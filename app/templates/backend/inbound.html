@@ -1,0 +1,186 @@
+{% extends "base.html" %}
+
+{% block title %}后端仓入库操作{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- 页面标题 -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-danger">
+                <div class="card-header bg-danger text-white">
+                    <h3 class="card-title mb-0">
+                        <i class="fas fa-warehouse me-2"></i>后端仓入库操作
+                        <span class="badge bg-light text-danger ms-2">Backend Warehouse</span>
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <p class="card-text mb-0">
+                        <i class="fas fa-info-circle me-1"></i>
+                        凭祥北投仓的货物入库操作
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 入库类型选择 -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title">
+                        <i class="fas fa-route me-2"></i>入库类型选择
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="card border-success">
+                                <div class="card-body text-center">
+                                    <i class="fas fa-truck fa-3x text-success mb-3"></i>
+                                    <h5 class="card-title">新增入库</h5>
+                                    <p class="card-text">单个货物入库录入</p>
+                                    <div class="alert alert-success">
+                                        <small><i class="fas fa-plus-circle"></i> 逐条录入</small>
+                                    </div>
+                                    <a href="{{ url_for('main.inbound') }}" class="btn btn-success">
+                                        <i class="fas fa-plus me-1"></i>新增入库
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 操作说明 -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="alert alert-warning">
+                <h5><i class="fas fa-route me-2"></i>后端仓入库流程</h5>
+                <div class="row">
+                    <div class="col-md-12">
+                        <h6>新增入库：</h6>
+                        <ol>
+                            <li>确认货物信息</li>
+                            <li>录入入库单据</li>
+                            <li>分配库位</li>
+                            <li>生成入库记录</li>
+                            <li>更新库存</li>
+                        </ol>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 快速统计 -->
+    <div class="row mt-4">
+        <div class="col-md-3">
+            <div class="card text-white bg-danger">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h6 class="card-title">今日入库</h6>
+                            <h4 class="mb-0">--</h4>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-truck-loading fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-info">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h6 class="card-title">本周入库</h6>
+                            <h4 class="mb-0">--</h4>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-calendar-week fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-warning">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h6 class="card-title">待出库</h6>
+                            <h4 class="mb-0">--</h4>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-clock fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-secondary">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h6 class="card-title">库存总量</h6>
+                            <h4 class="mb-0">--</h4>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-boxes fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 快捷操作 -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title">
+                        <i class="fas fa-bolt me-2"></i>快捷操作
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-start">
+                        <a href="{{ url_for('main.backend_inbound_list') }}" class="btn btn-outline-danger">
+                            <i class="fas fa-list me-1"></i>查看入库记录
+                        </a>
+                        <a href="{{ url_for('main.backend_receive_records') }}" class="btn btn-outline-info">
+                            <i class="fas fa-inbox me-1"></i>查看接收记录
+                        </a>
+                        <a href="{{ url_for('main.backend_inventory_list') }}" class="btn btn-outline-secondary">
+                            <i class="fas fa-boxes me-1"></i>查看库存
+                        </a>
+                        <a href="{{ url_for('main.backend_outbound') }}" class="btn btn-outline-warning">
+                            <i class="fas fa-truck me-1"></i>货物出库
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+$(document).ready(function() {
+    // 后端仓入库页面的特定JavaScript代码
+    console.log('后端仓入库页面已加载');
+    
+    // 可以在这里添加后端仓特有的功能
+});
+</script>
+{% endblock %}

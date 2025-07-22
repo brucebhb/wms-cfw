@@ -1,0 +1,504 @@
+{% extends "base.html" %}
+
+{% block title %}前端仓接收操作{% endblock %}
+
+{% block styles %}
+{{ super() }}
+<!-- 使用jsuites日期选择器 -->
+<link rel="stylesheet" href="{{ url_for('static', filename='vendor/css/jsuites.css') }}">
+<style>
+/* 页面样式 */
+.page-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 20px 0;
+    margin-bottom: 30px;
+}
+
+.page-title {
+    font-size: 28px;
+    font-weight: 600;
+    margin: 0;
+}
+
+.page-subtitle {
+    font-size: 16px;
+    opacity: 0.9;
+    margin: 5px 0 0 0;
+}
+
+/* 搜索框样式 */
+.search-box {
+    margin-bottom: 20px;
+    background-color: #f8f9fa;
+    padding: 20px;
+    border-radius: 8px;
+    border: 1px solid #e9ecef;
+}
+
+.search-form-row {
+    display: flex;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.search-label {
+    min-width: 80px;
+    margin-right: 10px;
+    color: #495057;
+    font-weight: 500;
+    text-align: right;
+}
+
+.search-control {
+    margin-right: 15px;
+}
+
+.search-buttons {
+    margin-left: auto;
+    display: flex;
+}
+
+.search-buttons .btn {
+    margin-left: 10px;
+    min-width: 90px;
+    height: 38px;
+}
+
+/* 按钮样式 */
+.btn-primary {
+    background-color: #0d6efd;
+    border-color: #0d6efd;
+    color: white;
+}
+
+.btn-primary:hover {
+    background-color: #0b5ed7;
+    border-color: #0a58ca;
+}
+
+.btn-success {
+    background-color: #198754;
+    border-color: #198754;
+}
+
+.btn-success:hover {
+    background-color: #157347;
+    border-color: #146c43;
+}
+
+/* 表格样式 */
+.table {
+    font-size: 14px;
+    margin-bottom: 0;
+}
+
+.table th, .table td {
+    padding: 12px 8px;
+    white-space: nowrap;
+    text-align: center;
+    vertical-align: middle;
+    border: 1px solid #dee2e6;
+}
+
+.table th {
+    background-color: #198754;
+    color: white;
+    font-weight: 600;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.table-striped tbody tr:nth-of-type(odd) {
+    background-color: rgba(0,0,0,.02);
+}
+
+.table-hover tbody tr:hover {
+    background-color: rgba(0,0,0,.075);
+}
+
+/* 列宽设置 */
+#pendingReceiveTable th:nth-child(1) { width: 50px; }   /* 选择框 */
+#pendingReceiveTable th:nth-child(2) { width: 120px; }  /* 发货时间 */
+#pendingReceiveTable th:nth-child(3) { width: 150px; }  /* 批次号 */
+#pendingReceiveTable th:nth-child(4) { width: 80px; }   /* 货物数量 */
+#pendingReceiveTable th:nth-child(5) { width: 150px; }  /* 客户名称 */
+#pendingReceiveTable th:nth-child(6) { width: 100px; }  /* 入库车牌 */
+#pendingReceiveTable th:nth-child(7) { width: 120px; }  /* 送货干线车 */
+#pendingReceiveTable th:nth-child(8) { width: 80px; }   /* 总板数 */
+#pendingReceiveTable th:nth-child(9) { width: 80px; }   /* 总件数 */
+#pendingReceiveTable th:nth-child(10) { width: 100px; } /* 总重量 */
+#pendingReceiveTable th:nth-child(11) { width: 100px; } /* 总体积 */
+#pendingReceiveTable th:nth-child(12) { width: 120px; } /* 发货仓库 */
+#pendingReceiveTable th:nth-child(13) { width: 150px; } /* 操作 */
+
+/* 卡片样式 */
+.card {
+    border: none;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    border-radius: 8px;
+}
+
+.card-header {
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #dee2e6;
+    padding: 15px 20px;
+}
+
+.card-title {
+    font-size: 18px;
+    font-weight: 600;
+    margin: 0;
+    color: #495057;
+}
+
+/* 徽章样式 */
+.badge {
+    font-size: 12px;
+    padding: 6px 10px;
+}
+
+/* 响应式 */
+@media (max-width: 768px) {
+    .search-form-row {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .search-label {
+        text-align: left;
+        margin-bottom: 5px;
+    }
+    
+    .search-buttons {
+        margin-left: 0;
+        margin-top: 15px;
+        justify-content: center;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- 页面标题 -->
+    <div class="page-header">
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col-12">
+                    <h1 class="page-title">
+                        <i class="fas fa-truck-loading me-3"></i>前端仓接收操作
+                    </h1>
+                    <p class="page-subtitle">接收来自后端仓的货物批次</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 搜索和筛选 -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="search-box">
+                <form id="searchForm">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                    <div class="search-form-row">
+                        <label class="search-label">时间范围:</label>
+                        <input type="date" class="form-control search-control" id="date_start" name="date_start" style="width: 160px;">
+                        <span class="me-2">至</span>
+                        <input type="date" class="form-control search-control" id="date_end" name="date_end" style="width: 160px;">
+                        
+                        <label class="search-label ms-3">批次号:</label>
+                        <input type="text" class="form-control search-control" id="batch_no" name="batch_no" placeholder="请输入批次号" style="width: 200px;">
+                        
+                        <div class="search-buttons">
+                            <button type="button" class="btn btn-primary" onclick="loadPendingBatches()">
+                                <i class="fas fa-search"></i> 查询
+                            </button>
+                            <button type="button" class="btn btn-secondary" onclick="resetSearch()">
+                                <i class="fas fa-undo"></i> 重置
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- 待接收批次列表 -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-list me-2"></i>待接收批次列表
+                    </h5>
+                    <div>
+                        <span class="badge bg-info" id="batchCount">加载中...</span>
+                        <button type="button" class="btn btn-success btn-sm ms-2" onclick="batchReceiveSelected()" id="batchReceiveBtn" disabled>
+                            <i class="fas fa-check-double"></i> 批量接收
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive" style="max-height: 600px; overflow-y: auto;">
+                        <table class="table table-striped table-hover mb-0" id="pendingReceiveTable">
+                            <thead>
+                                <tr>
+                                    <th scope="col" class="text-center">
+                                        <input type="checkbox" id="selectAll" class="form-check-input">
+                                    </th>
+                                    <th scope="col" class="text-center">发货时间</th>
+                                    <th scope="col" class="text-center">批次号</th>
+                                    <th scope="col" class="text-center">货物数量</th>
+                                    <th scope="col" class="text-center">客户名称</th>
+                                    <th scope="col" class="text-center">入库车牌</th>
+                                    <th scope="col" class="text-center">送货干线车</th>
+                                    <th scope="col" class="text-center">总板数</th>
+                                    <th scope="col" class="text-center">总件数</th>
+                                    <th scope="col" class="text-center">总重量(kg)</th>
+                                    <th scope="col" class="text-center">总体积(m³)</th>
+                                    <th scope="col" class="text-center">发货仓库</th>
+                                    <th scope="col" class="text-center">操作</th>
+                                </tr>
+                            </thead>
+                            <tbody id="pendingReceiveTableBody">
+                                <tr>
+                                    <td colspan="13" class="text-center text-muted py-4">
+                                        <i class="fas fa-spinner fa-spin me-2"></i>正在加载数据...
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 批次详情模态框 -->
+<div class="modal fade" id="cargoDetailModal" tabindex="-1" aria-labelledby="cargoDetailModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="cargoDetailModalLabel">
+                    <i class="fas fa-boxes me-2"></i>批次货物详情
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row mb-3">
+                    <div class="col-12">
+                        <h6 id="modalBatchNumber" class="text-primary"></h6>
+                    </div>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>序号</th>
+                                <th>客户名称</th>
+                                <th>识别编码</th>
+                                <th>板数</th>
+                                <th>件数</th>
+                                <th>重量(kg)</th>
+                                <th>体积(m³)</th>
+                                <th>备注</th>
+                            </tr>
+                        </thead>
+                        <tbody id="cargoDetailTableBody">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script src="{{ url_for('static', filename='vendor/js/jsuites.js') }}"></script>
+<script>
+// 页面加载完成后初始化
+document.addEventListener('DOMContentLoaded', function() {
+    // 设置默认日期范围（最近7天）
+    const today = new Date();
+    const oneWeekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+    
+    document.getElementById('date_start').value = oneWeekAgo.toISOString().split('T')[0];
+    document.getElementById('date_end').value = today.toISOString().split('T')[0];
+    
+    // 加载待接收批次数据
+    loadPendingBatches();
+    
+    // 绑定全选复选框事件
+    document.getElementById('selectAll').addEventListener('change', function() {
+        const checkboxes = document.querySelectorAll('#pendingReceiveTableBody input[type="checkbox"]');
+        checkboxes.forEach(checkbox => {
+            checkbox.checked = this.checked;
+        });
+        updateBatchReceiveButton();
+    });
+});
+
+// 加载待接收批次数据
+function loadPendingBatches() {
+    const dateStart = document.getElementById('date_start').value;
+    const dateEnd = document.getElementById('date_end').value;
+    const batchNo = document.getElementById('batch_no').value;
+    
+    // 构建查询参数
+    const params = new URLSearchParams();
+    if (dateStart) params.append('date_start', dateStart);
+    if (dateEnd) params.append('date_end', dateEnd);
+    if (batchNo) params.append('batch_no', batchNo);
+    
+    // 显示加载状态
+    document.getElementById('pendingReceiveTableBody').innerHTML = `
+        <tr>
+            <td colspan="13" class="text-center text-muted py-4">
+                <i class="fas fa-spinner fa-spin me-2"></i>正在加载数据...
+            </td>
+        </tr>
+    `;
+    
+    // 发送请求
+    fetch(`/api/frontend/pending-receive-batches?${params.toString()}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                displayPendingBatches(data.batches);
+                document.getElementById('batchCount').textContent = `共 ${data.batches.length} 个批次`;
+            } else {
+                throw new Error(data.message || '加载数据失败');
+            }
+        })
+        .catch(error => {
+            console.error('加载待接收批次失败:', error);
+            document.getElementById('pendingReceiveTableBody').innerHTML = `
+                <tr>
+                    <td colspan="13" class="text-center text-danger py-4">
+                        <i class="fas fa-exclamation-triangle me-2"></i>加载数据失败: ${error.message}
+                    </td>
+                </tr>
+            `;
+            document.getElementById('batchCount').textContent = '加载失败';
+        });
+}
+
+// 显示待接收批次数据
+function displayPendingBatches(batches) {
+    const tbody = document.getElementById('pendingReceiveTableBody');
+    
+    if (batches.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="13" class="text-center text-muted py-4">
+                    <i class="fas fa-inbox me-2"></i>暂无待接收的批次
+                </td>
+            </tr>
+        `;
+        return;
+    }
+    
+    const rows = batches.map((batch, index) => `
+        <tr>
+            <td class="text-center">
+                <input type="checkbox" class="form-check-input batch-checkbox" value="${batch.batch_no}" onchange="updateBatchReceiveButton()">
+            </td>
+            <td class="text-center">${batch.outbound_time || '-'}</td>
+            <td class="text-center">
+                <span class="badge bg-primary">${batch.batch_no}</span>
+            </td>
+            <td class="text-center">${batch.item_count}</td>
+            <td class="text-center">${batch.customer_names || '-'}</td>
+            <td class="text-center">${batch.inbound_plate || '-'}</td>
+            <td class="text-center">${batch.delivery_plate_number || '-'}</td>
+            <td class="text-center">${batch.total_pallet_count || 0}</td>
+            <td class="text-center">${batch.total_package_count || 0}</td>
+            <td class="text-center">${batch.total_weight || 0}</td>
+            <td class="text-center">${batch.total_volume || 0}</td>
+            <td class="text-center">${batch.source_warehouse || '-'}</td>
+            <td class="text-center">
+                <div class="btn-group btn-group-sm">
+                    <button type="button" class="btn btn-outline-info" onclick="showBatchDetail('${batch.batch_no}')" title="查看详情">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                    <button type="button" class="btn btn-outline-success" onclick="receiveSingleBatch('${batch.batch_no}')" title="接收">
+                        <i class="fas fa-check"></i>
+                    </button>
+                </div>
+            </td>
+        </tr>
+    `).join('');
+    
+    tbody.innerHTML = rows;
+}
+
+// 更新批量接收按钮状态
+function updateBatchReceiveButton() {
+    const checkedBoxes = document.querySelectorAll('#pendingReceiveTableBody input[type="checkbox"]:checked');
+    const batchReceiveBtn = document.getElementById('batchReceiveBtn');
+    
+    if (checkedBoxes.length > 0) {
+        batchReceiveBtn.disabled = false;
+        batchReceiveBtn.innerHTML = `<i class="fas fa-check-double"></i> 批量接收 (${checkedBoxes.length})`;
+    } else {
+        batchReceiveBtn.disabled = true;
+        batchReceiveBtn.innerHTML = `<i class="fas fa-check-double"></i> 批量接收`;
+    }
+}
+
+// 显示批次详情
+function showBatchDetail(batchNo) {
+    // 这里可以实现显示批次详情的功能
+    alert(`显示批次 ${batchNo} 的详情`);
+}
+
+// 接收单个批次
+function receiveSingleBatch(batchNo) {
+    if (confirm(`确定要接收批次 ${batchNo} 吗？`)) {
+        // 这里可以实现接收单个批次的功能
+        alert(`接收批次 ${batchNo}`);
+    }
+}
+
+// 批量接收选中的批次
+function batchReceiveSelected() {
+    const checkedBoxes = document.querySelectorAll('#pendingReceiveTableBody input[type="checkbox"]:checked');
+    const batchNos = Array.from(checkedBoxes).map(cb => cb.value);
+    
+    if (batchNos.length === 0) {
+        alert('请先选择要接收的批次');
+        return;
+    }
+    
+    if (confirm(`确定要批量接收选中的 ${batchNos.length} 个批次吗？`)) {
+        // 这里可以实现批量接收的功能
+        alert(`批量接收批次: ${batchNos.join(', ')}`);
+    }
+}
+
+// 重置搜索
+function resetSearch() {
+    document.getElementById('date_start').value = '';
+    document.getElementById('date_end').value = '';
+    document.getElementById('batch_no').value = '';
+    
+    // 重新设置默认日期范围
+    const today = new Date();
+    const oneWeekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+    
+    document.getElementById('date_start').value = oneWeekAgo.toISOString().split('T')[0];
+    document.getElementById('date_end').value = today.toISOString().split('T')[0];
+    
+    // 重新加载数据
+    loadPendingBatches();
+}
+</script>
+{% endblock %}

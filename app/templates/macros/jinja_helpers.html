@@ -1,0 +1,130 @@
+{# Jinja2 辅助宏 - 解决Jinja2不支持break语句的问题 #}
+
+{# 
+获取列表中第一个满足条件的项目的属性值
+用法: {{ get_first_value(records, 'receiver.address') }}
+#}
+{% macro get_first_value(items, attribute_path, default='') %}
+    {%- set result = '' -%}
+    {%- set found = false -%}
+    {%- for item in items -%}
+        {%- if not found -%}
+            {%- set current = item -%}
+            {%- for attr in attribute_path.split('.') -%}
+                {%- if current and current[attr] is defined -%}
+                    {%- set current = current[attr] -%}
+                {%- else -%}
+                    {%- set current = none -%}
+                    {%- break -%}
+                {%- endif -%}
+            {%- endfor -%}
+            {%- if current -%}
+                {%- set result = current -%}
+                {%- set found = true -%}
+            {%- endif -%}
+        {%- endif -%}
+    {%- endfor -%}
+    {{- result or default -}}
+{% endmacro %}
+
+{# 
+检查列表中是否存在满足条件的项目
+用法: {{ has_item_with_value(records, 'receiver.address') }}
+#}
+{% macro has_item_with_value(items, attribute_path) %}
+    {%- set found = false -%}
+    {%- for item in items -%}
+        {%- if not found -%}
+            {%- set current = item -%}
+            {%- for attr in attribute_path.split('.') -%}
+                {%- if current and current[attr] is defined -%}
+                    {%- set current = current[attr] -%}
+                {%- else -%}
+                    {%- set current = none -%}
+                    {%- break -%}
+                {%- endif -%}
+            {%- endfor -%}
+            {%- if current -%}
+                {%- set found = true -%}
+            {%- endif -%}
+        {%- endif -%}
+    {%- endfor -%}
+    {{- found -}}
+{% endmacro %}
+
+{# 
+获取第一个非空值（类似于JavaScript的 || 操作符）
+用法: {{ first_non_empty(value1, value2, value3, default='默认值') }}
+#}
+{% macro first_non_empty(*values, default='') %}
+    {%- for value in values -%}
+        {%- if value -%}
+            {{- value -}}
+            {%- break -%}
+        {%- endif -%}
+    {%- endfor -%}
+    {%- if not value -%}
+        {{- default -}}
+    {%- endif -%}
+{% endmacro %}
+
+{# 
+安全获取嵌套属性值
+用法: {{ safe_get(object, 'receiver.address', '默认地址') }}
+#}
+{% macro safe_get(obj, path, default='') %}
+    {%- set current = obj -%}
+    {%- for attr in path.split('.') -%}
+        {%- if current and current[attr] is defined -%}
+            {%- set current = current[attr] -%}
+        {%- else -%}
+            {%- set current = none -%}
+            {%- break -%}
+        {%- endif -%}
+    {%- endfor -%}
+    {{- current or default -}}
+{% endmacro %}
+
+{# 
+格式化日期时间
+用法: {{ format_datetime(datetime_obj, '%Y-%m-%d %H:%M:%S') }}
+#}
+{% macro format_datetime(dt, format='%Y-%m-%d %H:%M:%S') %}
+    {%- if dt -%}
+        {{- dt.strftime(format) -}}
+    {%- endif -%}
+{% endmacro %}
+
+{# 
+格式化数字，隐藏零值
+用法: {{ format_number(value, hide_zero=true) }}
+#}
+{% macro format_number(value, hide_zero=false, decimal_places=2) %}
+    {%- if value is number -%}
+        {%- if hide_zero and value == 0 -%}
+            {# 不显示零值 #}
+        {%- else -%}
+            {%- if value == value|int -%}
+                {{- value|int -}}
+            {%- else -%}
+                {{- "%.{}f".format(decimal_places) | format(value) | replace('.00', '') -}}
+            {%- endif -%}
+        {%- endif -%}
+    {%- endif -%}
+{% endmacro %}
+
+{# 
+条件CSS类
+用法: {{ conditional_class('active', condition) }}
+#}
+{% macro conditional_class(class_name, condition) %}
+    {%- if condition -%}{{ class_name }}{%- endif -%}
+{% endmacro %}
+
+{# 
+生成表格行的奇偶CSS类
+用法: {{ row_class(loop.index0) }}
+#}
+{% macro row_class(index) %}
+    {%- if index % 2 == 0 -%}table-row-even{%- else -%}table-row-odd{%- endif -%}
+{% endmacro %}

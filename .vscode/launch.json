@@ -1,0 +1,33 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Python: Flask App",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/app.py",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "env": {
+                "FLASK_ENV": "development",
+                "FLASK_DEBUG": "1",
+                "PYTHONPATH": "${workspaceFolder}"
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}",
+            "python": "${workspaceFolder}/Scripts/python.exe"
+        },
+        {
+            "name": "Python: Current File",
+            "type": "python",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}"
+            },
+            "python": "${workspaceFolder}/Scripts/python.exe"
+        }
+    ]
+}

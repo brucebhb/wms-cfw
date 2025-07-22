@@ -1,0 +1,261 @@
+{% extends "base.html" %}
+
+{% block title %}后端仓接收记录{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- 页面标题 -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-danger">
+                <div class="card-header bg-danger text-white">
+                    <h3 class="card-title mb-0">
+                        <i class="fas fa-list me-2"></i>后端仓接收记录
+                        <span class="badge bg-light text-danger ms-2">Backend Warehouse Records</span>
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-8">
+                            <p class="card-text mb-0">
+                                <i class="fas fa-info-circle me-1"></i>
+                                查看凭祥北投仓的接收记录（从前端仓转入的货物）
+                            </p>
+                        </div>
+                        <div class="col-md-4 text-end">
+                            <a href="{{ url_for('main.backend_receive') }}" class="btn btn-danger">
+                                <i class="fas fa-plus me-1"></i>新增接收
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 搜索过滤器 -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title">
+                        <i class="fas fa-search me-2"></i>搜索过滤
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="GET" action="{{ url_for('main.backend_receive_list') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                        <div class="row">
+                            <div class="col-md-2">
+                                <label for="customer_name" class="form-label">客户名称</label>
+                                <input type="text" class="form-control" id="customer_name" name="customer_name"
+                                       value="{{ search_params.get('customer_name', '') }}" placeholder="输入客户名称">
+                            </div>
+                            <div class="col-md-2">
+                                <label for="plate_number" class="form-label">车牌号</label>
+                                <input type="text" class="form-control" id="plate_number" name="plate_number"
+                                       value="{{ search_params.get('plate_number', '') }}" placeholder="输入车牌号">
+                            </div>
+                            <div class="col-md-2">
+                                <label for="inbound_type" class="form-label">入库类型</label>
+                                <select class="form-select" id="inbound_type" name="inbound_type">
+                                    <option value="">全部类型</option>
+                                    <option value="direct" {% if search_params.get('inbound_type') == 'direct' %}selected{% endif %}>客户直送</option>
+                                    <option value="transfer" {% if search_params.get('inbound_type') == 'transfer' %}selected{% endif %}>接收其它仓库订单</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="date_range" class="form-label">入仓日期</label>
+                                <div class="input-group">
+                                    <input type="date" class="form-control" name="date_start"
+                                           value="{{ search_params.get('date_start', '') }}">
+                                    <span class="input-group-text">至</span>
+                                    <input type="date" class="form-control" name="date_end"
+                                           value="{{ search_params.get('date_end', '') }}">
+                                </div>
+                            </div>
+                            <div class="col-md-2 d-flex align-items-end">
+                                <button type="submit" class="btn btn-primary me-2">
+                                    <i class="fas fa-search"></i> 搜索
+                                </button>
+                                <a href="{{ url_for('main.backend_receive_list') }}" class="btn btn-outline-secondary">
+                                    <i class="fas fa-redo"></i> 重置
+                                </a>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 记录列表 -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-table me-2"></i>接收记录列表
+                    </h5>
+                    <div>
+                        <span class="badge bg-danger">后端仓专用</span>
+                        {% if records.total %}
+                        <span class="badge bg-info">共 {{ records.total }} 条记录</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% if records.items %}
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover table-center">
+                            <thead class="table-danger">
+                                <tr>
+                                    <th>序号</th>
+                                    <th>入库时间</th>
+                                    <th>入库车牌</th>
+                                    <th>客户名称</th>
+                                    <th>板数</th>
+                                    <th>件数</th>
+                                    <th>重量(kg)</th>
+                                    <th>体积(m³)</th>
+                                    <th>出境模式</th>
+                                    <th>订单类型</th>
+                                    <th>报关行</th>
+                                    <th>库位</th>
+                                    <th>单据</th>
+                                    <th>跟单客服</th>
+                                    <th>识别编码</th>
+                                    <th>操作仓库</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for record in records.items %}
+                                <tr>
+                                    <td>{{ loop.index + (records.page - 1) * records.per_page }}</td>
+                                    <td>{{ record.inbound_time.strftime('%Y-%m-%d') if record.inbound_time else '' }}</td>
+                                    <td>{{ record.plate_number or '-' }}</td>
+                                    <td>{{ record.customer_name }}</td>
+                                    <td>{{ record.pallet_count or 0 }}</td>
+                                    <td>{{ record.package_count or 0 }}</td>
+                                    <td>{{ "%.1f"|format(record.weight or 0) }}</td>
+                                    <td>{{ "%.2f"|format(record.volume or 0) }}</td>
+                                    <td>{{ record.export_mode or '-' }}</td>
+                                    <td>{{ record.order_type or '-' }}</td>
+                                    <td>{{ record.customs_broker or '-' }}</td>
+                                    <td>{{ record.location or '-' }}</td>
+                                    <td>{{ record.documents or '-' }}</td>
+                                    <td>{{ record.service_staff or '-' }}</td>
+                                    <td>{{ record.identification_code or '-' }}</td>
+                                    <td>{{ record.operated_warehouse.warehouse_name if record.operated_warehouse else '-' }}</td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm">
+                                            <a href="{{ url_for('main.view_inbound', id=record.id) }}"
+                                               class="btn btn-outline-info" title="查看详情">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            <a href="{{ url_for('main.edit_inbound', id=record.id) }}"
+                                               class="btn btn-outline-warning" title="编辑">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- 分页 -->
+                    {% if records.pages > 1 %}
+                    <nav aria-label="分页导航">
+                        <ul class="pagination justify-content-center">
+                            {% if records.has_prev %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('main.backend_receive_list', page=records.prev_num, **search_params) }}">
+                                    <i class="fas fa-chevron-left"></i> 上一页
+                                </a>
+                            </li>
+                            {% endif %}
+                            
+                            {% for page_num in records.iter_pages() %}
+                                {% if page_num %}
+                                    {% if page_num != records.page %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="{{ url_for('main.backend_receive_list', page=page_num, **search_params) }}">{{ page_num }}</a>
+                                    </li>
+                                    {% else %}
+                                    <li class="page-item active">
+                                        <span class="page-link">{{ page_num }}</span>
+                                    </li>
+                                    {% endif %}
+                                {% else %}
+                                <li class="page-item disabled">
+                                    <span class="page-link">...</span>
+                                </li>
+                                {% endif %}
+                            {% endfor %}
+                            
+                            {% if records.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('main.backend_receive_list', page=records.next_num, **search_params) }}">
+                                    下一页 <i class="fas fa-chevron-right"></i>
+                                </a>
+                            </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                    {% endif %}
+                    {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-truck-loading fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">暂无接收记录</h5>
+                        <p class="text-muted">请先进行货物接收操作</p>
+                        <a href="{{ url_for('main.backend_receive') }}" class="btn btn-danger">
+                            <i class="fas fa-plus me-1"></i>立即接收
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block styles %}
+<style>
+.table-center th,
+.table-center td {
+    text-align: center;
+    vertical-align: middle;
+}
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script>
+$(document).ready(function() {
+    // 后端仓接收记录页面的特定JavaScript代码
+    console.log('后端仓接收记录页面已加载');
+    
+    // 表格行点击高亮
+    $('tbody tr').click(function() {
+        $(this).toggleClass('table-active');
+    });
+});
+
+function transferToInventory(recordId) {
+    if (confirm('确定要将此批货物平移到库存吗？')) {
+        // 这里可以添加库存平移的AJAX请求
+        alert('库存平移功能正在开发中...');
+    }
+}
+
+// 查看记录详情
+function viewRecord(recordId) {
+    // 跳转到入库记录详情页面
+    window.location.href = "{{ url_for('main.view_inbound', id=0) }}".replace('0', recordId);
+}
+</script>
+{% endblock %}

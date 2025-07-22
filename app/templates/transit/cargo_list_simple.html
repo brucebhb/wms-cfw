@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>在途货物管理 - 仓储管理系统</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        /* 确保表头显示 */
+        #cargoTable thead {
+            display: table-header-group !important;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        #cargoTable thead th {
+            background-color: #212529 !important;
+            color: white !important;
+            border-color: #454d55 !important;
+            font-weight: 600;
+            text-align: center;
+            vertical-align: middle;
+            padding: 12px 8px;
+            white-space: nowrap;
+        }
+
+        #cargoTable tbody td {
+            vertical-align: middle;
+            padding: 8px;
+            border-color: #dee2e6;
+        }
+
+        /* 表格容器样式 */
+        .table-responsive {
+            max-height: 70vh;
+            overflow-y: auto;
+            border: 1px solid #dee2e6;
+            border-radius: 0.375rem;
+        }
+
+        /* 状态徽章样式 */
+        .badge {
+            font-size: 0.75em;
+            padding: 0.35em 0.65em;
+        }
+
+        /* 操作按钮样式 */
+        .btn-sm {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.875rem;
+        }
+
+        /* 识别编码列样式 */
+        .identification-code-cell {
+            font-size: 0.85em !important;
+            word-wrap: break-word !important;
+            white-space: normal !important;
+            text-align: left !important;
+            line-height: 1.3 !important;
+            padding: 8px 6px !important;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-12">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h2><i class="fas fa-truck me-2"></i>在途货物管理</h2>
+                    <div>
+                        <a href="/" class="btn btn-outline-secondary">
+                            <i class="fas fa-home me-1"></i>返回首页
+                        </a>
+                        <a href="/auth/logout" class="btn btn-outline-danger ms-2">
+                            <i class="fas fa-sign-out-alt me-1"></i>退出登录
+                        </a>
+                    </div>
+                </div>
+
+                <!-- 统计信息 -->
+                <div class="row mb-4">
+                    <div class="col-md-4">
+                        <div class="card bg-primary text-white shadow-sm h-100">
+                            <div class="card-header bg-primary border-0 pb-1">
+                                <h6 class="card-title mb-0 fw-bold">
+                                    <i class="fas fa-truck me-2"></i>在途车数
+                                </h6>
+                            </div>
+                            <div class="card-body text-center pt-2 d-flex flex-column justify-content-center">
+                                <h1 class="display-4 fw-bold text-white mb-0" id="vehicleCount">0</h1>
+                                <small class="text-white-50">运输车辆数量</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card bg-secondary text-white shadow-sm h-100">
+                            <div class="card-header bg-secondary border-0 pb-1">
+                                <h6 class="card-title mb-0 fw-bold">
+                                    <i class="fas fa-file-alt me-2"></i>总票数
+                                </h6>
+                            </div>
+                            <div class="card-body text-center pt-2 d-flex flex-column justify-content-center">
+                                <h1 class="display-4 fw-bold text-white mb-0" id="totalCount">0</h1>
+                                <small class="text-white-50">在途货物票数</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card bg-success text-white shadow-sm h-100">
+                            <div class="card-header bg-success border-0 pb-1">
+                                <h5 class="card-title mb-0 fw-bold">
+                                    <i class="fas fa-boxes me-2"></i>总板数/件数
+                                </h5>
+                            </div>
+                            <div class="card-body pt-2 d-flex align-items-center">
+                                <div class="row text-center w-100">
+                                    <div class="col-6 border-end border-white-50">
+                                        <div class="fw-bold text-white mb-1 fs-6">总板数</div>
+                                        <h1 class="display-5 fw-bold text-white mb-0" id="totalPallets">0</h1>
+                                    </div>
+                                    <div class="col-6">
+                                        <div class="fw-bold text-white mb-1 fs-6">总件数</div>
+                                        <h1 class="display-5 fw-bold text-white mb-0" id="totalPackages">0</h1>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 搜索表单 -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="fas fa-search me-2"></i>搜索条件</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-2">
+                                <label for="customerName" class="form-label">客户名称</label>
+                                <input type="text" class="form-control" id="customerName" placeholder="输入客户名称">
+                            </div>
+                            <div class="col-md-2">
+                                <label for="identificationCode" class="form-label">识别编码</label>
+                                <input type="text" class="form-control" id="identificationCode" placeholder="输入识别编码">
+                            </div>
+                            <div class="col-md-2">
+                                <label for="batchNo" class="form-label">批次号</label>
+                                <input type="text" class="form-control" id="batchNo" placeholder="输入批次号">
+                            </div>
+                            <div class="col-md-2">
+                                <label for="plateNumber" class="form-label">车牌号</label>
+                                <input type="text" class="form-control" id="plateNumber" placeholder="入库车牌/干线车">
+                            </div>
+                            <div class="col-md-2">
+                                <label for="serviceStaff" class="form-label">跟单客服</label>
+                                <input type="text" class="form-control" id="serviceStaff" placeholder="输入客服姓名">
+                            </div>
+                            <div class="col-md-2">
+                                <label for="status" class="form-label">状态</label>
+                                <select class="form-control" id="status">
+                                    <option value="">全部状态</option>
+                                    <option value="in_transit" selected>运输中</option>
+                                    <option value="arrived">已到达</option>
+                                    <option value="received">已接收</option>
+                                    <option value="cancelled">已取消</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="row mt-3">
+                            <div class="col-md-2">
+                                <label for="orderType" class="form-label">订单类型</label>
+                                <select class="form-control" id="orderType">
+                                    <option value="">全部类型</option>
+                                    <option value="原车出境">原车出境</option>
+                                    <option value="换车出境">换车出境</option>
+                                    <option value="零担">零担</option>
+                                    <option value="TP订单">TP订单</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <label for="exportMode" class="form-label">出境模式</label>
+                                <select class="form-control" id="exportMode">
+                                    <option value="">全部模式</option>
+                                    <option value="保税">保税</option>
+                                    <option value="清关">清关</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <label for="customsBroker" class="form-label">报关行</label>
+                                <input type="text" class="form-control" id="customsBroker" placeholder="输入报关行">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">&nbsp;</label>
+                                <div>
+                                    <button type="button" class="btn btn-primary" id="searchBtn">
+                                        <i class="fas fa-search me-1"></i>搜索
+                                    </button>
+                                    <button type="button" class="btn btn-secondary ms-1" id="resetBtn">
+                                        <i class="fas fa-undo me-1"></i>重置
+                                    </button>
+                                    <button type="button" class="btn btn-success ms-1" id="exportBtn">
+                                        <i class="fas fa-download me-1"></i>导出
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 在途货物列表 -->
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0"><i class="fas fa-list me-2"></i>在途货物列表</h5>
+                        <div class="d-flex gap-2 align-items-center">
+                            <div class="btn-group" role="group">
+                                <input type="radio" class="btn-check" name="viewMode" id="batchView" value="batch" checked>
+                                <label class="btn btn-outline-primary btn-sm" for="batchView">批次视图</label>
+
+                                <input type="radio" class="btn-check" name="viewMode" id="listView" value="list">
+                                <label class="btn btn-outline-primary btn-sm" for="listView">列表视图</label>
+                            </div>
+                            <span class="badge bg-secondary" id="recordCount">共 0 条记录</span>
+                        </div>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-striped table-hover table-bordered" id="cargoTable">
+                                <thead class="table-dark sticky-top">
+                                    <tr>
+                                        <th style="width: 50px;">序号</th>
+                                        <th style="width: 120px;">客户名称</th>
+                                        <th style="width: 150px;">识别编码</th>
+                                        <th style="width: 60px;">板数</th>
+                                        <th style="width: 60px;">件数</th>
+                                        <th style="width: 80px;">重量(kg)</th>
+                                        <th style="width: 80px;">体积(m³)</th>
+                                        <th style="width: 100px;">批次号</th>
+                                        <th style="width: 100px;">入库车牌</th>
+                                        <th style="width: 100px;">送货干线车</th>
+                                        <th style="width: 80px;">跟单客服</th>
+                                        <th style="width: 80px;">订单类型</th>
+                                        <th style="width: 80px;">出境模式</th>
+                                        <th style="width: 100px;">报关行</th>
+                                        <th style="width: 160px;">运输路线</th>
+                                        <th style="width: 120px;">出发时间</th>
+                                        <th style="width: 80px;">状态</th>
+                                        <th style="width: 80px;">操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="cargoTableBody">
+                                    <tr>
+                                        <td colspan="18" class="text-center">
+                                            <div class="spinner-border text-primary" role="status">
+                                                <span class="visually-hidden">加载中...</span>
+                                            </div>
+                                            <p class="mt-2">正在加载在途货物数据...</p>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 分页 -->
+                <nav aria-label="分页导航" class="mt-4">
+                    <ul class="pagination justify-content-center" id="pagination">
+                        <!-- 分页按钮将通过JavaScript动态生成 -->
+                    </ul>
+                </nav>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let currentPage = 1;
+
+        // 页面加载完成后初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            loadStatistics();
+            loadCargoList();
+
+            // 绑定事件
+            document.getElementById('searchBtn').addEventListener('click', function() {
+                currentPage = 1;
+                loadStatistics(); // 搜索时同时更新统计数据
+                loadCargoList();
+            });
+
+            // 视图切换事件
+            document.querySelectorAll('input[name="viewMode"]').forEach(radio => {
+                radio.addEventListener('change', function() {
+                    currentPage = 1;
+                    loadCargoList();
+                });
+            });
+
+            document.getElementById('resetBtn').addEventListener('click', function() {
+                // 重置表单
+                document.getElementById('customerName').value = '';
+                document.getElementById('identificationCode').value = '';
+                document.getElementById('batchNo').value = '';
+                document.getElementById('plateNumber').value = '';
+                document.getElementById('serviceStaff').value = '';
+                document.getElementById('orderType').value = '';
+                document.getElementById('exportMode').value = '';
+                document.getElementById('customsBroker').value = '';
+                document.getElementById('status').value = 'in_transit';
+
+                currentPage = 1;
+                loadStatistics(); // 重置时同时更新统计数据
+                loadCargoList();
+            });
+        });
+
+        // 加载统计信息（根据当前搜索条件）
+        function loadStatistics() {
+            // 获取当前搜索参数
+            const params = new URLSearchParams({
+                customer_name: document.getElementById('customerName').value,
+                identification_code: document.getElementById('identificationCode').value,
+                batch_no: document.getElementById('batchNo').value,
+                plate_number: document.getElementById('plateNumber').value,
+                service_staff: document.getElementById('serviceStaff').value,
+                order_type: document.getElementById('orderType').value,
+                export_mode: document.getElementById('exportMode').value,
+                customs_broker: document.getElementById('customsBroker').value,
+                // 不传status参数，获取所有状态的统计
+            });
+
+            fetch(`/api/transit/cargo/statistics?${params}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        const stats = data.status_summary;
+                        const inTransitCount = stats.in_transit?.count || 0;
+                        const arrivedCount = stats.arrived?.count || 0;
+
+                        // 显示在途车数
+                        document.getElementById('vehicleCount').textContent = data.vehicle_count || 0;
+
+                        // 显示总票数（运输中 + 已到达）
+                        const totalCount = inTransitCount + arrivedCount;
+                        document.getElementById('totalCount').textContent = totalCount;
+
+                        // 显示总板数和总件数
+                        const totalPallets = (stats.in_transit?.total_pallets || 0) + (stats.arrived?.total_pallets || 0);
+                        const totalPackages = (stats.in_transit?.total_packages || 0) + (stats.arrived?.total_packages || 0);
+                        document.getElementById('totalPallets').textContent = totalPallets;
+                        document.getElementById('totalPackages').textContent = totalPackages;
+                    }
+                })
+                .catch(error => {
+                    console.error('加载统计信息失败:', error);
+                });
+        }
+
+        // 加载在途货物列表
+        function loadCargoList() {
+            const viewMode = document.querySelector('input[name="viewMode"]:checked').value;
+            const params = new URLSearchParams({
+                page: currentPage,
+                per_page: 20,
+                customer_name: document.getElementById('customerName').value,
+                identification_code: document.getElementById('identificationCode').value,
+                batch_no: document.getElementById('batchNo').value,
+                plate_number: document.getElementById('plateNumber').value,
+                service_staff: document.getElementById('serviceStaff').value,
+                order_type: document.getElementById('orderType').value,
+                export_mode: document.getElementById('exportMode').value,
+                customs_broker: document.getElementById('customsBroker').value,
+                status: document.getElementById('status').value
+            });
+
+            // 显示加载状态
+            const tbody = document.getElementById('cargoTableBody');
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="18" class="text-center py-4">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">加载中...</span>
+                        </div>
+                        <p class="mt-2 mb-0">正在加载在途货物数据...</p>
+                    </td>
+                </tr>
+            `;
+
+            console.log('正在加载在途货物列表，参数:', Object.fromEntries(params));
+
+            // 根据视图模式选择API
+            const apiUrl = viewMode === 'batch' ? '/api/transit/cargo/list/by-batch' : '/api/transit/cargo/list';
+
+            fetch(`${apiUrl}?${params}`)
+                .then(response => {
+                    console.log('API响应状态:', response.status);
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('API响应数据:', data);
+                    if (data.success) {
+                        if (viewMode === 'batch') {
+                            renderBatchTable(data.batches);
+                            document.getElementById('recordCount').textContent = `共 ${data.total_batches} 个批次，${data.total_items} 条记录`;
+                            // 隐藏分页控件
+                            document.getElementById('pagination').parentElement.style.display = 'none';
+                            showSuccess(`成功加载 ${data.total_batches} 个批次，${data.total_items} 条在途货物记录`);
+                        } else {
+                            renderCargoTable(data.cargos);
+                            renderPagination(data.page, data.pages, data.total);
+                            // 显示分页控件
+                            document.getElementById('pagination').parentElement.style.display = 'block';
+                            showSuccess(`成功加载 ${data.cargos.length} 条在途货物记录`);
+                        }
+                    } else {
+                        showError('加载在途货物列表失败: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('加载在途货物列表失败:', error);
+                    showError('网络错误，请检查网络连接或联系管理员');
+                    // 显示错误状态
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="18" class="text-center text-danger py-4">
+                                <i class="fas fa-exclamation-triangle fa-3x mb-3"></i>
+                                <p class="mb-0">加载失败</p>
+                                <small>请刷新页面重试或联系管理员</small>
+                            </td>
+                        </tr>
+                    `;
+                });
+        }
+
+        // 渲染货物表格
+        function renderCargoTable(cargos) {
+            const tbody = document.getElementById('cargoTableBody');
+
+            if (cargos.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="18" class="text-center text-muted py-4">
+                            <i class="fas fa-inbox fa-3x mb-3 text-secondary"></i>
+                            <p class="mb-0">暂无在途货物数据</p>
+                            <small class="text-muted">请检查搜索条件或联系管理员</small>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            tbody.innerHTML = cargos.map((cargo, index) => `
+                <tr>
+                    <td class="text-center">${(currentPage - 1) * 20 + index + 1}</td>
+                    <td class="text-truncate" style="max-width: 120px;" title="${cargo.customer_name || ''}">${cargo.customer_name || ''}</td>
+                    <td class="identification-code-cell" style="max-width: 150px;" title="${cargo.identification_code || ''}">${cargo.identification_code || ''}</td>
+                    <td class="text-center">${cargo.pallet_count || 0}</td>
+                    <td class="text-center">${cargo.package_count || 0}</td>
+                    <td class="text-center">${formatNumber(cargo.weight)}</td>
+                    <td class="text-center">${formatNumber(cargo.volume)}</td>
+                    <td class="text-truncate" style="max-width: 100px;" title="${cargo.batch_no || ''}">${cargo.batch_no || ''}</td>
+                    <td class="text-truncate" style="max-width: 100px;" title="${cargo.inbound_plate || ''}">${cargo.inbound_plate || ''}</td>
+                    <td class="text-truncate" style="max-width: 100px;" title="${cargo.delivery_plate_number || ''}">${cargo.delivery_plate_number || ''}</td>
+                    <td class="text-truncate" style="max-width: 80px;" title="${cargo.service_staff || ''}">${cargo.service_staff || ''}</td>
+                    <td class="text-truncate" style="max-width: 80px;" title="${cargo.order_type || ''}">${cargo.order_type || ''}</td>
+                    <td class="text-truncate" style="max-width: 80px;" title="${cargo.export_mode || ''}">${cargo.export_mode || ''}</td>
+                    <td class="text-truncate" style="max-width: 100px;" title="${cargo.customs_broker || ''}">${cargo.customs_broker || ''}</td>
+                    <td class="text-truncate" style="max-width: 160px;" title="${getRouteDisplay(cargo)}">${getRouteDisplay(cargo)}</td>
+                    <td class="text-center">${formatDateTime(cargo.departure_time)}</td>
+                    <td class="text-center">
+                        <span class="badge ${getStatusBadgeClass(cargo.status)}">
+                            ${cargo.status_display || getStatusDisplay(cargo.status)}
+                        </span>
+                    </td>
+                    <td class="text-center">
+                        <button type="button" class="btn btn-sm btn-outline-info" onclick="showCargoDetail(${cargo.id})" title="查看详情">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        // 渲染批次表格
+        function renderBatchTable(batches) {
+            const tbody = document.getElementById('cargoTableBody');
+
+            if (batches.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="18" class="text-center text-muted py-4">
+                            <i class="fas fa-inbox fa-3x mb-3 text-secondary"></i>
+                            <p class="mb-0">暂无在途货物批次数据</p>
+                            <small class="text-muted">请检查搜索条件或联系管理员</small>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            let html = '';
+            batches.forEach((batch, batchIndex) => {
+                // 批次汇总行
+                html += `
+                    <tr class="table-warning batch-header" style="font-weight: bold;">
+                        <td class="text-center">${batchIndex + 1}</td>
+                        <td colspan="2">
+                            <i class="fas fa-layer-group me-1"></i>
+                            批次: ${batch.batch_no || '未知批次'}
+                            <small class="text-muted ms-2">(${batch.item_count} 条记录)</small>
+                        </td>
+                        <td class="text-center text-primary">${batch.total_pallets || 0}</td>
+                        <td class="text-center text-primary">${batch.total_packages || 0}</td>
+                        <td class="text-center text-primary">${formatNumber(batch.total_weight)}</td>
+                        <td class="text-center text-primary">${formatNumber(batch.total_volume)}</td>
+                        <td colspan="7">
+                            <span class="text-muted">
+                                ${batch.source_warehouse || ''} → ${batch.destination_warehouse || ''}
+                            </span>
+                        </td>
+                        <td class="text-center">${formatDateTime(batch.departure_time)}</td>
+                        <td class="text-center">
+                            <button type="button" class="btn btn-sm btn-outline-primary" onclick="toggleBatchItems('${batch.batch_no}')" title="展开/收起">
+                                <i class="fas fa-chevron-down" id="toggle-${batch.batch_no}"></i>
+                            </button>
+                        </td>
+                        <td></td>
+                    </tr>
+                `;
+
+                // 批次明细行（默认隐藏）
+                batch.items.forEach((cargo, itemIndex) => {
+                    html += `
+                        <tr class="batch-item batch-${batch.batch_no}" style="display: none; background-color: #f8f9fa;">
+                            <td class="text-center text-muted">${batchIndex + 1}.${itemIndex + 1}</td>
+                            <td class="text-truncate" style="max-width: 120px;" title="${cargo.customer_name || ''}">${cargo.customer_name || ''}</td>
+                            <td class="identification-code-cell" style="max-width: 150px;" title="${cargo.identification_code || ''}">${cargo.identification_code || ''}</td>
+                            <td class="text-center">${cargo.pallet_count || 0}</td>
+                            <td class="text-center">${cargo.package_count || 0}</td>
+                            <td class="text-center">${formatNumber(cargo.weight)}</td>
+                            <td class="text-center">${formatNumber(cargo.volume)}</td>
+                            <td class="text-truncate" style="max-width: 100px;" title="${cargo.batch_no || ''}">${cargo.batch_no || ''}</td>
+                            <td class="text-truncate" style="max-width: 100px;" title="${cargo.inbound_plate || ''}">${cargo.inbound_plate || ''}</td>
+                            <td class="text-truncate" style="max-width: 100px;" title="${cargo.delivery_plate_number || ''}">${cargo.delivery_plate_number || ''}</td>
+                            <td class="text-truncate" style="max-width: 80px;" title="${cargo.service_staff || ''}">${cargo.service_staff || ''}</td>
+                            <td class="text-truncate" style="max-width: 80px;" title="${cargo.order_type || ''}">${cargo.order_type || ''}</td>
+                            <td class="text-truncate" style="max-width: 80px;" title="${cargo.export_mode || ''}">${cargo.export_mode || ''}</td>
+                            <td class="text-truncate" style="max-width: 100px;" title="${cargo.customs_broker || ''}">${cargo.customs_broker || ''}</td>
+                            <td class="text-truncate" style="max-width: 160px;" title="${getRouteDisplay(cargo)}">${getRouteDisplay(cargo)}</td>
+                            <td class="text-center">${formatDateTime(cargo.departure_time)}</td>
+                            <td class="text-center">
+                                <span class="badge ${getStatusBadgeClass(cargo.status)}">
+                                    ${cargo.status_display || getStatusDisplay(cargo.status)}
+                                </span>
+                            </td>
+                            <td class="text-center">
+                                <button type="button" class="btn btn-sm btn-outline-info" onclick="showCargoDetail(${cargo.id})" title="查看详情">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                });
+            });
+
+            tbody.innerHTML = html;
+        }
+
+        // 切换批次明细显示/隐藏
+        function toggleBatchItems(batchNo) {
+            const items = document.querySelectorAll(`.batch-${batchNo}`);
+            const toggleIcon = document.getElementById(`toggle-${batchNo}`);
+            const isVisible = items[0] && items[0].style.display !== 'none';
+
+            items.forEach(item => {
+                item.style.display = isVisible ? 'none' : '';
+            });
+
+            if (toggleIcon) {
+                toggleIcon.className = isVisible ? 'fas fa-chevron-down' : 'fas fa-chevron-up';
+            }
+        }
+
+        // 格式化数字显示
+        function formatNumber(value) {
+            if (value === null || value === undefined) return '';
+            return parseFloat(value).toFixed(2);
+        }
+
+        // 格式化日期时间显示
+        function formatDateTime(dateTime) {
+            if (!dateTime) return '';
+            try {
+                const date = new Date(dateTime);
+                return date.toLocaleString('zh-CN', {
+                    year: 'numeric',
+                    month: '2-digit',
+                    day: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+            } catch (e) {
+                return dateTime;
+            }
+        }
+
+        // 获取路线显示
+        function getRouteDisplay(cargo) {
+            const source = cargo.source_warehouse_name || '未知';
+            const dest = cargo.destination_warehouse_name || '未知';
+            return `${source} → ${dest}`;
+        }
+
+        // 获取状态显示
+        function getStatusDisplay(status) {
+            const statusMap = {
+                'in_transit': '运输中',
+                'arrived': '已到达',
+                'received': '已接收',
+                'cancelled': '已取消'
+            };
+            return statusMap[status] || status;
+        }
+
+        // 获取状态徽章样式
+        function getStatusBadgeClass(status) {
+            const classMap = {
+                'in_transit': 'bg-warning',
+                'arrived': 'bg-info',
+                'received': 'bg-success',
+                'cancelled': 'bg-secondary'
+            };
+            return classMap[status] || 'bg-secondary';
+        }
+
+        // 渲染分页
+        function renderPagination(page, pages, total) {
+            const pagination = document.getElementById('pagination');
+            const recordCount = document.getElementById('recordCount');
+
+            recordCount.textContent = `共 ${total} 条记录`;
+
+            if (pages <= 1) {
+                pagination.innerHTML = '';
+                return;
+            }
+
+            let paginationHTML = '';
+
+            // 上一页
+            if (page > 1) {
+                paginationHTML += `
+                    <li class="page-item">
+                        <a class="page-link" href="#" onclick="changePage(${page - 1})">上一页</a>
+                    </li>
+                `;
+            }
+
+            // 页码
+            const startPage = Math.max(1, page - 2);
+            const endPage = Math.min(pages, page + 2);
+
+            if (startPage > 1) {
+                paginationHTML += `
+                    <li class="page-item">
+                        <a class="page-link" href="#" onclick="changePage(1)">1</a>
+                    </li>
+                `;
+                if (startPage > 2) {
+                    paginationHTML += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
+                }
+            }
+
+            for (let i = startPage; i <= endPage; i++) {
+                paginationHTML += `
+                    <li class="page-item ${i === page ? 'active' : ''}">
+                        <a class="page-link" href="#" onclick="changePage(${i})">${i}</a>
+                    </li>
+                `;
+            }
+
+            if (endPage < pages) {
+                if (endPage < pages - 1) {
+                    paginationHTML += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
+                }
+                paginationHTML += `
+                    <li class="page-item">
+                        <a class="page-link" href="#" onclick="changePage(${pages})">${pages}</a>
+                    </li>
+                `;
+            }
+
+            // 下一页
+            if (page < pages) {
+                paginationHTML += `
+                    <li class="page-item">
+                        <a class="page-link" href="#" onclick="changePage(${page + 1})">下一页</a>
+                    </li>
+                `;
+            }
+
+            pagination.innerHTML = paginationHTML;
+        }
+
+        // 切换页面
+        function changePage(page) {
+            currentPage = page;
+            loadCargoList();
+        }
+
+        // 显示货物详情
+        function showCargoDetail(cargoId) {
+            alert('货物详情功能待开发，货物ID: ' + cargoId);
+        }
+
+        // 显示成功信息
+        function showSuccess(message) {
+            // 创建成功提示
+            const alertDiv = document.createElement('div');
+            alertDiv.className = 'alert alert-success alert-dismissible fade show position-fixed';
+            alertDiv.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+            alertDiv.innerHTML = `
+                <i class="fas fa-check-circle me-2"></i>${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            document.body.appendChild(alertDiv);
+
+            // 3秒后自动消失
+            setTimeout(() => {
+                if (alertDiv.parentNode) {
+                    alertDiv.remove();
+                }
+            }, 3000);
+        }
+
+        // 显示错误信息
+        function showError(message) {
+            // 创建错误提示
+            const alertDiv = document.createElement('div');
+            alertDiv.className = 'alert alert-danger alert-dismissible fade show position-fixed';
+            alertDiv.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+            alertDiv.innerHTML = `
+                <i class="fas fa-exclamation-triangle me-2"></i>${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            document.body.appendChild(alertDiv);
+
+            // 5秒后自动消失
+            setTimeout(() => {
+                if (alertDiv.parentNode) {
+                    alertDiv.remove();
+                }
+            }, 5000);
+        }
+    </script>
+</body>
+</html>

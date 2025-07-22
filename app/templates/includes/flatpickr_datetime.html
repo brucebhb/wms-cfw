@@ -1,0 +1,38 @@
+{% macro datetime_field(id, label, required=False, value=None, placeholder='选择日期时间', date_only=False, time_only=False) %}
+<div class="date-time-container flatpickr-wrapper" id="{{ id }}-container">
+    <label for="{{ id }}" class="form-label {% if required %}required-field{% endif %}">{{ label }}</label>
+    <div class="input-group flatpickr-input-group" 
+         data-flatpickr 
+         data-input-id="{{ id }}"
+         data-enable-time="{% if not date_only %}true{% else %}false{% endif %}"
+         data-no-calendar="{% if time_only %}true{% else %}false{% endif %}"
+         data-date-format="{% if date_only %}Y-m-d{% elif time_only %}H:i{% else %}Y-m-d H:i{% endif %}">
+        <input type="text" 
+               class="form-control flatpickr-input" 
+               id="{{ id }}" 
+               name="{{ id }}" 
+               placeholder="{{ placeholder }}" 
+               value="{{ value|default('', true) }}"
+               {% if required %}required{% endif %}
+               data-datetime="true"
+               {% if date_only %}data-date-only="true"{% endif %}
+               {% if time_only %}data-time-only="true"{% endif %}
+               autocomplete="off">
+        <span class="input-group-text cursor-pointer flatpickr-trigger">
+            {% if time_only %}
+            <i class="fas fa-clock"></i>
+            {% else %}
+            <i class="fas fa-calendar-alt"></i>
+            {% endif %}
+        </span>
+    </div>
+</div>
+{% endmacro %}
+
+{% macro date_field(id, label, required=False, value=None, placeholder='选择日期') %}
+{{ datetime_field(id, label, required, value, placeholder, date_only=True) }}
+{% endmacro %}
+
+{% macro time_field(id, label, required=False, value=None, placeholder='选择时间') %}
+{{ datetime_field(id, label, required, value, placeholder, time_only=True) }}
+{% endmacro %} 

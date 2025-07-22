@@ -1,0 +1,248 @@
+2025-07-12 18:46:27,369 [INFO] app: 数据库表检查完成
+2025-07-12 18:46:54,163 [INFO] app: 数据库表检查完成
+2025-07-12 18:47:19,284 [INFO] app: 数据库表检查完成
+2025-07-12 18:47:44,184 [INFO] app: 数据库表检查完成
+2025-07-12 18:48:46,362 [INFO] app: 数据库表检查完成
+2025-07-12 18:49:06,094 [INFO] app: 数据库表检查完成
+2025-07-12 18:49:25,739 [INFO] app: 数据库表检查完成
+2025-07-12 18:49:45,315 [INFO] app: 数据库表检查完成
+2025-07-12 18:50:04,920 [INFO] app: 数据库表检查完成
+2025-07-12 18:50:19,316 [INFO] app.services.scheduler_service: 调度器已关闭
+2025-07-12 18:50:20,570 [INFO] app.services.scheduler_service: 调度器已关闭
+2025-07-12 18:50:21,368 [INFO] app.services.scheduler_service: 调度器已关闭
+2025-07-12 18:50:21,944 [INFO] app.services.scheduler_service: 调度器已关闭
+2025-07-12 18:50:22,560 [INFO] app.services.scheduler_service: 调度器已关闭
+2025-07-12 18:50:23,252 [INFO] app.services.scheduler_service: 调度器已关闭
+2025-07-12 18:50:23,566 [INFO] app.services.scheduler_service: 调度器已关闭
+2025-07-12 18:50:27,308 [INFO] app.services.scheduler_service: 调度器已关闭
+2025-07-12 18:50:46,133 [INFO] app: 数据库表检查完成
+2025-07-12 18:51:05,005 [INFO] app: 数据库表检查完成
+2025-07-12 18:51:23,935 [INFO] app: 数据库表检查完成
+2025-07-12 18:51:43,232 [INFO] app: 数据库表检查完成
+2025-07-12 18:52:03,085 [INFO] app: 数据库表检查完成
+2025-07-12 18:52:22,964 [INFO] app: 数据库表检查完成
+2025-07-12 18:52:45,520 [INFO] app: 数据库表检查完成
+2025-07-12 18:53:08,042 [INFO] app.services.scheduler_service: 调度器已关闭
+2025-07-12 18:53:09,374 [INFO] app.services.scheduler_service: 调度器已关闭
+2025-07-12 18:53:10,781 [INFO] app.services.scheduler_service: 调度器已关闭
+2025-07-12 18:53:14,280 [INFO] app.services.scheduler_service: 调度器已关闭
+2025-07-12 18:58:22,771 [INFO] app: 数据库表检查完成
+2025-07-12 19:02:59,071 [ERROR] app: Exception on /outbound/print_selected_records [POST]
+Traceback (most recent call last):
+  File "C:\Users\杨\Desktop\pythonProject\lib\site-packages\flask\app.py", line 1511, in wsgi_app
+    response = self.full_dispatch_request()
+  File "C:\Users\杨\Desktop\pythonProject\lib\site-packages\flask\app.py", line 919, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "C:\Users\杨\Desktop\pythonProject\lib\site-packages\flask\app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "C:\Users\杨\Desktop\pythonProject\lib\site-packages\flask\app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+  File "c:\Users\杨\Desktop\pythonProject\app\main\routes.py", line 4980, in print_selected_records
+    return render_template('outbound_print_template.html',
+  File "C:\Users\杨\Desktop\pythonProject\lib\site-packages\flask\templating.py", line 150, in render_template
+    return _render(app, template, context)
+  File "C:\Users\杨\Desktop\pythonProject\lib\site-packages\flask\templating.py", line 131, in _render
+    rv = template.render(context)
+  File "C:\Users\杨\Desktop\pythonProject\lib\site-packages\jinja2\environment.py", line 1295, in render
+    self.environment.handle_exception()
+  File "C:\Users\杨\Desktop\pythonProject\lib\site-packages\jinja2\environment.py", line 942, in handle_exception
+    raise rewrite_traceback_stack(source=source)
+  File "c:\Users\杨\Desktop\pythonProject\app\templates\outbound_print_template.html", line 1, in top-level template code
+    {% extends "base.html" %}
+  File "c:\Users\杨\Desktop\pythonProject\app\templates\base.html", line 522, in top-level template code
+    {% block content %}{% endblock %}
+  File "c:\Users\杨\Desktop\pythonProject\app\templates\outbound_print_template.html", line 244, in block 'content'
+    <td class="text-center">{{ batch_items|sum(attribute='inbound_pallet_count') or 0 }}</td>
+  File "C:\Users\杨\Desktop\pythonProject\lib\site-packages\jinja2\async_utils.py", line 48, in wrapper
+    return normal_func(*args, **kwargs)
+  File "C:\Users\杨\Desktop\pythonProject\lib\site-packages\jinja2\filters.py", line 1336, in sync_do_sum
+    return sum(iterable, start)  # type: ignore[no-any-return, call-overload]
+jinja2.exceptions.UndefinedError: 'app.models.OutboundRecord object' has no attribute 'inbound_pallet_count'
+2025-07-12 19:03:15,802 [ERROR] app: Exception on /outbound/print_selected_records [POST]
+Traceback (most recent call last):
+  File "C:\Users\杨\Desktop\pythonProject\lib\site-packages\flask\app.py", line 1511, in wsgi_app
+    response = self.full_dispatch_request()
+  File "C:\Users\杨\Desktop\pythonProject\lib\site-packages\flask\app.py", line 919, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "C:\Users\杨\Desktop\pythonProject\lib\site-packages\flask\app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "C:\Users\杨\Desktop\pythonProject\lib\site-packages\flask\app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+  File "c:\Users\杨\Desktop\pythonProject\app\main\routes.py", line 4980, in print_selected_records
+    # 统计每个批次的记录数
+  File "C:\Users\杨\Desktop\pythonProject\lib\site-packages\flask\templating.py", line 150, in render_template
+    return _render(app, template, context)
+  File "C:\Users\杨\Desktop\pythonProject\lib\site-packages\flask\templating.py", line 131, in _render
+    rv = template.render(context)
+  File "C:\Users\杨\Desktop\pythonProject\lib\site-packages\jinja2\environment.py", line 1295, in render
+    self.environment.handle_exception()
+  File "C:\Users\杨\Desktop\pythonProject\lib\site-packages\jinja2\environment.py", line 942, in handle_exception
+    raise rewrite_traceback_stack(source=source)
+  File "c:\Users\杨\Desktop\pythonProject\app\templates\outbound_print_template.html", line 1, in top-level template code
+    {% extends "base.html" %}
+  File "c:\Users\杨\Desktop\pythonProject\app\templates\base.html", line 522, in top-level template code
+    {% block content %}{% endblock %}
+  File "c:\Users\杨\Desktop\pythonProject\app\templates\outbound_print_template.html", line 244, in block 'content'
+    <td class="text-center">{{ batch_items|sum(attribute='inbound_pallet_count') or 0 }}</td>
+  File "C:\Users\杨\Desktop\pythonProject\lib\site-packages\jinja2\async_utils.py", line 48, in wrapper
+    return normal_func(*args, **kwargs)
+  File "C:\Users\杨\Desktop\pythonProject\lib\site-packages\jinja2\filters.py", line 1336, in sync_do_sum
+    return sum(iterable, start)  # type: ignore[no-any-return, call-overload]
+jinja2.exceptions.UndefinedError: 'app.models.OutboundRecord object' has no attribute 'inbound_pallet_count'
+2025-07-12 19:03:44,081 [INFO] app: 数据库表检查完成
+2025-07-12 19:04:51,336 [ERROR] app: Exception on /outbound/print_selected_records [POST]
+Traceback (most recent call last):
+  File "C:\Users\杨\Desktop\pythonProject\lib\site-packages\flask\app.py", line 1511, in wsgi_app
+    response = self.full_dispatch_request()
+  File "C:\Users\杨\Desktop\pythonProject\lib\site-packages\flask\app.py", line 919, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "C:\Users\杨\Desktop\pythonProject\lib\site-packages\flask\app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "C:\Users\杨\Desktop\pythonProject\lib\site-packages\flask\app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+  File "c:\Users\杨\Desktop\pythonProject\app\main\routes.py", line 4980, in print_selected_records
+    # 统计每个批次的记录数
+  File "C:\Users\杨\Desktop\pythonProject\lib\site-packages\flask\templating.py", line 150, in render_template
+    return _render(app, template, context)
+  File "C:\Users\杨\Desktop\pythonProject\lib\site-packages\flask\templating.py", line 131, in _render
+    rv = template.render(context)
+  File "C:\Users\杨\Desktop\pythonProject\lib\site-packages\jinja2\environment.py", line 1295, in render
+    self.environment.handle_exception()
+  File "C:\Users\杨\Desktop\pythonProject\lib\site-packages\jinja2\environment.py", line 942, in handle_exception
+    raise rewrite_traceback_stack(source=source)
+  File "c:\Users\杨\Desktop\pythonProject\app\templates\outbound_print_template.html", line 1, in top-level template code
+    {% extends "base.html" %}
+  File "c:\Users\杨\Desktop\pythonProject\app\templates\base.html", line 522, in top-level template code
+    {% block content %}{% endblock %}
+  File "c:\Users\杨\Desktop\pythonProject\app\templates\outbound_print_template.html", line 244, in block 'content'
+    <td class="text-center">{{ batch_items|sum(attribute='inbound_pallet_count') or 0 }}</td>
+  File "C:\Users\杨\Desktop\pythonProject\lib\site-packages\jinja2\async_utils.py", line 48, in wrapper
+    return normal_func(*args, **kwargs)
+  File "C:\Users\杨\Desktop\pythonProject\lib\site-packages\jinja2\filters.py", line 1336, in sync_do_sum
+    return sum(iterable, start)  # type: ignore[no-any-return, call-overload]
+jinja2.exceptions.UndefinedError: 'app.models.OutboundRecord object' has no attribute 'inbound_pallet_count'
+2025-07-12 19:04:59,433 [INFO] app.services.scheduler_service: 调度器已关闭
+2025-07-12 19:05:08,831 [INFO] app: 数据库表检查完成
+2025-07-12 19:06:41,418 [INFO] app: 数据库表检查完成
+2025-07-12 19:08:09,199 [INFO] app: 数据库表检查完成
+2025-07-12 20:02:43,645 [INFO] app.services.scheduler_service: 调度器已关闭
+2025-07-12 20:08:07,235 [INFO] app: 数据库表检查完成
+2025-07-12 20:08:43,103 [INFO] app: 数据库表检查完成
+2025-07-12 20:09:33,550 [INFO] app: 数据库表检查完成
+2025-07-12 20:10:19,282 [INFO] app: 数据库表检查完成
+2025-07-12 20:11:04,168 [INFO] app: 数据库表检查完成
+2025-07-12 20:11:21,225 [INFO] app.services.scheduler_service: 调度器已关闭
+2025-07-12 20:15:50,302 [INFO] app: 数据库表检查完成
+2025-07-12 20:15:50,471 [INFO] app.services.scheduler_service: 调度器已关闭
+2025-07-12 20:17:02,344 [INFO] app: 数据库表检查完成
+2025-07-12 20:19:48,696 [INFO] app: 数据库表检查完成
+2025-07-12 20:20:50,143 [INFO] app.services.scheduler_service: 调度器已关闭
+2025-07-12 20:20:55,126 [INFO] app: 数据库表检查完成
+2025-07-12 20:25:37,727 [INFO] app: 数据库表检查完成
+2025-07-12 20:26:39,105 [INFO] app: 数据库表检查完成
+2025-07-12 20:26:39,308 [INFO] app.services.scheduler_service: 调度器已关闭
+2025-07-12 20:26:54,569 [INFO] app.services.scheduler_service: 调度器已关闭
+2025-07-12 20:26:57,176 [INFO] app.services.scheduler_service: 调度器已关闭
+2025-07-12 20:27:01,536 [INFO] app: 数据库表检查完成
+2025-07-12 20:27:29,507 [INFO] app: 数据库表检查完成
+2025-07-12 20:27:29,681 [INFO] app.services.scheduler_service: 调度器已关闭
+2025-07-12 20:28:42,198 [INFO] app: 数据库表检查完成
+2025-07-12 20:28:42,465 [INFO] app.services.scheduler_service: 调度器已关闭
+2025-07-12 20:33:32,505 [INFO] app: 数据库表检查完成
+2025-07-12 20:33:32,740 [INFO] app.services.scheduler_service: 调度器已关闭
+2025-07-12 20:34:43,155 [INFO] app: 数据库表检查完成
+2025-07-12 20:34:43,377 [INFO] app.services.scheduler_service: 调度器已关闭
+2025-07-12 20:38:37,446 [INFO] app: 数据库表检查完成
+2025-07-12 20:38:37,618 [INFO] app.services.scheduler_service: 调度器已关闭
+2025-07-12 20:41:24,517 [INFO] app.services.scheduler_service: 调度器已关闭
+2025-07-12 20:42:30,742 [INFO] app: 数据库表检查完成
+2025-07-12 20:43:47,736 [INFO] app: 数据库表检查完成
+2025-07-12 20:43:55,515 [INFO] app.services.scheduler_service: 调度器已关闭
+2025-07-12 20:43:59,825 [INFO] app: 数据库表检查完成
+2025-07-12 20:53:34,059 [INFO] app: 数据库表检查完成
+2025-07-12 20:53:34,075 [INFO] app.services.scheduler_service: 调度器已关闭
+2025-07-12 20:58:19,910 [INFO] app.services.scheduler_service: 调度器已关闭
+2025-07-12 20:58:25,180 [INFO] app: 数据库表检查完成
+2025-07-12 21:00:21,393 [INFO] app.services.scheduler_service: 调度器已关闭
+2025-07-12 21:00:24,719 [INFO] app: 数据库表检查完成
+2025-07-12 21:03:52,221 [INFO] app.services.scheduler_service: 调度器已关闭
+2025-07-12 21:03:57,962 [INFO] app: 数据库表检查完成
+2025-07-12 21:05:15,994 [INFO] app.services.scheduler_service: 调度器已关闭
+2025-07-12 21:05:20,048 [INFO] app: 数据库表检查完成
+2025-07-12 21:12:26,591 [INFO] app.services.scheduler_service: 调度器已关闭
+2025-07-12 21:12:30,303 [INFO] app: 数据库表检查完成
+2025-07-12 21:13:34,520 [INFO] app.services.scheduler_service: 调度器已关闭
+2025-07-12 21:13:37,457 [INFO] app: 数据库表检查完成
+2025-07-12 21:17:50,598 [INFO] app.services.scheduler_service: 调度器已关闭
+2025-07-12 21:17:55,679 [INFO] app: 数据库表检查完成
+2025-07-12 21:21:07,974 [INFO] app.services.scheduler_service: 调度器已关闭
+2025-07-12 21:21:19,483 [INFO] app: 数据库表检查完成
+2025-07-12 21:21:27,178 [INFO] app.services.scheduler_service: 调度器已关闭
+2025-07-12 21:21:31,482 [INFO] app: 数据库表检查完成
+2025-07-12 21:24:18,558 [INFO] app.services.scheduler_service: 调度器已关闭
+2025-07-12 21:24:22,201 [INFO] app: 数据库表检查完成
+2025-07-12 21:24:27,309 [ERROR] app: 搜索后端仓库存失败: type object 'Inventory' has no attribute 'warehouse_id'
+2025-07-12 21:24:32,763 [ERROR] app: 搜索后端仓库存失败: type object 'Inventory' has no attribute 'warehouse_id'
+2025-07-12 21:27:50,737 [INFO] app.services.scheduler_service: 调度器已关闭
+2025-07-12 21:27:54,212 [INFO] app: 数据库表检查完成
+2025-07-12 21:31:07,841 [INFO] app.services.scheduler_service: 调度器已关闭
+2025-07-12 21:31:14,686 [INFO] app: 数据库表检查完成
+2025-07-12 21:31:23,401 [ERROR] app: 搜索后端仓库存失败: type object 'Inventory' has no attribute 'inbound_date'
+2025-07-12 21:31:28,625 [ERROR] app: 搜索后端仓库存失败: type object 'Inventory' has no attribute 'inbound_date'
+2025-07-12 21:35:44,624 [INFO] app.services.scheduler_service: 调度器已关闭
+2025-07-12 21:35:48,407 [INFO] app: 数据库表检查完成
+2025-07-12 22:11:15,111 [INFO] app.services.scheduler_service: 调度器已关闭
+2025-07-12 22:11:20,053 [INFO] app: 数据库表检查完成
+2025-07-12 22:14:31,593 [INFO] app.services.scheduler_service: 调度器已关闭
+2025-07-12 22:14:34,880 [INFO] app: 数据库表检查完成
+2025-07-12 23:00:24,408 [INFO] app: 数据库表检查完成
+2025-07-12 23:00:24,592 [INFO] app.services.scheduler_service: 调度器已关闭
+2025-07-12 23:01:35,334 [INFO] app: 数据库表检查完成
+2025-07-12 23:02:04,507 [INFO] app: 数据库表检查完成
+2025-07-12 23:02:53,497 [INFO] app: 数据库表检查完成
+2025-07-12 23:04:02,424 [INFO] app: 数据库表检查完成
+2025-07-12 23:04:30,715 [INFO] app: 数据库表检查完成
+2025-07-12 23:05:49,395 [INFO] app.services.scheduler_service: 调度器已关闭
+2025-07-12 23:05:50,788 [INFO] app.services.scheduler_service: 调度器已关闭
+2025-07-12 23:05:54,406 [INFO] app: 数据库表检查完成
+2025-07-12 23:06:07,494 [ERROR] app: 搜索后端仓库存失败: type object 'Inventory' has no attribute 'inbound_date'
+2025-07-12 23:07:26,020 [INFO] app: 数据库表检查完成
+2025-07-12 23:07:26,181 [INFO] app.services.scheduler_service: 调度器已关闭
+2025-07-12 23:08:10,018 [INFO] app: 数据库表检查完成
+2025-07-12 23:08:10,197 [INFO] app.services.scheduler_service: 调度器已关闭
+2025-07-12 23:10:15,238 [INFO] app: 数据库表检查完成
+2025-07-12 23:11:03,172 [INFO] app: 数据库表检查完成
+2025-07-12 23:12:46,097 [INFO] app.services.scheduler_service: 调度器已关闭
+2025-07-12 23:12:58,689 [INFO] app: 数据库表检查完成
+2025-07-12 23:19:16,424 [ERROR] app: 搜索后端仓库存失败: type object 'Inventory' has no attribute 'inbound_date'
+2025-07-12 23:19:22,731 [INFO] app.services.scheduler_service: 调度器已关闭
+2025-07-12 23:19:26,171 [INFO] app.services.scheduler_service: 调度器已关闭
+2025-07-12 23:19:27,697 [INFO] app.services.scheduler_service: 调度器已关闭
+2025-07-12 23:19:29,830 [INFO] app.services.scheduler_service: 调度器已关闭
+2025-07-12 23:19:33,327 [INFO] app: 数据库表检查完成
+2025-07-12 23:21:47,389 [ERROR] app: 搜索后端仓库存失败: type object 'Inventory' has no attribute 'inbound_date'
+2025-07-12 23:24:21,199 [INFO] app: 数据库表检查完成
+2025-07-12 23:25:53,864 [ERROR] app: 搜索后端仓库存失败: type object 'Inventory' has no attribute 'inbound_date'
+2025-07-12 23:26:00,007 [INFO] app.services.scheduler_service: 调度器已关闭
+2025-07-12 23:26:00,647 [INFO] app.services.scheduler_service: 调度器已关闭
+2025-07-12 23:26:03,769 [INFO] app: 数据库表检查完成
+2025-07-12 23:26:09,063 [INFO] app: 数据库表检查完成
+2025-07-12 23:26:09,311 [INFO] app: 缓存系统暂时禁用
+2025-07-12 23:26:09,312 [INFO] app.services.scheduler_service: 调度器服务已启动
+2025-07-12 23:26:09,313 [INFO] app: 调度器服务已启动
+2025-07-12 23:26:09,380 [INFO] app: 数据库表检查完成
+2025-07-12 23:26:09,417 [INFO] app.services.scheduler_service: 调度器已关闭
+2025-07-12 23:26:26,514 [INFO] app: 数据库表检查完成
+2025-07-12 23:26:26,681 [INFO] app.services.scheduler_service: 调度器已关闭
+2025-07-12 23:27:05,943 [INFO] app: 数据库表检查完成
+2025-07-12 23:27:06,108 [INFO] app.services.scheduler_service: 调度器已关闭
+2025-07-12 23:27:44,281 [INFO] app: 数据库表检查完成
+2025-07-12 23:27:44,451 [INFO] app.services.scheduler_service: 调度器已关闭
+2025-07-12 23:28:11,668 [INFO] app: 数据库表检查完成
+2025-07-12 23:35:19,909 [INFO] app: 数据库表检查完成
+2025-07-12 23:35:39,551 [INFO] app: 数据库表检查完成
+2025-07-12 23:35:39,842 [INFO] app: 缓存系统暂时禁用
+2025-07-12 23:35:39,844 [INFO] app.services.scheduler_service: 调度器服务已启动
+2025-07-12 23:35:39,844 [INFO] app: 调度器服务已启动
+2025-07-12 23:35:39,897 [INFO] app: 数据库表检查完成
+2025-07-12 23:35:39,953 [INFO] app.services.scheduler_service: 调度器已关闭

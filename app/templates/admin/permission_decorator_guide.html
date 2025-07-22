@@ -1,0 +1,206 @@
+{% extends "base.html" %}
+{% set title = "权限装饰器使用指南" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-code"></i> 权限装饰器使用指南
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <h5><i class="fas fa-info-circle"></i> 新的权限装饰器系统</h5>
+                        <p>现在您可以使用新的权限装饰器来自动注册权限到系统中，无需手动在数据库中添加权限定义。</p>
+                    </div>
+
+                    <h4>1. 页面权限装饰器</h4>
+                    <div class="card mb-3">
+                        <div class="card-body">
+                            <h6>使用方法：</h6>
+                            <pre><code>from app.auth.decorators import register_page_permission
+
+@bp.route('/your-page')
+@register_page_permission(
+    page_code='YOUR_PAGE_CODE',
+    page_name='您的页面名称',
+    menu_code='PARENT_MENU_CODE',  # 可选
+    page_url='/your-page',         # 可选
+    description='页面描述'          # 可选
+)
+def your_page_function():
+    return render_template('your_template.html')</code></pre>
+                            
+                            <h6 class="mt-3">示例：</h6>
+                            <pre><code>@bp.route('/receiver')
+@register_page_permission(
+    'RECEIVER_LIST', 
+    '收货人信息管理', 
+    'FRONTEND_OUTBOUND', 
+    '/receiver', 
+    '收货人信息管理页面'
+)
+def receiver_list():
+    return render_template('receiver_list.html')</code></pre>
+                        </div>
+                    </div>
+
+                    <h4>2. 菜单权限装饰器</h4>
+                    <div class="card mb-3">
+                        <div class="card-body">
+                            <h6>使用方法：</h6>
+                            <pre><code>from app.auth.decorators import register_menu_permission
+
+@bp.route('/menu-page')
+@register_menu_permission(
+    menu_code='YOUR_MENU_CODE',
+    menu_name='菜单名称',
+    menu_level=1,                    # 菜单层级
+    parent_menu_code=None,           # 父菜单代码
+    menu_order=0,                    # 排序
+    description='菜单描述'            # 可选
+)
+def menu_function():
+    return render_template('menu_template.html')</code></pre>
+                        </div>
+                    </div>
+
+                    <h4>3. 操作权限装饰器</h4>
+                    <div class="card mb-3">
+                        <div class="card-body">
+                            <h6>使用方法：</h6>
+                            <pre><code>from app.auth.decorators import register_operation_permission
+
+@bp.route('/api/operation', methods=['POST'])
+@register_operation_permission(
+    operation_code='YOUR_OPERATION_CODE',
+    operation_name='操作名称',
+    page_code='RELATED_PAGE_CODE',   # 可选
+    operation_type='action',         # 操作类型
+    description='操作描述'            # 可选
+)
+def operation_function():
+    return jsonify({'success': True})</code></pre>
+                        </div>
+                    </div>
+
+                    <h4>4. 权限同步</h4>
+                    <div class="card mb-3">
+                        <div class="card-body">
+                            <p>使用装饰器后，权限会在应用启动时自动同步到数据库。您也可以手动触发同步：</p>
+                            <button type="button" class="btn btn-primary" onclick="syncPermissions()">
+                                <i class="fas fa-sync"></i> 手动同步权限
+                            </button>
+                            <div id="syncResult" class="mt-3"></div>
+                        </div>
+                    </div>
+
+                    <h4>5. 当前注册的权限</h4>
+                    <div class="card">
+                        <div class="card-body">
+                            <button type="button" class="btn btn-info" onclick="loadRegisteredPermissions()">
+                                <i class="fas fa-list"></i> 查看注册的权限
+                            </button>
+                            <div id="registeredPermissions" class="mt-3"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function syncPermissions() {
+    $.ajax({
+        url: '/admin/permissions/sync-from-decorators',
+        type: 'POST',
+        headers: {
+            'X-CSRFToken': $('meta[name=csrf-token]').attr('content')
+        },
+        success: function(response) {
+            const resultDiv = $('#syncResult');
+            if (response.success) {
+                resultDiv.html(`
+                    <div class="alert alert-success">
+                        <i class="fas fa-check"></i> ${response.message}
+                    </div>
+                `);
+            } else {
+                resultDiv.html(`
+                    <div class="alert alert-danger">
+                        <i class="fas fa-times"></i> 同步失败: ${response.message}
+                    </div>
+                `);
+            }
+        },
+        error: function() {
+            $('#syncResult').html(`
+                <div class="alert alert-danger">
+                    <i class="fas fa-times"></i> 同步权限失败
+                </div>
+            `);
+        }
+    });
+}
+
+function loadRegisteredPermissions() {
+    $.ajax({
+        url: '/admin/permissions/registered-list',
+        type: 'GET',
+        success: function(response) {
+            const resultDiv = $('#registeredPermissions');
+            if (response.success) {
+                let html = '<div class="row">';
+                
+                // 菜单权限
+                if (response.data.menus.length > 0) {
+                    html += '<div class="col-md-4"><h6>菜单权限</h6><ul class="list-group">';
+                    response.data.menus.forEach(menu => {
+                        html += `<li class="list-group-item">${menu.menu_code} - ${menu.menu_name}</li>`;
+                    });
+                    html += '</ul></div>';
+                }
+                
+                // 页面权限
+                if (response.data.pages.length > 0) {
+                    html += '<div class="col-md-4"><h6>页面权限</h6><ul class="list-group">';
+                    response.data.pages.forEach(page => {
+                        html += `<li class="list-group-item">${page.page_code} - ${page.page_name}</li>`;
+                    });
+                    html += '</ul></div>';
+                }
+                
+                // 操作权限
+                if (response.data.operations.length > 0) {
+                    html += '<div class="col-md-4"><h6>操作权限</h6><ul class="list-group">';
+                    response.data.operations.forEach(operation => {
+                        html += `<li class="list-group-item">${operation.operation_code} - ${operation.operation_name}</li>`;
+                    });
+                    html += '</ul></div>';
+                }
+                
+                html += '</div>';
+                resultDiv.html(html);
+            } else {
+                resultDiv.html(`
+                    <div class="alert alert-danger">
+                        <i class="fas fa-times"></i> 获取权限失败: ${response.message}
+                    </div>
+                `);
+            }
+        },
+        error: function() {
+            $('#registeredPermissions').html(`
+                <div class="alert alert-danger">
+                    <i class="fas fa-times"></i> 获取注册权限失败
+                </div>
+            `);
+        }
+    });
+}
+</script>
+{% endblock %}

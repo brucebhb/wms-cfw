@@ -1,0 +1,11 @@
+
+{# 在模板顶部导入分页宏 #}
+{% from 'macros/pagination.html' import render_pagination %}
+
+{# 其他模板内容... #}
+
+{# 在表格下方添加分页控件 #}
+</table>
+
+{# 渲染分页控件 #}
+{{ render_pagination(pagination, 'main.inbound_list', kwargs=request.args) }}

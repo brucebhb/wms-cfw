@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <title>调试后端仓库存API</title>
+    <link href="https://cdn.bootcdn.net/ajax/libs/twitter-bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.bootcdn.net/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+</head>
+<body>
+    <div class="container mt-4">
+        <h2>调试后端仓库存API</h2>
+        
+        <div class="row mt-4">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5>测试参数</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label for="customerName" class="form-label">客户名称</label>
+                            <input type="text" class="form-control" id="customerName" placeholder="输入客户名称">
+                        </div>
+                        <div class="mb-3">
+                            <label for="identificationCode" class="form-label">识别编码</label>
+                            <input type="text" class="form-control" id="identificationCode" placeholder="输入识别编码">
+                        </div>
+                        <div class="mb-3">
+                            <label for="plateNumber" class="form-label">车牌号</label>
+                            <input type="text" class="form-control" id="plateNumber" placeholder="输入车牌号">
+                        </div>
+                        <button type="button" class="btn btn-primary" id="testApiBtn">测试API</button>
+                        <button type="button" class="btn btn-secondary" id="clearBtn">清空</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5>API响应</h5>
+                    </div>
+                    <div class="card-body">
+                        <pre id="apiResponse" style="max-height: 400px; overflow-y: auto; background: #f8f9fa; padding: 10px; border-radius: 4px;">等待API调用...</pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5>库存数据表格</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>客户名称</th>
+                                        <th>识别编码</th>
+                                        <th>板数</th>
+                                        <th>件数</th>
+                                        <th>重量</th>
+                                        <th>车牌号</th>
+                                        <th>入库日期</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="inventoryTableBody">
+                                    <tr>
+                                        <td colspan="8" class="text-center text-muted">暂无数据</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    $(document).ready(function() {
+        $('#testApiBtn').click(function() {
+            testInventoryApi();
+        });
+        
+        $('#clearBtn').click(function() {
+            $('#customerName').val('');
+            $('#identificationCode').val('');
+            $('#plateNumber').val('');
+            $('#apiResponse').text('等待API调用...');
+            $('#inventoryTableBody').html('<tr><td colspan="8" class="text-center text-muted">暂无数据</td></tr>');
+        });
+        
+        function testInventoryApi() {
+            const params = {
+                customer_name: $('#customerName').val().trim(),
+                identification_code: $('#identificationCode').val().trim(),
+                plate_number: $('#plateNumber').val().trim()
+            };
+            
+            // 移除空参数
+            Object.keys(params).forEach(key => {
+                if (!params[key]) {
+                    delete params[key];
+                }
+            });
+            
+            $('#apiResponse').text('正在调用API...');
+            
+            $.ajax({
+                url: '/api/backend/inventory/search',
+                method: 'GET',
+                data: params,
+                headers: {
+                    'X-CSRFToken': $('meta[name=csrf-token]').attr('content')
+                },
+                success: function(response, textStatus, xhr) {
+                    const responseInfo = {
+                        status: xhr.status,
+                        statusText: xhr.statusText,
+                        headers: xhr.getAllResponseHeaders(),
+                        data: response
+                    };
+                    
+                    $('#apiResponse').text(JSON.stringify(responseInfo, null, 2));
+                    
+                    if (response.success && response.data) {
+                        renderInventoryTable(response.data);
+                    }
+                },
+                error: function(xhr, status, error) {
+                    const errorInfo = {
+                        status: xhr.status,
+                        statusText: xhr.statusText,
+                        error: error,
+                        responseText: xhr.responseText,
+                        headers: xhr.getAllResponseHeaders()
+                    };
+                    
+                    $('#apiResponse').text(JSON.stringify(errorInfo, null, 2));
+                }
+            });
+        }
+        
+        function renderInventoryTable(data) {
+            if (!data || data.length === 0) {
+                $('#inventoryTableBody').html('<tr><td colspan="8" class="text-center text-muted">无库存数据</td></tr>');
+                return;
+            }
+            
+            let html = '';
+            data.forEach(item => {
+                html += `
+                    <tr>
+                        <td>${item.id}</td>
+                        <td>${item.customer_name || ''}</td>
+                        <td>${item.identification_code || ''}</td>
+                        <td>${item.pallet_count || 0}</td>
+                        <td>${item.package_count || 0}</td>
+                        <td>${item.weight || 0}</td>
+                        <td>${item.plate_number || ''}</td>
+                        <td>${item.inbound_date || ''}</td>
+                    </tr>
+                `;
+            });
+            
+            $('#inventoryTableBody').html(html);
+        }
+    });
+    </script>
+</body>
+</html>

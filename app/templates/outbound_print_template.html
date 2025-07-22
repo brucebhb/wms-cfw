@@ -1,0 +1,415 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid print-container">
+    <div class="d-print-none mb-4 text-center">
+        <h2>出库单打印预览</h2>
+        <div class="mb-3">
+            <button class="btn btn-primary" onclick="window.print()">
+                <i class="fas fa-print"></i> 打印
+            </button>
+            <button class="btn btn-secondary ml-2" onclick="closeWindow()">
+                <i class="fas fa-times"></i> 关闭
+            </button>
+        </div>
+    </div>
+    
+    <!-- 打印内容 -->
+    <div class="print-content">
+        {% for batch_no, batch_items in records|groupby('batch_no') %}
+        <div class="batch-document page-break-before">
+            <!-- 打印头部信息 -->
+            <div class="print-header mb-3">
+                <div style="position: relative; text-align: center;">
+                    <div style="position: absolute; left: 0; top: 0;">
+                        <img src="{{ url_for('static', filename='img/cfw_logo.png') }}" alt="CFW车夫网" style="height: 40px; width: auto;">
+                    </div>
+                    <h2 class="text-center font-weight-bold">车夫网物流陆运集拼发运单</h2>
+                </div>
+                <hr>
+                
+                <!-- 集拼信息区域 - 使用div布局代替表格 -->
+                <div class="info-container" style="border: 2px solid #000; margin-bottom: 20px;">
+                    <!-- 第1行：集拼发运单号/始发仓 -->
+                    <div class="info-row" style="display: flex; border-bottom: 1px solid #000; min-height: 50px;">
+                        <div style="width: 15%; padding: 10px; text-align: center; border-right: 1px solid #000; display: flex; align-items: center; justify-content: center;">
+                            <strong>集拼发运单号:</strong>
+                        </div>
+                        <div style="width: 35%; padding: 10px; border-right: 1px solid #000; display: flex; align-items: center; justify-content: center;">
+                            {{ batch_no }}
+                        </div>
+                        <div style="width: 15%; padding: 10px; text-align: center; border-right: 1px solid #000; display: flex; align-items: center; justify-content: center;">
+                            <strong>始发仓:</strong>
+                        </div>
+                        <div style="width: 35%; padding: 10px; display: flex; align-items: center; justify-content: center;">
+                            {{ source_warehouse.warehouse_name if source_warehouse else '仓库地址' }}
+                        </div>
+                    </div>
+                    
+                    <!-- 第2行：车牌/车型/司机姓名/电话 -->
+                    <div class="info-row" style="display: flex; border-bottom: 1px solid #000; min-height: 50px;">
+                        <div style="width: 10%; padding: 10px; text-align: center; border-right: 1px solid #000; display: flex; align-items: center; justify-content: center;">
+                            <strong>车牌号:</strong>
+                        </div>
+                        <div style="width: 15%; padding: 10px; border-right: 1px solid #000; display: flex; align-items: center; justify-content: center;">
+                            {{ batch_items[0].plate_number }}
+                        </div>
+                        <div style="width: 10%; padding: 10px; text-align: center; border-right: 1px solid #000; display: flex; align-items: center; justify-content: center;">
+                            <strong>车型:</strong>
+                        </div>
+                        <div style="width: 15%; padding: 10px; border-right: 1px solid #000; display: flex; align-items: center; justify-content: center;">
+                            {{ batch_items[0].vehicle_type or '17.5平板' }}
+                        </div>
+                        <div style="width: 10%; padding: 10px; text-align: center; border-right: 1px solid #000; display: flex; align-items: center; justify-content: center;">
+                            <strong>司机姓名:</strong>
+                        </div>
+                        <div style="width: 15%; padding: 10px; border-right: 1px solid #000; display: flex; align-items: center; justify-content: center;">
+                            {{ batch_items[0].driver_name or '未设置' }}
+                        </div>
+                        <div style="width: 10%; padding: 10px; text-align: center; border-right: 1px solid #000; display: flex; align-items: center; justify-content: center;">
+                            <strong>司机电话:</strong>
+                        </div>
+                        <div style="width: 15%; padding: 10px; display: flex; align-items: center; justify-content: center;">
+                            {{ batch_items[0].driver_phone or '未设置' }}
+                        </div>
+                    </div>
+                    
+                    <!-- 第3行：所有时间信息 -->
+                    <div class="info-row" style="display: flex; border-bottom: 1px solid #000; min-height: 50px;">
+                        <div style="width: 10%; padding: 10px; text-align: center; border-right: 1px solid #000; display: flex; align-items: center; justify-content: center;">
+                            <strong>到仓时间:</strong>
+                        </div>
+                        <div style="width: 15%; padding: 10px; border-right: 1px solid #000; display: flex; align-items: center; justify-content: center;">
+                            {{ batch_items[0].arrival_time.strftime('%m-%d %H:%M') if batch_items[0].arrival_time else '-' }}
+                        </div>
+                        <div style="width: 10%; padding: 10px; text-align: center; border-right: 1px solid #000; display: flex; align-items: center; justify-content: center;">
+                            <strong>装车开始:</strong>
+                        </div>
+                        <div style="width: 15%; padding: 10px; border-right: 1px solid #000; display: flex; align-items: center; justify-content: center;">
+                            {{ batch_items[0].loading_start_time.strftime('%m-%d %H:%M') if batch_items[0].loading_start_time else '-' }}
+                        </div>
+                        <div style="width: 10%; padding: 10px; text-align: center; border-right: 1px solid #000; display: flex; align-items: center; justify-content: center;">
+                            <strong>装车结束:</strong>
+                        </div>
+                        <div style="width: 15%; padding: 10px; border-right: 1px solid #000; display: flex; align-items: center; justify-content: center;">
+                            {{ batch_items[0].loading_end_time.strftime('%m-%d %H:%M') if batch_items[0].loading_end_time else '-' }}
+                        </div>
+                        <div style="width: 10%; padding: 10px; text-align: center; border-right: 1px solid #000; display: flex; align-items: center; justify-content: center;">
+                            <strong>离仓时间:</strong>
+                        </div>
+                        <div style="width: 15%; padding: 10px; display: flex; align-items: center; justify-content: center;">
+                            {% if batch_items[0].departure_time %}
+                                {{ batch_items[0].departure_time.strftime('%m-%d %H:%M') }}
+                            {% else %}
+                                {% set depart_time = batch_items[0].outbound_time %}
+                                {% set depart_hour = depart_time.hour + 1 %}
+                                {{ depart_time.strftime('%m-%d') }} {{ '%02d' % depart_hour }}:{{ depart_time.strftime('%M') }}
+                            {% endif %}
+                        </div>
+                    </div>
+
+
+
+                    <!-- 第5行：目的仓/详细地址/联络窗口 (行高是其它行的2倍) -->
+                    <div class="info-row" style="display: flex; min-height: 100px;">
+                        <div style="width: 10%; padding: 10px; text-align: center; border-right: 1px solid #000; display: flex; align-items: center; justify-content: center;">
+                            <strong>目的仓:</strong>
+                        </div>
+                        <div style="width: 10%; padding: 10px; border-right: 1px solid #000; display: flex; align-items: center; justify-content: center;">
+                            {{ batch_items[0].destination or '-' }}
+                        </div>
+                        <div style="width: 10%; padding: 10px; text-align: center; border-right: 1px solid #000; display: flex; align-items: center; justify-content: center;">
+                            <strong>详细地址:</strong>
+                        </div>
+                        <div style="width: 25%; padding: 10px; border-right: 1px solid #000; display: flex; align-items: center; justify-content: center;">
+                            {% set destination_name = batch_items[0].destination %}
+                            {% if batch_items[0].receiver %}
+                                {{ batch_items[0].receiver.address }}
+                            {% elif batch_items[0].detailed_address %}
+                                {{ batch_items[0].detailed_address }}
+                            {% elif batch_items[0].warehouse_address %}
+                                {{ batch_items[0].warehouse_address }}
+                            {% elif destination_name == '凭祥北投仓' %}
+                                凭祥市凭祥镇北投跨境物流中心B8-3至B8-4门
+                            {% elif destination_name == '平湖仓' %}
+                                广东省东莞市凤岗镇凤平路1号,车辆进盛辉物流园左转22-23号码头车夫网仓库
+                            {% elif destination_name == '成都仓' %}
+                                成都市青白江区远洋物流 2楼7-128
+                            {% elif destination_name == '昆山仓' %}
+                                江苏省苏州市昆山普洛斯淀山湖物流园东门进去左转B7仓库码头
+                            {% else %}
+                                {{ destination_name or '目的地址' }}
+                            {% endif %}
+                        </div>
+                        <div style="width: 10%; padding: 10px; text-align: center; border-right: 1px solid #000; display: flex; align-items: center; justify-content: center;">
+                            <strong>联络窗口:</strong>
+                        </div>
+                        <div style="width: 35%; padding: 10px; display: flex; align-items: center; justify-content: center;">
+                            {% set destination_name = batch_items[0].destination %}
+                            {% if batch_items[0].receiver %}
+                                {{ batch_items[0].receiver.contact }}
+                            {% elif batch_items[0].contact_window %}
+                                {{ batch_items[0].contact_window }}
+                            {% elif destination_name == '凭祥北投仓' %}
+                                早班: 林飞威/17620431231 刘国宽/18776738925 晚班:莫显友/19377029961 凌廷忠/17776550065
+                            {% elif destination_name == '平湖仓' %}
+                                邬斌林/13641486964    钟文广/15113440547
+                            {% elif destination_name == '成都仓' %}
+                                韩胜/17602866878    余苗/18328621911
+                            {% elif destination_name == '昆山仓' %}
+                                耿和兵/15287003539    黄新平/13543408533
+                            {% else %}
+                                -
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 货物明细表格 -->
+            <table class="table table-bordered table-sm">
+                <thead>
+                    <tr class="text-center">
+                        <th width="3%">序次</th>
+                        <th width="7%">提货入库时间</th>
+                        <th width="7%">提货入库车牌</th>
+                        <th width="8%">客户名称</th>
+                        <th width="10%">识别编码</th>
+                        <th width="3%">板数</th>
+                        <th width="3%">件数</th>
+                        <th width="5%">体积M³</th>
+                        <th width="4%">单据份数</th>
+                        <th width="6%">出境模式</th>
+                        <th width="7%">报关行</th>
+                        <th width="5%">订单类型</th>
+                        <th width="5%">跟单客服</th>
+                        <th width="9%">备注1</th>
+                        <th width="10%">备注2</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in batch_items %}
+                    <tr>
+                        <td class="text-center">{{ loop.index }}</td>
+                        <td class="text-center">{{ item.outbound_time.strftime('%m月%d日') }}</td>
+                        <td class="text-center">{{ item.inbound_plate or '' }}</td>
+                        <td class="text-center">{{ item.customer_name }}</td>
+                        <td class="text-center">{{ item.identification_code or '' }}</td>
+                        <td class="text-center">{{ item.pallet_count or 0 }}</td>
+                        <td class="text-center">{{ item.package_count or 0 }}</td>
+                        <td class="text-center">{{ item.volume|round(2) if item.volume else 0 }}</td>
+                        <td class="text-center">{{ item.document_count if item.document_count else '' }}</td>
+                        <td class="text-center">{{ item.export_mode or '' }}</td>
+                        <td class="text-center">{{ item.customs_broker or '' }}</td>
+                        <td class="text-center">{{ item.order_type or '' }}</td>
+                        <td class="text-center">{{ item.service_staff or '' }}</td>
+                        <td class="text-center">{{ item.remark1 or '' }}</td>
+                        <td class="text-center">{{ item.remark2 or '' }}</td>
+                    </tr>
+                    {% endfor %}
+                    
+                    <!-- 空行，只比实际数据多两行 -->
+                    {% for _ in range(2) %}
+                    <tr>
+                        <td class="text-center">{{ loop.index + batch_items|length }}</td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                    </tr>
+                    {% endfor %}
+                    
+                    <!-- 合计行 -->
+                    <tr>
+                        <td class="text-center">合计</td>
+                        <td colspan="4"></td>
+                        <td class="text-center">{{ batch_items|sum(attribute='pallet_count') }}</td>
+                        <td class="text-center">{{ batch_items|sum(attribute='package_count') }}</td>
+                        <td class="text-center">{{ batch_items|sum(attribute='volume')|round(2) }}</td>
+                        <td colspan="7"></td>
+                    </tr>
+                </tbody>
+            </table>
+            
+            <!-- 底部统计信息 -->
+            <table class="table table-bordered table-sm" style="border-collapse: collapse; width: 100%;">
+                <tr>
+                    <td width="10%" class="text-center" style="border: 1px solid #000;"><strong>随车载材:</strong></td>
+                    <td width="10%" class="text-center" style="border: 1px solid #000;">大木板:</td>
+                    <td width="10%" class="text-center" style="border: 1px solid #000;">{{ batch_items[0].large_layer if batch_items else 0 }}</td>
+                    <td width="10%" class="text-center" style="border: 1px solid #000;">小木板:</td>
+                    <td width="10%" class="text-center" style="border: 1px solid #000;">{{ batch_items[0].small_layer if batch_items else 0 }}</td>
+                    <td width="10%" class="text-center" style="border: 1px solid #000;">卡板:</td>
+                    <td width="10%" class="text-center" style="border: 1px solid #000;">{{ batch_items[0].pallet_board if batch_items else 0 }}</td>
+                    <td width="10%" class="text-center" style="border: 1px solid #000;">其他:</td>
+                    <td width="20%" style="border: 1px solid #000;"></td>
+                </tr>
+                <tr>
+                    <td width="10%" style="border: 1px solid #000; text-align: left; padding-left: 10px;"><strong>备注1:</strong></td>
+                    <td colspan="4" style="border: 1px solid #000;"></td>
+                    <td width="10%" style="border: 1px solid #000; text-align: left; padding-left: 10px;"><strong>备注2:</strong></td>
+                    <td colspan="3" style="border: 1px solid #000;"></td>
+                </tr>
+                <tr>
+                    <td class="text-center" style="border: 1px solid #000;"><strong>发货方签字:</strong></td>
+                    <td colspan="2" style="border: 1px solid #000;"></td>
+                    <td class="text-center" style="border: 1px solid #000;"><strong>司机签字:</strong></td>
+                    <td colspan="2" style="border: 1px solid #000;"></td>
+                    <td class="text-center" style="border: 1px solid #000;"><strong>收货方签字:</strong></td>
+                    <td colspan="2" style="border: 1px solid #000;"></td>
+                </tr>
+            </table>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<style>
+@media print {
+    .print-container {
+        width: 100%;
+        margin: 0;
+        padding: 0;
+        zoom: 110%;
+        transform: scale(1.1);
+        transform-origin: top left;
+    }
+    
+    .page-break-before {
+        page-break-before: always;
+    }
+    
+    body {
+        margin: 0;
+        padding: 0;
+        font-size: 12pt;
+    }
+    
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 10px;
+    }
+    
+    th, td {
+        border: 1px solid #000 !important;
+        padding: 4px;
+        font-size: 10pt;
+    }
+    
+    .print-header h2 {
+        margin-bottom: 10px;
+    }
+    
+    .batch-document {
+        margin-bottom: 20px;
+    }
+    
+    /* 第一页不需要分页符 */
+    .batch-document:first-child {
+        page-break-before: auto;
+    }
+    
+    .table td, .table th {
+        padding: 0.3rem;
+        font-size: 12pt;
+        border: 1px solid #000 !important;
+    }
+    
+    .table {
+        width: 100%;
+        border-collapse: collapse;
+        border: 2px solid #000 !important;
+    }
+
+    .table-bordered td, .table-bordered th {
+        border: 1px solid #000 !important;
+    }
+    
+    .print-header h2 {
+        margin-bottom: 15px;
+        font-size: 18pt;
+    }
+    
+    .table-bordered {
+        border: 2px solid #000 !important;
+    }
+    
+    .info-container {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 14pt;
+        border: 2px solid #000 !important;
+    }
+    
+    .info-row {
+        page-break-inside: avoid;
+    }
+    
+    .print-header h2 {
+        margin-bottom: 15px;
+        font-size: 18pt;
+    }
+    
+    /* 强化底部表格的边框 */
+    .batch-document table:last-of-type {
+        border: 2px solid #000 !important;
+    }
+    
+    .batch-document table:last-of-type td {
+        border: 1px solid #000 !important;
+    }
+}
+
+/* 非打印时的样式 */
+.table-bordered td, .table-bordered th {
+    border: 1px solid #000 !important;
+}
+
+.table-bordered {
+    border: 2px solid #000 !important;
+}
+</style>
+
+<script>
+function closeWindow() {
+    // 尝试关闭窗口
+    if (window.opener) {
+        // 如果是弹出窗口，直接关闭
+        window.close();
+    } else {
+        // 如果不是弹出窗口，尝试返回上一页
+        if (document.referrer && document.referrer !== '') {
+            window.location.href = document.referrer;
+        } else {
+            // 如果没有来源页面，返回出库管理页面
+            window.location.href = "{{ url_for('main.outbound') }}";
+        }
+    }
+}
+
+// 添加键盘快捷键支持
+document.addEventListener('keydown', function(event) {
+    // Ctrl+P 打印
+    if (event.ctrlKey && event.key === 'p') {
+        event.preventDefault();
+        window.print();
+    }
+    // ESC 关闭
+    if (event.key === 'Escape') {
+        event.preventDefault();
+        closeWindow();
+    }
+});
+</script>
+{% endblock %}

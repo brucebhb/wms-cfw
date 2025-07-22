@@ -1,0 +1,397 @@
+from flask import Flask, g, request
+from flask_sqlalchemy import SQLAlchemy
+from flask_migrate import Migrate
+from flask_wtf.csrf import CSRFProtect
+from flask_login import LoginManager
+from config import Config
+import logging
+from logging.handlers import RotatingFileHandler
+import os
+import time
+
+# 创建数据库实例
+db = SQLAlchemy()
+migrate = Migrate()
+csrf = CSRFProtect()
+login_manager = LoginManager()
+
+def create_app(config_class=Config):
+    app = Flask(__name__)
+    app.config.from_object(config_class)
+
+    # MySQL专用配置和性能优化
+    if 'mysql' in app.config['SQLALCHEMY_DATABASE_URI'].lower():
+        app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
+            'pool_pre_ping': True,
+            'pool_recycle': 300,
+            'pool_timeout': 20,
+            'max_overflow': 0,
+            'pool_size': 10,
+            'echo': False,  # 生产环境关闭SQL日志
+            'connect_args': {
+                'charset': 'utf8mb4',
+                'autocommit': False,
+                'connect_timeout': 60,
+                'read_timeout': 30,
+                'write_timeout': 30
+            }
+        }
+        app.logger.info("MySQL数据库配置已加载")
+    else:
+        # 如果不是MySQL，记录警告
+        app.logger.warning("检测到非MySQL数据库配置，建议使用MySQL以获得最佳性能")
+    
+    # 初始化扩展
+    db.init_app(app)
+    migrate.init_app(app, db)
+    csrf.init_app(app)
+    login_manager.init_app(app)
+    login_manager.login_view = 'auth.login'
+    login_manager.login_message = '请先登录以访问此页面。'
+    
+    # 注册蓝图
+    from app.main import bp as main_bp
+    app.register_blueprint(main_bp)
+
+    from app.api import bp as api_bp
+    app.register_blueprint(api_bp, url_prefix='/api')
+
+    from app.api.optimization_routes import optimization_api
+    app.register_blueprint(optimization_api, url_prefix='/api/optimization')
+
+    from app.auth import bp as auth_bp
+    app.register_blueprint(auth_bp, url_prefix='/auth')
+
+    from app.admin import bp as admin_bp
+    app.register_blueprint(admin_bp, url_prefix='/admin')
+
+
+
+    from app.admin.user_permission_routes import bp as user_permission_bp
+    app.register_blueprint(user_permission_bp)
+
+    from app.admin.permission_management_routes import permission_bp
+    app.register_blueprint(permission_bp, url_prefix='/permission')
+
+    from app.customer import bp as customer_bp
+    app.register_blueprint(customer_bp, url_prefix='/customer')
+
+    from app.reports import bp as reports_bp
+    app.register_blueprint(reports_bp, url_prefix='/reports')
+
+    # 注册维护管理蓝图（临时修复）
+    from app.maintenance import maintenance_bp
+    app.register_blueprint(maintenance_bp)
+
+    # 初始化缓存和性能监控系统
+    try:
+        # 初始化Redis缓存
+        from app.cache_config import get_cache_manager
+        get_cache_manager()
+        app.logger.info("Redis缓存系统初始化完成")
+
+        # 注册缓存事件监听器
+        from app.cache_invalidation import register_cache_events
+        register_cache_events()
+        app.logger.info("缓存事件监听器注册完成")
+
+        # 创建数据库索引优化
+        from app.database_optimization import DatabaseOptimizer
+        DatabaseOptimizer.create_indexes()
+        app.logger.info("数据库索引优化完成")
+
+        # 预热基础数据缓存
+        from app.hot_data_cache import cache_warmup
+        cache_warmup.warmup_basic_data_cache()
+        app.logger.info("基础数据缓存预热完成")
+
+    except Exception as e:
+        app.logger.error(f"缓存和性能监控系统初始化失败: {str(e)}")
+        app.logger.info("缓存系统初始化失败，继续使用无缓存模式")
+
+    # 初始化调度器服务
+    try:
+        from app.services.scheduler_service import scheduler_service
+        scheduler_service.init_app(app)
+        app.logger.info('调度器服务已启动')
+    except Exception as e:
+        app.logger.error(f'调度器服务启动失败: {e}')
+
+    # 初始化启动检查器
+    try:
+        # from app.services.startup_checker import startup_checker
+        # startup_checker.init_app(app)
+        app.logger.info('启动检查器已初始化')
+    except Exception as e:
+        app.logger.error(f'启动检查器初始化失败: {str(e)}')
+
+    # 初始化持续优化服务
+    try:
+        # from app.services.continuous_optimization_service import continuous_optimization_service
+        # continuous_optimization_service.init_app(app)
+        app.logger.info('持续优化服务已启动')
+    except Exception as e:
+        app.logger.error(f'持续优化服务启动失败: {str(e)}')
+
+    # 添加请求性能监控
+    @app.before_request
+    def before_request():
+        g.start_time = time.time()
+
+    @app.after_request
+    def after_request(response):
+        try:
+            from app.performance_monitor import log_request_performance
+            log_request_performance()
+        except:
+            pass
+        return response
+
+    # 设置日志配置
+    from app.logging_config import LoggingConfig
+    LoggingConfig.setup_logging(app)
+    
+    # 用户加载器
+    @login_manager.user_loader
+    def load_user(user_id):
+        from app.models import User
+        return User.query.get(int(user_id))
+
+    # 模板上下文处理器
+    @app.context_processor
+    def inject_csrf_token():
+        from flask_wtf.csrf import generate_csrf
+        return dict(csrf_token=generate_csrf)
+
+    # 添加moment函数到模板上下文
+    @app.context_processor
+    def inject_moment():
+        from datetime import datetime
+        def moment():
+            class MomentWrapper:
+                def __init__(self):
+                    self.dt = datetime.now()
+
+                def format(self, format_str):
+                    # 将moment.js格式转换为Python strftime格式
+                    format_map = {
+                        'YYYY-MM-DD HH:mm:ss': '%Y-%m-%d %H:%M:%S',
+                        'YYYY-MM-DD': '%Y-%m-%d',
+                        'HH:mm:ss': '%H:%M:%S',
+                        'YYYY': '%Y',
+                        'MM': '%m',
+                        'DD': '%d',
+                        'HH': '%H',
+                        'mm': '%M',
+                        'ss': '%S'
+                    }
+                    python_format = format_map.get(format_str, format_str)
+                    return self.dt.strftime(python_format)
+
+            return MomentWrapper()
+
+        return dict(moment=moment)
+
+    # 添加权限检查函数到模板上下文
+    @app.context_processor
+    def inject_permission_functions():
+        from app.utils.permission_manager import PermissionManager
+        from flask_login import current_user
+
+        def has_menu_permission(menu_code):
+            try:
+                if not current_user.is_authenticated:
+                    return False
+
+                # 超级管理员拥有所有权限
+                if current_user.is_super_admin():
+                    return True
+
+                # 使用权限管理器检查菜单权限
+                return PermissionManager.has_menu_permission(current_user.id, menu_code)
+            except Exception as e:
+                app.logger.error(f"检查菜单权限失败: {e}")
+                return False
+
+        def has_page_permission(page_code):
+            try:
+                if not current_user.is_authenticated:
+                    return False
+
+                # 超级管理员拥有所有权限
+                if current_user.is_super_admin():
+                    return True
+
+                # 使用权限管理器检查页面权限
+                return PermissionManager.has_page_permission(current_user.id, page_code)
+            except Exception as e:
+                app.logger.error(f"检查页面权限失败: {e}")
+                return False
+
+        def has_operation_permission(operation_code):
+            try:
+                if not current_user.is_authenticated:
+                    return False
+
+                # 超级管理员拥有所有权限
+                if current_user.is_super_admin():
+                    return True
+
+                # 使用权限管理器检查操作权限
+                return PermissionManager.has_operation_permission(current_user.id, operation_code)
+            except Exception as e:
+                app.logger.error(f"检查操作权限失败: {e}")
+                return False
+
+        def has_warehouse_permission(warehouse_id, warehouse_permission_code):
+            try:
+                if not current_user.is_authenticated:
+                    return False
+
+                # 超级管理员拥有所有权限
+                if current_user.is_super_admin():
+                    return True
+
+                # 使用权限管理器检查仓库权限
+                return PermissionManager.has_warehouse_permission(current_user.id, warehouse_id, warehouse_permission_code)
+            except Exception as e:
+                app.logger.error(f"检查仓库权限失败: {e}")
+                return False
+
+        return dict(
+            has_menu_permission=has_menu_permission,
+            has_page_permission=has_page_permission,
+            has_operation_permission=has_operation_permission,
+            has_warehouse_permission=has_warehouse_permission
+        )
+
+    # 确保数据库表存在
+    with app.app_context():
+        try:
+            db.create_all()
+
+            # 检查并添加ReceiveRecord表的缺失字段
+            try:
+                from sqlalchemy import text
+                inspector = db.inspect(db.engine)
+                if 'receive_records' in inspector.get_table_names():
+                    columns = [col['name'] for col in inspector.get_columns('receive_records')]
+
+                    # 需要添加的字段列表
+                    missing_fields = [
+                        ('identification_code', 'VARCHAR(100)'),
+                        ('delivery_plate_number', 'VARCHAR(20)'),
+                        ('inbound_plate', 'VARCHAR(20)'),
+                        ('storage_location', 'VARCHAR(50)'),
+                        ('export_mode', 'VARCHAR(50)'),
+                        ('order_type', 'VARCHAR(50)'),
+                        ('customs_broker', 'VARCHAR(100)'),
+                        ('batch_total', 'INTEGER'),
+                        ('batch_sequence', 'VARCHAR(20)'),
+                        ('remark1', 'TEXT'),
+                        ('remark2', 'TEXT')
+                    ]
+
+                    # 添加缺失的字段
+                    for field_name, field_type in missing_fields:
+                        if field_name not in columns:
+                            try:
+                                # 使用SQLAlchemy 2.0兼容的方式执行
+                                from sqlalchemy import text
+                                db.session.execute(text(f'ALTER TABLE receive_records ADD COLUMN {field_name} {field_type}'))
+                                db.session.commit()
+                                app.logger.info(f"已添加字段 {field_name} 到 receive_records 表")
+                            except Exception as e:
+                                # 如果字段已存在，忽略错误
+                                if 'duplicate column name' not in str(e).lower():
+                                    app.logger.warning(f"添加字段 {field_name} 失败: {str(e)}")
+            except Exception as e:
+                app.logger.warning(f"数据库字段检查失败: {str(e)}")
+
+            # 检查并添加TransitCargo表的缺失字段
+            try:
+                from sqlalchemy import text
+                inspector = db.inspect(db.engine)
+                if 'transit_cargo' in inspector.get_table_names():
+                    columns = [col['name'] for col in inspector.get_columns('transit_cargo')]
+
+                    # 需要添加的字段列表
+                    transit_missing_fields = [
+                        ('delivery_plate_number', 'VARCHAR(20)'),
+                        ('inbound_plate', 'VARCHAR(20)')
+                    ]
+
+                    # 添加缺失的字段
+                    for field_name, field_type in transit_missing_fields:
+                        if field_name not in columns:
+                            try:
+                                # 使用SQLAlchemy 2.0兼容的方式执行
+                                from sqlalchemy import text
+                                db.session.execute(text(f'ALTER TABLE transit_cargo ADD COLUMN {field_name} {field_type}'))
+                                db.session.commit()
+                                app.logger.info(f"已添加字段 {field_name} 到 transit_cargo 表")
+                            except Exception as e:
+                                # 如果字段已存在，忽略错误
+                                if 'duplicate column name' not in str(e).lower():
+                                    app.logger.warning(f"添加字段 {field_name} 失败: {str(e)}")
+            except Exception as e:
+                app.logger.warning(f"TransitCargo表字段检查失败: {str(e)}")
+
+            app.logger.info('数据库表检查完成')
+
+            # 初始化收货人信息
+            from app.models import Receiver
+            if Receiver.query.count() == 0:
+                receivers_data = [
+                    {'warehouse_name': '平湖仓', 'address': '广东省深圳市平湖物流园区A区', 'contact': '张经理 13800138001'},
+                    {'warehouse_name': '昆山仓', 'address': '江苏省苏州市昆山经济开发区B区', 'contact': '李经理 13800138002'},
+                    {'warehouse_name': '成都仓', 'address': '四川省成都市双流区物流中心C区', 'contact': '王经理 13800138003'},
+                    {'warehouse_name': '凭祥北投仓', 'address': '广西壮族自治区崇左市凭祥市北投物流园', 'contact': '赵经理 13800138004'}
+                ]
+                for data in receivers_data:
+                    receiver = Receiver(**data)
+                    db.session.add(receiver)
+                db.session.commit()
+                app.logger.info('收货人信息初始化完成')
+        except Exception as e:
+            app.logger.error(f'创建数据库表时出错: {e}')
+
+    # 会话超时检查中间件
+    @app.before_request
+    def check_session_timeout():
+        from flask import session, request, redirect, url_for, flash
+        from flask_login import current_user, logout_user
+        from datetime import datetime, timedelta
+
+        # 跳过静态文件和认证相关页面
+        if (request.endpoint and
+            (request.endpoint.startswith('static') or
+             request.endpoint == 'auth.login' or
+             request.endpoint == 'auth.logout')):
+            return
+
+        # 如果用户已登录，检查会话是否过期
+        if current_user.is_authenticated:
+            if 'login_time' in session:
+                try:
+                    login_time = datetime.fromisoformat(session['login_time'])
+                    current_time = datetime.now()
+                    session_duration = current_time - login_time
+
+                    # 如果超过6小时，强制登出
+                    if session_duration > timedelta(hours=app.config['SESSION_TIMEOUT_HOURS']):
+                        logout_user()
+                        session.clear()
+                        flash('您的会话已过期，请重新登录', 'warning')
+                        return redirect(url_for('auth.login'))
+
+                except (ValueError, KeyError):
+                    # 如果登录时间格式错误，重新设置登录时间
+                    session['login_time'] = datetime.now().isoformat()
+            else:
+                # 如果没有登录时间记录，设置当前时间
+                session['login_time'] = datetime.now().isoformat()
+
+    return app
+
+from app import models

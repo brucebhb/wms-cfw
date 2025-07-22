@@ -1,0 +1,1912 @@
+{
+  "menu_permissions": [
+    {
+      "id": 288,
+      "user_id": 1,
+      "menu_code": "home",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:29:42"
+    },
+    {
+      "id": 289,
+      "user_id": 1,
+      "menu_code": "inbound_mgmt",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:29:42"
+    },
+    {
+      "id": 290,
+      "user_id": 1,
+      "menu_code": "outbound_mgmt",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:29:42"
+    },
+    {
+      "id": 291,
+      "user_id": 1,
+      "menu_code": "print_mgmt",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:29:42"
+    },
+    {
+      "id": 292,
+      "user_id": 1,
+      "menu_code": "inventory_mgmt",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:29:42"
+    },
+    {
+      "id": 293,
+      "user_id": 1,
+      "menu_code": "statistics",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:29:42"
+    },
+    {
+      "id": 294,
+      "user_id": 1,
+      "menu_code": "user_mgmt",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:29:42"
+    },
+    {
+      "id": 296,
+      "user_id": 1,
+      "menu_code": "system_settings",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:29:42"
+    },
+    {
+      "id": 318,
+      "user_id": 2,
+      "menu_code": "home",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:39:56"
+    },
+    {
+      "id": 319,
+      "user_id": 2,
+      "menu_code": "inbound_mgmt",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:39:56"
+    },
+    {
+      "id": 320,
+      "user_id": 2,
+      "menu_code": "outbound_mgmt",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:39:56"
+    },
+    {
+      "id": 321,
+      "user_id": 2,
+      "menu_code": "print_mgmt",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:39:56"
+    },
+    {
+      "id": 322,
+      "user_id": 2,
+      "menu_code": "inventory_mgmt",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:39:56"
+    },
+    {
+      "id": 323,
+      "user_id": 2,
+      "menu_code": "statistics",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:39:56"
+    },
+    {
+      "id": 324,
+      "user_id": 2,
+      "menu_code": "user_mgmt",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:39:56"
+    },
+    {
+      "id": 338,
+      "user_id": 3,
+      "menu_code": "home",
+      "is_granted": true,
+      "granted_by": null,
+      "granted_at": "2025-07-10T18:44:13"
+    },
+    {
+      "id": 339,
+      "user_id": 3,
+      "menu_code": "inbound_mgmt",
+      "is_granted": true,
+      "granted_by": null,
+      "granted_at": "2025-07-10T18:44:13"
+    },
+    {
+      "id": 340,
+      "user_id": 3,
+      "menu_code": "outbound_mgmt",
+      "is_granted": true,
+      "granted_by": null,
+      "granted_at": "2025-07-10T18:44:13"
+    },
+    {
+      "id": 341,
+      "user_id": 3,
+      "menu_code": "print_mgmt",
+      "is_granted": true,
+      "granted_by": null,
+      "granted_at": "2025-07-10T18:44:13"
+    },
+    {
+      "id": 342,
+      "user_id": 3,
+      "menu_code": "inventory_mgmt",
+      "is_granted": true,
+      "granted_by": null,
+      "granted_at": "2025-07-10T18:44:13"
+    },
+    {
+      "id": 343,
+      "user_id": 3,
+      "menu_code": "statistics",
+      "is_granted": true,
+      "granted_by": null,
+      "granted_at": "2025-07-10T18:44:13"
+    },
+    {
+      "id": 369,
+      "user_id": 5,
+      "menu_code": "home",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:50:32"
+    },
+    {
+      "id": 370,
+      "user_id": 5,
+      "menu_code": "inbound_mgmt",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:50:32"
+    },
+    {
+      "id": 371,
+      "user_id": 5,
+      "menu_code": "outbound_mgmt",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:50:32"
+    },
+    {
+      "id": 372,
+      "user_id": 5,
+      "menu_code": "print_mgmt",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:50:32"
+    },
+    {
+      "id": 373,
+      "user_id": 5,
+      "menu_code": "inventory_mgmt",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:50:32"
+    },
+    {
+      "id": 374,
+      "user_id": 5,
+      "menu_code": "statistics",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:50:32"
+    },
+    {
+      "id": 381,
+      "user_id": 4,
+      "menu_code": "home",
+      "is_granted": true,
+      "granted_by": null,
+      "granted_at": "2025-07-10T18:50:52"
+    },
+    {
+      "id": 382,
+      "user_id": 4,
+      "menu_code": "inbound_mgmt",
+      "is_granted": true,
+      "granted_by": null,
+      "granted_at": "2025-07-10T18:50:52"
+    },
+    {
+      "id": 383,
+      "user_id": 4,
+      "menu_code": "outbound_mgmt",
+      "is_granted": true,
+      "granted_by": null,
+      "granted_at": "2025-07-10T18:50:52"
+    },
+    {
+      "id": 384,
+      "user_id": 4,
+      "menu_code": "print_mgmt",
+      "is_granted": true,
+      "granted_by": null,
+      "granted_at": "2025-07-10T18:50:52"
+    },
+    {
+      "id": 385,
+      "user_id": 4,
+      "menu_code": "inventory_mgmt",
+      "is_granted": true,
+      "granted_by": null,
+      "granted_at": "2025-07-10T18:50:52"
+    },
+    {
+      "id": 386,
+      "user_id": 4,
+      "menu_code": "statistics",
+      "is_granted": true,
+      "granted_by": null,
+      "granted_at": "2025-07-10T18:50:52"
+    }
+  ],
+  "page_permissions": [
+    {
+      "id": 402,
+      "user_id": 1,
+      "page_code": "frontend_inbound_operation",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:29:42"
+    },
+    {
+      "id": 403,
+      "user_id": 1,
+      "page_code": "frontend_inbound_records",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:29:42"
+    },
+    {
+      "id": 404,
+      "user_id": 1,
+      "page_code": "frontend_receive_records",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:29:42"
+    },
+    {
+      "id": 405,
+      "user_id": 1,
+      "page_code": "backend_inbound_operation",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:29:42"
+    },
+    {
+      "id": 406,
+      "user_id": 1,
+      "page_code": "backend_inbound_records",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:29:42"
+    },
+    {
+      "id": 407,
+      "user_id": 1,
+      "page_code": "backend_receive_records",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:29:42"
+    },
+    {
+      "id": 408,
+      "user_id": 1,
+      "page_code": "frontend_outbound_operation",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:29:42"
+    },
+    {
+      "id": 409,
+      "user_id": 1,
+      "page_code": "frontend_outbound_records",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:29:42"
+    },
+    {
+      "id": 410,
+      "user_id": 1,
+      "page_code": "backend_outbound_operation",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:29:42"
+    },
+    {
+      "id": 411,
+      "user_id": 1,
+      "page_code": "backend_outbound_records",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:29:42"
+    },
+    {
+      "id": 412,
+      "user_id": 1,
+      "page_code": "frontend_inventory_list",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:29:42"
+    },
+    {
+      "id": 413,
+      "user_id": 1,
+      "page_code": "backend_inventory_list",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:29:42"
+    },
+    {
+      "id": 414,
+      "user_id": 1,
+      "page_code": "all_inventory_list",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:29:42"
+    },
+    {
+      "id": 415,
+      "user_id": 1,
+      "page_code": "transit_cargo_list",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:29:42"
+    },
+    {
+      "id": 416,
+      "user_id": 1,
+      "page_code": "print_documents",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:29:42"
+    },
+    {
+      "id": 417,
+      "user_id": 1,
+      "page_code": "label_print",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:29:42"
+    },
+    {
+      "id": 418,
+      "user_id": 1,
+      "page_code": "user_management",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:29:42"
+    },
+    {
+      "id": 419,
+      "user_id": 1,
+      "page_code": "warehouse_management",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:29:42"
+    },
+    {
+      "id": 420,
+      "user_id": 1,
+      "page_code": "receiver_management",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:29:42"
+    },
+    {
+      "id": 421,
+      "user_id": 1,
+      "page_code": "audit_logs",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:29:42"
+    },
+    {
+      "id": 432,
+      "user_id": 2,
+      "page_code": "frontend_inbound_operation",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:39:56"
+    },
+    {
+      "id": 433,
+      "user_id": 2,
+      "page_code": "frontend_inbound_records",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:39:56"
+    },
+    {
+      "id": 434,
+      "user_id": 2,
+      "page_code": "frontend_receive_records",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:39:56"
+    },
+    {
+      "id": 435,
+      "user_id": 2,
+      "page_code": "frontend_outbound_operation",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:39:56"
+    },
+    {
+      "id": 436,
+      "user_id": 2,
+      "page_code": "frontend_outbound_records",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:39:56"
+    },
+    {
+      "id": 437,
+      "user_id": 2,
+      "page_code": "frontend_inventory_list",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:39:56"
+    },
+    {
+      "id": 438,
+      "user_id": 2,
+      "page_code": "all_inventory_list",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:39:56"
+    },
+    {
+      "id": 439,
+      "user_id": 2,
+      "page_code": "transit_cargo_list",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:39:56"
+    },
+    {
+      "id": 440,
+      "user_id": 2,
+      "page_code": "print_documents",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:39:56"
+    },
+    {
+      "id": 441,
+      "user_id": 2,
+      "page_code": "label_print",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:39:56"
+    },
+    {
+      "id": 451,
+      "user_id": 3,
+      "page_code": "frontend_inbound_operation",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:44:13"
+    },
+    {
+      "id": 452,
+      "user_id": 3,
+      "page_code": "frontend_inbound_records",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:44:13"
+    },
+    {
+      "id": 453,
+      "user_id": 3,
+      "page_code": "frontend_receive_records",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:44:13"
+    },
+    {
+      "id": 454,
+      "user_id": 3,
+      "page_code": "frontend_outbound_operation",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:44:13"
+    },
+    {
+      "id": 455,
+      "user_id": 3,
+      "page_code": "frontend_outbound_records",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:44:13"
+    },
+    {
+      "id": 456,
+      "user_id": 3,
+      "page_code": "frontend_inventory_list",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:44:13"
+    },
+    {
+      "id": 457,
+      "user_id": 3,
+      "page_code": "all_inventory_list",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:44:13"
+    },
+    {
+      "id": 458,
+      "user_id": 3,
+      "page_code": "print_documents",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:44:13"
+    },
+    {
+      "id": 459,
+      "user_id": 3,
+      "page_code": "label_print",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:44:13"
+    },
+    {
+      "id": 478,
+      "user_id": 5,
+      "page_code": "backend_inbound_operation",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:50:32"
+    },
+    {
+      "id": 479,
+      "user_id": 5,
+      "page_code": "backend_inbound_records",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:50:32"
+    },
+    {
+      "id": 480,
+      "user_id": 5,
+      "page_code": "backend_receive_records",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:50:32"
+    },
+    {
+      "id": 481,
+      "user_id": 5,
+      "page_code": "frontend_outbound_records",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:50:32"
+    },
+    {
+      "id": 482,
+      "user_id": 5,
+      "page_code": "backend_outbound_operation",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:50:32"
+    },
+    {
+      "id": 483,
+      "user_id": 5,
+      "page_code": "backend_outbound_records",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:50:32"
+    },
+    {
+      "id": 484,
+      "user_id": 5,
+      "page_code": "frontend_inventory_list",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:50:32"
+    },
+    {
+      "id": 485,
+      "user_id": 5,
+      "page_code": "backend_inventory_list",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:50:32"
+    },
+    {
+      "id": 486,
+      "user_id": 5,
+      "page_code": "all_inventory_list",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:50:32"
+    },
+    {
+      "id": 487,
+      "user_id": 5,
+      "page_code": "transit_cargo_list",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:50:32"
+    },
+    {
+      "id": 488,
+      "user_id": 5,
+      "page_code": "print_documents",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:50:32"
+    },
+    {
+      "id": 489,
+      "user_id": 5,
+      "page_code": "label_print",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:50:32"
+    },
+    {
+      "id": 490,
+      "user_id": 4,
+      "page_code": "frontend_inbound_operation",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:50:52"
+    },
+    {
+      "id": 491,
+      "user_id": 4,
+      "page_code": "frontend_inbound_records",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:50:52"
+    },
+    {
+      "id": 492,
+      "user_id": 4,
+      "page_code": "frontend_receive_records",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:50:52"
+    },
+    {
+      "id": 493,
+      "user_id": 4,
+      "page_code": "frontend_outbound_operation",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:50:52"
+    },
+    {
+      "id": 494,
+      "user_id": 4,
+      "page_code": "frontend_outbound_records",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:50:52"
+    },
+    {
+      "id": 495,
+      "user_id": 4,
+      "page_code": "frontend_inventory_list",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:50:52"
+    },
+    {
+      "id": 496,
+      "user_id": 4,
+      "page_code": "all_inventory_list",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:50:52"
+    },
+    {
+      "id": 497,
+      "user_id": 4,
+      "page_code": "print_documents",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:50:52"
+    },
+    {
+      "id": 498,
+      "user_id": 4,
+      "page_code": "label_print",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:50:52"
+    }
+  ],
+  "operation_permissions": [
+    {
+      "id": 216,
+      "user_id": 1,
+      "operation_code": "view",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:29:42"
+    },
+    {
+      "id": 217,
+      "user_id": 1,
+      "operation_code": "create",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:29:42"
+    },
+    {
+      "id": 218,
+      "user_id": 1,
+      "operation_code": "edit",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:29:42"
+    },
+    {
+      "id": 219,
+      "user_id": 1,
+      "operation_code": "delete",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:29:42"
+    },
+    {
+      "id": 220,
+      "user_id": 1,
+      "operation_code": "export",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:29:42"
+    },
+    {
+      "id": 221,
+      "user_id": 1,
+      "operation_code": "print",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:29:42"
+    },
+    {
+      "id": 228,
+      "user_id": 2,
+      "operation_code": "view",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:39:56"
+    },
+    {
+      "id": 229,
+      "user_id": 2,
+      "operation_code": "create",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:39:56"
+    },
+    {
+      "id": 230,
+      "user_id": 2,
+      "operation_code": "edit",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:39:56"
+    },
+    {
+      "id": 231,
+      "user_id": 2,
+      "operation_code": "delete",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:39:56"
+    },
+    {
+      "id": 232,
+      "user_id": 2,
+      "operation_code": "export",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:39:56"
+    },
+    {
+      "id": 233,
+      "user_id": 2,
+      "operation_code": "print",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:39:56"
+    },
+    {
+      "id": 240,
+      "user_id": 3,
+      "operation_code": "view",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:44:13"
+    },
+    {
+      "id": 241,
+      "user_id": 3,
+      "operation_code": "create",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:44:13"
+    },
+    {
+      "id": 242,
+      "user_id": 3,
+      "operation_code": "edit",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:44:13"
+    },
+    {
+      "id": 243,
+      "user_id": 3,
+      "operation_code": "delete",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:44:13"
+    },
+    {
+      "id": 244,
+      "user_id": 3,
+      "operation_code": "export",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:44:13"
+    },
+    {
+      "id": 245,
+      "user_id": 3,
+      "operation_code": "print",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:44:13"
+    },
+    {
+      "id": 258,
+      "user_id": 5,
+      "operation_code": "view",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:50:32"
+    },
+    {
+      "id": 259,
+      "user_id": 5,
+      "operation_code": "create",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:50:32"
+    },
+    {
+      "id": 260,
+      "user_id": 5,
+      "operation_code": "edit",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:50:32"
+    },
+    {
+      "id": 261,
+      "user_id": 5,
+      "operation_code": "delete",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:50:32"
+    },
+    {
+      "id": 262,
+      "user_id": 5,
+      "operation_code": "export",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:50:32"
+    },
+    {
+      "id": 263,
+      "user_id": 5,
+      "operation_code": "print",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:50:32"
+    },
+    {
+      "id": 264,
+      "user_id": 4,
+      "operation_code": "view",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:50:52"
+    },
+    {
+      "id": 265,
+      "user_id": 4,
+      "operation_code": "create",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:50:52"
+    },
+    {
+      "id": 266,
+      "user_id": 4,
+      "operation_code": "edit",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:50:52"
+    },
+    {
+      "id": 267,
+      "user_id": 4,
+      "operation_code": "delete",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:50:52"
+    },
+    {
+      "id": 268,
+      "user_id": 4,
+      "operation_code": "export",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:50:52"
+    },
+    {
+      "id": 269,
+      "user_id": 4,
+      "operation_code": "print",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:50:52"
+    },
+    {
+      "id": 271,
+      "user_id": 2,
+      "operation_code": "INBOUND_VIEW",
+      "is_granted": true,
+      "granted_by": null,
+      "granted_at": "2025-07-11T09:51:33"
+    },
+    {
+      "id": 272,
+      "user_id": 2,
+      "operation_code": "INBOUND_CREATE",
+      "is_granted": true,
+      "granted_by": null,
+      "granted_at": "2025-07-11T09:51:33"
+    },
+    {
+      "id": 273,
+      "user_id": 2,
+      "operation_code": "INBOUND_EDIT",
+      "is_granted": true,
+      "granted_by": null,
+      "granted_at": "2025-07-11T09:51:33"
+    },
+    {
+      "id": 274,
+      "user_id": 2,
+      "operation_code": "INBOUND_DELETE",
+      "is_granted": true,
+      "granted_by": null,
+      "granted_at": "2025-07-11T09:51:33"
+    },
+    {
+      "id": 275,
+      "user_id": 2,
+      "operation_code": "OUTBOUND_VIEW",
+      "is_granted": true,
+      "granted_by": null,
+      "granted_at": "2025-07-11T09:51:33"
+    },
+    {
+      "id": 276,
+      "user_id": 2,
+      "operation_code": "OUTBOUND_CREATE",
+      "is_granted": true,
+      "granted_by": null,
+      "granted_at": "2025-07-11T09:51:33"
+    },
+    {
+      "id": 277,
+      "user_id": 2,
+      "operation_code": "OUTBOUND_EDIT",
+      "is_granted": true,
+      "granted_by": null,
+      "granted_at": "2025-07-11T09:51:33"
+    },
+    {
+      "id": 278,
+      "user_id": 2,
+      "operation_code": "OUTBOUND_DELETE",
+      "is_granted": true,
+      "granted_by": null,
+      "granted_at": "2025-07-11T09:51:33"
+    },
+    {
+      "id": 279,
+      "user_id": 2,
+      "operation_code": "INVENTORY_VIEW",
+      "is_granted": true,
+      "granted_by": null,
+      "granted_at": "2025-07-11T09:51:33"
+    },
+    {
+      "id": 280,
+      "user_id": 3,
+      "operation_code": "INBOUND_VIEW",
+      "is_granted": true,
+      "granted_by": null,
+      "granted_at": "2025-07-11T09:51:33"
+    },
+    {
+      "id": 281,
+      "user_id": 3,
+      "operation_code": "INBOUND_CREATE",
+      "is_granted": true,
+      "granted_by": null,
+      "granted_at": "2025-07-11T09:51:33"
+    },
+    {
+      "id": 282,
+      "user_id": 3,
+      "operation_code": "INBOUND_EDIT",
+      "is_granted": true,
+      "granted_by": null,
+      "granted_at": "2025-07-11T09:51:33"
+    },
+    {
+      "id": 283,
+      "user_id": 3,
+      "operation_code": "INBOUND_DELETE",
+      "is_granted": true,
+      "granted_by": null,
+      "granted_at": "2025-07-11T09:51:33"
+    },
+    {
+      "id": 284,
+      "user_id": 3,
+      "operation_code": "OUTBOUND_VIEW",
+      "is_granted": true,
+      "granted_by": null,
+      "granted_at": "2025-07-11T09:51:33"
+    },
+    {
+      "id": 285,
+      "user_id": 3,
+      "operation_code": "OUTBOUND_CREATE",
+      "is_granted": true,
+      "granted_by": null,
+      "granted_at": "2025-07-11T09:51:33"
+    },
+    {
+      "id": 286,
+      "user_id": 3,
+      "operation_code": "OUTBOUND_EDIT",
+      "is_granted": true,
+      "granted_by": null,
+      "granted_at": "2025-07-11T09:51:33"
+    },
+    {
+      "id": 287,
+      "user_id": 3,
+      "operation_code": "OUTBOUND_DELETE",
+      "is_granted": true,
+      "granted_by": null,
+      "granted_at": "2025-07-11T09:51:33"
+    },
+    {
+      "id": 288,
+      "user_id": 3,
+      "operation_code": "INVENTORY_VIEW",
+      "is_granted": true,
+      "granted_by": null,
+      "granted_at": "2025-07-11T09:51:33"
+    },
+    {
+      "id": 289,
+      "user_id": 4,
+      "operation_code": "INBOUND_VIEW",
+      "is_granted": true,
+      "granted_by": null,
+      "granted_at": "2025-07-11T09:51:33"
+    },
+    {
+      "id": 290,
+      "user_id": 4,
+      "operation_code": "INBOUND_CREATE",
+      "is_granted": true,
+      "granted_by": null,
+      "granted_at": "2025-07-11T09:51:33"
+    },
+    {
+      "id": 291,
+      "user_id": 4,
+      "operation_code": "INBOUND_EDIT",
+      "is_granted": true,
+      "granted_by": null,
+      "granted_at": "2025-07-11T09:51:33"
+    },
+    {
+      "id": 292,
+      "user_id": 4,
+      "operation_code": "INBOUND_DELETE",
+      "is_granted": true,
+      "granted_by": null,
+      "granted_at": "2025-07-11T09:51:33"
+    },
+    {
+      "id": 293,
+      "user_id": 4,
+      "operation_code": "OUTBOUND_VIEW",
+      "is_granted": true,
+      "granted_by": null,
+      "granted_at": "2025-07-11T09:51:33"
+    },
+    {
+      "id": 294,
+      "user_id": 4,
+      "operation_code": "OUTBOUND_CREATE",
+      "is_granted": true,
+      "granted_by": null,
+      "granted_at": "2025-07-11T09:51:33"
+    },
+    {
+      "id": 295,
+      "user_id": 4,
+      "operation_code": "OUTBOUND_EDIT",
+      "is_granted": true,
+      "granted_by": null,
+      "granted_at": "2025-07-11T09:51:33"
+    },
+    {
+      "id": 296,
+      "user_id": 4,
+      "operation_code": "OUTBOUND_DELETE",
+      "is_granted": true,
+      "granted_by": null,
+      "granted_at": "2025-07-11T09:51:33"
+    },
+    {
+      "id": 297,
+      "user_id": 4,
+      "operation_code": "INVENTORY_VIEW",
+      "is_granted": true,
+      "granted_by": null,
+      "granted_at": "2025-07-11T09:51:33"
+    }
+  ],
+  "warehouse_permissions": [
+    {
+      "id": 554,
+      "user_id": 1,
+      "warehouse_id": 1,
+      "warehouse_permission_code": "inbound_operation",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:29:42"
+    },
+    {
+      "id": 555,
+      "user_id": 1,
+      "warehouse_id": 1,
+      "warehouse_permission_code": "inbound_records_view",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:29:42"
+    },
+    {
+      "id": 556,
+      "user_id": 1,
+      "warehouse_id": 1,
+      "warehouse_permission_code": "receive_operation",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:29:42"
+    },
+    {
+      "id": 557,
+      "user_id": 1,
+      "warehouse_id": 1,
+      "warehouse_permission_code": "receive_records_view",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:29:42"
+    },
+    {
+      "id": 558,
+      "user_id": 1,
+      "warehouse_id": 1,
+      "warehouse_permission_code": "outbound_operation",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:29:42"
+    },
+    {
+      "id": 559,
+      "user_id": 1,
+      "warehouse_id": 1,
+      "warehouse_permission_code": "outbound_records_view",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:29:42"
+    },
+    {
+      "id": 560,
+      "user_id": 1,
+      "warehouse_id": 1,
+      "warehouse_permission_code": "inventory_view",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:29:42"
+    },
+    {
+      "id": 561,
+      "user_id": 1,
+      "warehouse_id": 1,
+      "warehouse_permission_code": "print_documents",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:29:42"
+    },
+    {
+      "id": 562,
+      "user_id": 1,
+      "warehouse_id": 1,
+      "warehouse_permission_code": "label_print",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:29:42"
+    },
+    {
+      "id": 563,
+      "user_id": 1,
+      "warehouse_id": 2,
+      "warehouse_permission_code": "inbound_operation",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:29:42"
+    },
+    {
+      "id": 564,
+      "user_id": 1,
+      "warehouse_id": 2,
+      "warehouse_permission_code": "inbound_records_view",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:29:42"
+    },
+    {
+      "id": 565,
+      "user_id": 1,
+      "warehouse_id": 2,
+      "warehouse_permission_code": "receive_operation",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:29:42"
+    },
+    {
+      "id": 566,
+      "user_id": 1,
+      "warehouse_id": 2,
+      "warehouse_permission_code": "receive_records_view",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:29:42"
+    },
+    {
+      "id": 567,
+      "user_id": 1,
+      "warehouse_id": 2,
+      "warehouse_permission_code": "outbound_operation",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:29:42"
+    },
+    {
+      "id": 568,
+      "user_id": 1,
+      "warehouse_id": 2,
+      "warehouse_permission_code": "outbound_records_view",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:29:42"
+    },
+    {
+      "id": 569,
+      "user_id": 1,
+      "warehouse_id": 2,
+      "warehouse_permission_code": "inventory_view",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:29:42"
+    },
+    {
+      "id": 570,
+      "user_id": 1,
+      "warehouse_id": 2,
+      "warehouse_permission_code": "print_documents",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:29:42"
+    },
+    {
+      "id": 571,
+      "user_id": 1,
+      "warehouse_id": 2,
+      "warehouse_permission_code": "label_print",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:29:42"
+    },
+    {
+      "id": 572,
+      "user_id": 1,
+      "warehouse_id": 3,
+      "warehouse_permission_code": "inbound_operation",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:29:42"
+    },
+    {
+      "id": 573,
+      "user_id": 1,
+      "warehouse_id": 3,
+      "warehouse_permission_code": "inbound_records_view",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:29:42"
+    },
+    {
+      "id": 574,
+      "user_id": 1,
+      "warehouse_id": 3,
+      "warehouse_permission_code": "receive_operation",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:29:42"
+    },
+    {
+      "id": 575,
+      "user_id": 1,
+      "warehouse_id": 3,
+      "warehouse_permission_code": "receive_records_view",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:29:42"
+    },
+    {
+      "id": 576,
+      "user_id": 1,
+      "warehouse_id": 3,
+      "warehouse_permission_code": "outbound_operation",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:29:42"
+    },
+    {
+      "id": 577,
+      "user_id": 1,
+      "warehouse_id": 3,
+      "warehouse_permission_code": "outbound_records_view",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:29:42"
+    },
+    {
+      "id": 578,
+      "user_id": 1,
+      "warehouse_id": 3,
+      "warehouse_permission_code": "inventory_view",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:29:42"
+    },
+    {
+      "id": 579,
+      "user_id": 1,
+      "warehouse_id": 3,
+      "warehouse_permission_code": "print_documents",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:29:42"
+    },
+    {
+      "id": 580,
+      "user_id": 1,
+      "warehouse_id": 3,
+      "warehouse_permission_code": "label_print",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:29:42"
+    },
+    {
+      "id": 581,
+      "user_id": 1,
+      "warehouse_id": 4,
+      "warehouse_permission_code": "inbound_operation",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:29:42"
+    },
+    {
+      "id": 582,
+      "user_id": 1,
+      "warehouse_id": 4,
+      "warehouse_permission_code": "inbound_records_view",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:29:42"
+    },
+    {
+      "id": 583,
+      "user_id": 1,
+      "warehouse_id": 4,
+      "warehouse_permission_code": "receive_operation",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:29:42"
+    },
+    {
+      "id": 584,
+      "user_id": 1,
+      "warehouse_id": 4,
+      "warehouse_permission_code": "receive_records_view",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:29:42"
+    },
+    {
+      "id": 585,
+      "user_id": 1,
+      "warehouse_id": 4,
+      "warehouse_permission_code": "outbound_operation",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:29:42"
+    },
+    {
+      "id": 586,
+      "user_id": 1,
+      "warehouse_id": 4,
+      "warehouse_permission_code": "outbound_records_view",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:29:42"
+    },
+    {
+      "id": 587,
+      "user_id": 1,
+      "warehouse_id": 4,
+      "warehouse_permission_code": "inventory_view",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:29:42"
+    },
+    {
+      "id": 588,
+      "user_id": 1,
+      "warehouse_id": 4,
+      "warehouse_permission_code": "print_documents",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:29:42"
+    },
+    {
+      "id": 589,
+      "user_id": 1,
+      "warehouse_id": 4,
+      "warehouse_permission_code": "label_print",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:29:42"
+    },
+    {
+      "id": 600,
+      "user_id": 2,
+      "warehouse_id": 1,
+      "warehouse_permission_code": "inbound_operation",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:39:56"
+    },
+    {
+      "id": 601,
+      "user_id": 2,
+      "warehouse_id": 1,
+      "warehouse_permission_code": "inbound_records_view",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:39:56"
+    },
+    {
+      "id": 602,
+      "user_id": 2,
+      "warehouse_id": 1,
+      "warehouse_permission_code": "receive_operation",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:39:56"
+    },
+    {
+      "id": 603,
+      "user_id": 2,
+      "warehouse_id": 1,
+      "warehouse_permission_code": "receive_records_view",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:39:56"
+    },
+    {
+      "id": 604,
+      "user_id": 2,
+      "warehouse_id": 1,
+      "warehouse_permission_code": "outbound_operation",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:39:56"
+    },
+    {
+      "id": 605,
+      "user_id": 2,
+      "warehouse_id": 1,
+      "warehouse_permission_code": "outbound_records_view",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:39:56"
+    },
+    {
+      "id": 606,
+      "user_id": 2,
+      "warehouse_id": 1,
+      "warehouse_permission_code": "inventory_view",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:39:56"
+    },
+    {
+      "id": 607,
+      "user_id": 2,
+      "warehouse_id": 1,
+      "warehouse_permission_code": "print_documents",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:39:56"
+    },
+    {
+      "id": 608,
+      "user_id": 2,
+      "warehouse_id": 1,
+      "warehouse_permission_code": "label_print",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:39:56"
+    },
+    {
+      "id": 609,
+      "user_id": 2,
+      "warehouse_id": 4,
+      "warehouse_permission_code": "inventory_view",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:39:56"
+    },
+    {
+      "id": 620,
+      "user_id": 3,
+      "warehouse_id": 2,
+      "warehouse_permission_code": "inbound_operation",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:44:13"
+    },
+    {
+      "id": 621,
+      "user_id": 3,
+      "warehouse_id": 2,
+      "warehouse_permission_code": "inbound_records_view",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:44:13"
+    },
+    {
+      "id": 622,
+      "user_id": 3,
+      "warehouse_id": 2,
+      "warehouse_permission_code": "receive_operation",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:44:13"
+    },
+    {
+      "id": 623,
+      "user_id": 3,
+      "warehouse_id": 2,
+      "warehouse_permission_code": "receive_records_view",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:44:13"
+    },
+    {
+      "id": 624,
+      "user_id": 3,
+      "warehouse_id": 2,
+      "warehouse_permission_code": "outbound_operation",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:44:13"
+    },
+    {
+      "id": 625,
+      "user_id": 3,
+      "warehouse_id": 2,
+      "warehouse_permission_code": "outbound_records_view",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:44:13"
+    },
+    {
+      "id": 626,
+      "user_id": 3,
+      "warehouse_id": 2,
+      "warehouse_permission_code": "inventory_view",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:44:13"
+    },
+    {
+      "id": 627,
+      "user_id": 3,
+      "warehouse_id": 2,
+      "warehouse_permission_code": "print_documents",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:44:13"
+    },
+    {
+      "id": 628,
+      "user_id": 3,
+      "warehouse_id": 2,
+      "warehouse_permission_code": "label_print",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:44:13"
+    },
+    {
+      "id": 629,
+      "user_id": 3,
+      "warehouse_id": 4,
+      "warehouse_permission_code": "inventory_view",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:44:13"
+    },
+    {
+      "id": 648,
+      "user_id": 5,
+      "warehouse_id": 1,
+      "warehouse_permission_code": "outbound_records_view",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:50:32"
+    },
+    {
+      "id": 649,
+      "user_id": 5,
+      "warehouse_id": 2,
+      "warehouse_permission_code": "outbound_records_view",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:50:32"
+    },
+    {
+      "id": 650,
+      "user_id": 5,
+      "warehouse_id": 3,
+      "warehouse_permission_code": "outbound_records_view",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:50:32"
+    },
+    {
+      "id": 651,
+      "user_id": 5,
+      "warehouse_id": 4,
+      "warehouse_permission_code": "inbound_operation",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:50:32"
+    },
+    {
+      "id": 652,
+      "user_id": 5,
+      "warehouse_id": 4,
+      "warehouse_permission_code": "inbound_records_view",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:50:32"
+    },
+    {
+      "id": 653,
+      "user_id": 5,
+      "warehouse_id": 4,
+      "warehouse_permission_code": "receive_operation",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:50:32"
+    },
+    {
+      "id": 654,
+      "user_id": 5,
+      "warehouse_id": 4,
+      "warehouse_permission_code": "receive_records_view",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:50:32"
+    },
+    {
+      "id": 655,
+      "user_id": 5,
+      "warehouse_id": 4,
+      "warehouse_permission_code": "outbound_operation",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:50:32"
+    },
+    {
+      "id": 656,
+      "user_id": 5,
+      "warehouse_id": 4,
+      "warehouse_permission_code": "outbound_records_view",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:50:32"
+    },
+    {
+      "id": 657,
+      "user_id": 5,
+      "warehouse_id": 4,
+      "warehouse_permission_code": "inventory_view",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:50:32"
+    },
+    {
+      "id": 658,
+      "user_id": 5,
+      "warehouse_id": 4,
+      "warehouse_permission_code": "print_documents",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:50:32"
+    },
+    {
+      "id": 659,
+      "user_id": 5,
+      "warehouse_id": 4,
+      "warehouse_permission_code": "label_print",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:50:32"
+    },
+    {
+      "id": 660,
+      "user_id": 4,
+      "warehouse_id": 3,
+      "warehouse_permission_code": "inbound_operation",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:50:52"
+    },
+    {
+      "id": 661,
+      "user_id": 4,
+      "warehouse_id": 3,
+      "warehouse_permission_code": "inbound_records_view",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:50:52"
+    },
+    {
+      "id": 662,
+      "user_id": 4,
+      "warehouse_id": 3,
+      "warehouse_permission_code": "receive_operation",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:50:52"
+    },
+    {
+      "id": 663,
+      "user_id": 4,
+      "warehouse_id": 3,
+      "warehouse_permission_code": "receive_records_view",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:50:52"
+    },
+    {
+      "id": 664,
+      "user_id": 4,
+      "warehouse_id": 3,
+      "warehouse_permission_code": "outbound_operation",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:50:52"
+    },
+    {
+      "id": 665,
+      "user_id": 4,
+      "warehouse_id": 3,
+      "warehouse_permission_code": "outbound_records_view",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:50:52"
+    },
+    {
+      "id": 666,
+      "user_id": 4,
+      "warehouse_id": 3,
+      "warehouse_permission_code": "inventory_view",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:50:52"
+    },
+    {
+      "id": 667,
+      "user_id": 4,
+      "warehouse_id": 3,
+      "warehouse_permission_code": "print_documents",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:50:52"
+    },
+    {
+      "id": 668,
+      "user_id": 4,
+      "warehouse_id": 3,
+      "warehouse_permission_code": "label_print",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:50:52"
+    },
+    {
+      "id": 669,
+      "user_id": 4,
+      "warehouse_id": 4,
+      "warehouse_permission_code": "inventory_view",
+      "is_granted": true,
+      "granted_by": 1,
+      "granted_at": "2025-07-10T18:50:52"
+    }
+  ]
+}

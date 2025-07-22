@@ -1,0 +1,197 @@
+{% extends "base.html" %}
+
+{% block title %}角色权限管理{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- 页面标题 -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-primary">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="card-title mb-0">
+                        <i class="fas fa-user-shield me-2"></i>角色权限管理
+                        <span class="badge bg-light text-primary ms-2">Role & Permission Management</span>
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <p class="card-text mb-0">
+                        <i class="fas fa-info-circle me-1"></i>
+                        管理系统角色和权限分配，控制用户访问权限
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 角色列表 -->
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title">
+                        <i class="fas fa-users me-2"></i>系统角色
+                        <button class="btn btn-sm btn-primary float-end" onclick="showCreateRoleModal()">
+                            <i class="fas fa-plus me-1"></i>新建角色
+                        </button>
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>角色名称</th>
+                                    <th>描述</th>
+                                    <th>状态</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for role in roles %}
+                                <tr>
+                                    <td>
+                                        <strong>{{ role.name }}</strong>
+                                        <br>
+                                        <small class="text-muted">{{ role.code }}</small>
+                                    </td>
+                                    <td>{{ role.description or '-' }}</td>
+                                    <td>
+                                        {% if role.status == 'active' %}
+                                            <span class="badge bg-success">启用</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">禁用</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <button class="btn btn-sm btn-outline-primary" onclick="editRole({{ role.id }})">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-info" onclick="window.location.href='/admin/permissions/role-permissions/{{ role.id }}'">
+                                            <i class="fas fa-key"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 权限列表 -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title">
+                        <i class="fas fa-key me-2"></i>系统权限
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>权限名称</th>
+                                    <th>权限代码</th>
+                                    <th>分类</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for permission in permissions %}
+                                <tr>
+                                    <td>
+                                        <strong>{{ permission.name }}</strong>
+                                        <br>
+                                        <small class="text-muted">{{ permission.description or '-' }}</small>
+                                    </td>
+                                    <td><code>{{ permission.code }}</code></td>
+                                    <td>
+                                        <span class="badge bg-info">{{ permission.category or '通用' }}</span>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 创建角色模态框 -->
+<div class="modal fade" id="createRoleModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">创建新角色</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="createRoleForm">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                    <div class="mb-3">
+                        <label for="roleName" class="form-label">角色名称</label>
+                        <input type="text" class="form-control" id="roleName" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="roleCode" class="form-label">角色代码</label>
+                        <input type="text" class="form-control" id="roleCode" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="roleDescription" class="form-label">角色描述</label>
+                        <textarea class="form-control" id="roleDescription" rows="3"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary" onclick="createRole()">创建</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 权限分配模态框已移除，使用专门的权限设置页面 -->
+{% endblock %}
+
+{% block scripts %}
+<script>
+// 角色管理页面 JavaScript - 版本 2.0 (2025-07-08)
+// 强制缓存刷新时间戳: {{ moment().format('YYYY-MM-DD HH:mm:ss') }}
+console.log('角色管理页面JavaScript已加载 - 版本 2.0');
+let currentRoleId = null;
+
+function showCreateRoleModal() {
+    $('#createRoleModal').modal('show');
+}
+
+function createRole() {
+    const data = {
+        name: $('#roleName').val(),
+        code: $('#roleCode').val(),
+        description: $('#roleDescription').val()
+    };
+    
+    if (!data.name || !data.code) {
+        alert('请填写角色名称和代码');
+        return;
+    }
+    
+    // 这里应该调用API创建角色
+    console.log('创建角色:', data);
+    alert('角色创建功能正在开发中...');
+}
+
+function editRole(roleId) {
+    console.log('编辑角色:', roleId);
+    alert('角色编辑功能正在开发中...');
+}
+
+// managePermissions函数已移除，直接使用内联跳转代码
+
+// savePermissions函数已移除，权限保存功能在专门的权限设置页面中实现
+</script>
+{% endblock %}

@@ -1,0 +1,509 @@
+{% extends "base.html" %}
+
+{% block title %}后端仓返回前端仓{% endblock %}
+
+{% block styles %}
+<link rel="stylesheet" href="https://cdn.bootcdn.net/ajax/libs/handsontable/12.4.0/handsontable.full.min.css">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/simple-table.css') }}" type="text/css" />
+<style>
+    .batch-options {
+        margin-bottom: 1rem;
+    }
+    #hot-container {
+        height: 600px;
+        overflow: visible;
+        margin-bottom: 20px;
+        margin-left: auto;
+        margin-right: auto;
+        position: relative;
+    }
+    .handsontable td {
+        height: 32px !important;
+        line-height: 28px !important;
+        padding: 4px 6px !important;
+        font-size: 14px !important;
+        text-align: center !important;
+        vertical-align: middle !important;
+    }
+    .handsontable th {
+        height: 36px !important;
+        padding: 6px 6px !important;
+        font-size: 14px !important;
+        font-weight: bold !important;
+        text-align: center !important;
+        vertical-align: middle !important;
+    }
+    .handsontable .required {
+        color: #ff0000;
+    }
+    .required {
+        color: #dc3545 !important;
+        font-weight: bold;
+    }
+    .btn-action {
+        margin-right: 8px;
+    }
+    .card-body {
+        text-align: center;
+    }
+    .destination-info {
+        background-color: #fff3cd;
+        border: 1px solid #ffeaa7;
+        border-radius: 5px;
+        padding: 15px;
+        margin-bottom: 20px;
+    }
+    .return-reason {
+        margin-bottom: 20px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- 页面标题 -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-warning">
+                <div class="card-header bg-warning text-dark">
+                    <h3 class="card-title mb-0">
+                        <i class="fas fa-undo me-2"></i>后端仓返回前端仓
+                        <span class="badge bg-dark text-warning ms-2">Return to Frontend</span>
+                    </h3>
+                    <div class="mt-2">
+                        <a href="{{ url_for('main.backend_outbound') }}" class="btn btn-sm btn-outline-dark">
+                            <i class="fas fa-arrow-left me-1"></i>返回选择页面
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="destination-info">
+                        <h5 class="text-warning mb-2">
+                            <i class="fas fa-map-marker-alt me-1"></i>返回目的地：前端仓
+                        </h5>
+                        <p class="mb-0">
+                            <i class="fas fa-info-circle me-1"></i>
+                            将货物从后端仓返回到原来的前端仓，适用于需要重新处理或客户要求的情况
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 返回原因选择 -->
+    <div class="row mb-3">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title">
+                        <i class="fas fa-question-circle me-2"></i>返回原因
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="return-reason">
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="returnReason" id="customerRequest" value="客户要求" checked>
+                                    <label class="form-check-label" for="customerRequest">
+                                        <strong>客户要求</strong>
+                                        <small class="text-muted d-block">客户主动要求返回</small>
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="returnReason" id="qualityIssue" value="质量问题">
+                                    <label class="form-check-label" for="qualityIssue">
+                                        <strong>质量问题</strong>
+                                        <small class="text-muted d-block">货物存在质量问题</small>
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="returnReason" id="documentIssue" value="单据问题">
+                                    <label class="form-check-label" for="documentIssue">
+                                        <strong>单据问题</strong>
+                                        <small class="text-muted d-block">单据不齐全或有误</small>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row mt-3">
+                            <div class="col-md-4">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="returnReason" id="processError" value="处理错误">
+                                    <label class="form-check-label" for="processError">
+                                        <strong>处理错误</strong>
+                                        <small class="text-muted d-block">操作过程中出现错误</small>
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="returnReason" id="customsIssue" value="报关问题">
+                                    <label class="form-check-label" for="customsIssue">
+                                        <strong>报关问题</strong>
+                                        <small class="text-muted d-block">报关手续有问题</small>
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="returnReason" id="otherReason" value="其他原因">
+                                    <label class="form-check-label" for="otherReason">
+                                        <strong>其他原因</strong>
+                                        <small class="text-muted d-block">其他特殊情况</small>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 批量操作工具栏 -->
+    <div class="row mb-3">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <div class="batch-options d-flex flex-wrap align-items-center justify-content-between">
+                        <div class="d-flex flex-wrap align-items-center">
+                            <button type="button" class="btn btn-success btn-action" id="addRowBtn">
+                                <i class="fas fa-plus"></i> 添加行
+                            </button>
+                            <button type="button" class="btn btn-danger btn-action" id="deleteRowBtn">
+                                <i class="fas fa-trash"></i> 删除行
+                            </button>
+                            <button type="button" class="btn btn-info btn-action" id="loadInventoryBtn">
+                                <i class="fas fa-download"></i> 加载库存
+                            </button>
+                            <button type="button" class="btn btn-warning btn-action" id="generateBatchBtn">
+                                <i class="fas fa-layer-group"></i> 生成批次号
+                            </button>
+                        </div>
+                        <div class="d-flex flex-wrap align-items-center">
+                            <button type="button" class="btn btn-primary btn-action" id="saveAllBtn">
+                                <i class="fas fa-save"></i> 保存全部
+                            </button>
+                            <button type="button" class="btn btn-secondary btn-action" id="clearAllBtn">
+                                <i class="fas fa-eraser"></i> 清空
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 数据表格 -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title">
+                        <i class="fas fa-table me-2"></i>返回前端仓数据录入
+                        <small class="text-muted">（标有 <span class="required">*</span> 的字段为必填项）</small>
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div id="hot-container"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 操作说明 -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card border-info">
+                <div class="card-header bg-info text-white">
+                    <h6 class="card-title mb-0">
+                        <i class="fas fa-question-circle me-1"></i>操作说明
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6 class="text-primary">必填字段</h6>
+                            <ul class="small">
+                                <li><span class="required">返回时间*</span>：货物返回的时间</li>
+                                <li><span class="required">运输车牌*</span>：运输车辆车牌号</li>
+                                <li><span class="required">客户名称*</span>：货物所属客户</li>
+                                <li><span class="required">返回原因*</span>：选择返回的具体原因</li>
+                                <li><span class="required">目标前端仓*</span>：返回到哪个前端仓</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="text-warning">返回提示</h6>
+                            <ul class="small">
+                                <li>请详细填写返回原因和说明</li>
+                                <li>确保目标前端仓有足够的存储空间</li>
+                                <li>系统会自动更新货物状态和位置</li>
+                                <li>返回完成后需要通知相关客户</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.bootcdn.net/ajax/libs/handsontable/12.4.0/handsontable.full.min.js"></script>
+<script>
+$(document).ready(function() {
+    console.log('后端仓返回前端仓页面已加载');
+    
+    // 初始化Handsontable
+    const container = document.getElementById('hot-container');
+    let hot;
+    
+    // 表格列定义 - 专门针对后端仓返回前端仓
+    const columns = [
+        {
+            data: 'return_time',
+            title: '<span class="required">返回时间*</span>',
+            type: 'date',
+            dateFormat: 'YYYY-MM-DD',
+            correctFormat: true,
+            defaultDate: new Date().toISOString().split('T')[0],
+            width: 120
+        },
+        {
+            data: 'delivery_plate_number',
+            title: '<span class="required">运输车牌*</span>',
+            type: 'text',
+            width: 120
+        },
+        {
+            data: 'customer_name',
+            title: '<span class="required">客户名称*</span>',
+            type: 'text',
+            width: 150
+        },
+        {
+            data: 'identification_code',
+            title: '识别编码',
+            type: 'text',
+            readOnly: true,
+            width: 180
+        },
+        {
+            data: 'pallet_count',
+            title: '板数',
+            type: 'numeric',
+            numericFormat: {
+                pattern: '0'
+            },
+            width: 80
+        },
+        {
+            data: 'package_count',
+            title: '件数',
+            type: 'numeric',
+            numericFormat: {
+                pattern: '0'
+            },
+            width: 80
+        },
+        {
+            data: 'weight',
+            title: '重量(kg)',
+            type: 'numeric',
+            numericFormat: {
+                pattern: '0.00'
+            },
+            width: 100
+        },
+        {
+            data: 'volume',
+            title: '体积(m³)',
+            type: 'numeric',
+            numericFormat: {
+                pattern: '0.00'
+            },
+            width: 100
+        },
+        {
+            data: 'target_warehouse',
+            title: '<span class="required">目标前端仓*</span>',
+            type: 'dropdown',
+            source: ['平湖仓', '昆山仓', '成都仓'],
+            width: 120
+        },
+        {
+            data: 'return_reason',
+            title: '<span class="required">返回原因*</span>',
+            type: 'text',
+            readOnly: true,
+            width: 120
+        },
+        {
+            data: 'batch_no',
+            title: '批次号',
+            type: 'text',
+            width: 120
+        },
+        {
+            data: 'remarks',
+            title: '详细说明',
+            type: 'text',
+            width: 200
+        }
+    ];
+    
+    // 初始化表格
+    hot = new Handsontable(container, {
+        data: [{}], // 初始一行空数据
+        columns: columns,
+        rowHeaders: true,
+        colHeaders: true,
+        contextMenu: true,
+        manualRowResize: true,
+        manualColumnResize: true,
+        stretchH: 'all',
+        autoWrapRow: true,
+        autoWrapCol: true,
+        licenseKey: 'non-commercial-and-evaluation',
+        afterChange: function(changes, source) {
+            if (source === 'edit') {
+                // 自动生成识别编码等逻辑
+                generateIdentificationCodes();
+                // 根据返回原因选择自动填充
+                updateReturnReasonInTable();
+            }
+        }
+    });
+    
+    // 监听返回原因选择变化
+    $('input[name="returnReason"]').change(function() {
+        updateReturnReasonInTable();
+    });
+    
+    // 添加行
+    $('#addRowBtn').click(function() {
+        hot.alter('insert_row', hot.countRows());
+        updateReturnReasonInTable();
+    });
+    
+    // 删除行
+    $('#deleteRowBtn').click(function() {
+        const selected = hot.getSelected();
+        if (selected && selected.length > 0) {
+            hot.alter('remove_row', selected[0][0]);
+        }
+    });
+    
+    // 生成批次号
+    $('#generateBatchBtn').click(function() {
+        generateBatchNumber();
+    });
+    
+    // 保存全部
+    $('#saveAllBtn').click(function() {
+        saveAllData();
+    });
+    
+    // 清空表格
+    $('#clearAllBtn').click(function() {
+        if (confirm('确定要清空所有数据吗？')) {
+            hot.loadData([{}]);
+        }
+    });
+    
+    // 加载库存
+    $('#loadInventoryBtn').click(function() {
+        loadInventoryData();
+    });
+    
+    // 更新表格中的返回原因
+    function updateReturnReasonInTable() {
+        const selectedReason = $('input[name="returnReason"]:checked').val();
+        const data = hot.getData();
+        
+        for (let i = 0; i < data.length; i++) {
+            hot.setDataAtCell(i, 9, selectedReason); // return_reason列
+        }
+    }
+    
+    // 生成识别编码
+    function generateIdentificationCodes() {
+        // 实现识别编码生成逻辑
+        console.log('生成识别编码');
+    }
+    
+    // 生成批次号
+    function generateBatchNumber() {
+        // 实现批次号生成逻辑
+        console.log('生成批次号');
+    }
+    
+    // 保存数据
+    function saveAllData() {
+        const data = hot.getData();
+        const selectedReason = $('input[name="returnReason"]:checked').val();
+        
+        console.log('保存后端仓返回前端仓数据:', data);
+        
+        // 发送到专门的API端点
+        $.ajax({
+            url: '/api/backend/outbound/return_frontend',
+            method: 'POST',
+            data: JSON.stringify({
+                records: data,
+                destination: 'return_frontend',
+                return_reason: selectedReason,
+                warehouse_type: 'backend'
+            }),
+            contentType: 'application/json',
+            success: function(response) {
+                if (response.success) {
+                    showMessage('success', '后端仓返回前端仓数据保存成功！');
+                    // 可以选择清空表格或跳转到记录列表
+                } else {
+                    showMessage('error', '保存失败：' + response.message);
+                }
+            },
+            error: function() {
+                showMessage('error', '保存失败，请检查网络连接');
+            }
+        });
+    }
+    
+    // 加载库存数据
+    function loadInventoryData() {
+        $.ajax({
+            url: '/api/inventory/backend',
+            method: 'GET',
+            success: function(response) {
+                if (response.success && response.data.length > 0) {
+                    // 显示库存选择对话框
+                    showInventorySelector(response.data);
+                } else {
+                    showMessage('warning', '当前没有可用的库存数据');
+                }
+            },
+            error: function() {
+                showMessage('error', '加载库存数据失败');
+            }
+        });
+    }
+    
+    // 显示库存选择器
+    function showInventorySelector(inventoryData) {
+        // 实现库存选择对话框
+        console.log('显示库存选择器:', inventoryData);
+    }
+    
+    // 初始化时设置默认返回原因
+    updateReturnReasonInTable();
+});
+</script>
+{% endblock %}

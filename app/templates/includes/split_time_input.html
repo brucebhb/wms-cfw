@@ -1,0 +1,39 @@
+{% macro datetime_field(id, date_label, time_label, required=False, date_value=None, time_value=None) %}
+<div class="mb-3">
+    <label class="form-label {% if required %}fw-bold{% endif %}">{{ date_label }}{% if required %} *{% endif %}</label>
+    <div class="d-flex">
+        <div class="me-2" style="width: 50%">
+            <input type="date" 
+                   class="form-control" 
+                   id="{{ id }}-date" 
+                   name="{{ id }}-date" 
+                   value="{{ date_value|default('', true) }}"
+                   {% if required %}required{% endif %}>
+        </div>
+        <div style="width: 40%">
+            <div class="split-time-container d-flex">
+                <input type="text" 
+                       class="form-control split-time-hour" 
+                       id="{{ id }}-hour" 
+                       name="{{ id }}-hour" 
+                       placeholder="HH"
+                       maxlength="2"
+                       style="min-width: 40px;"
+                       {% if required %}required{% endif %}>
+                <span class="split-time-separator px-1">:</span>
+                <input type="text" 
+                       class="form-control split-time-minute" 
+                       id="{{ id }}-minute" 
+                       name="{{ id }}-minute" 
+                       placeholder="MM"
+                       maxlength="2"
+                       style="min-width: 40px;"
+                       {% if required %}required{% endif %}>
+            </div>
+        </div>
+    </div>
+    <div class="form-text">格式: 24小时制 (例如: 14:30)</div>
+    <!-- 隐藏字段用于表单提交 -->
+    <input type="hidden" id="{{ id }}" name="{{ id }}" value="">
+</div>
+{% endmacro %} 

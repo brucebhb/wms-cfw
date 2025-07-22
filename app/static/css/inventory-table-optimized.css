@@ -1,0 +1,439 @@
+/* 库存表格列宽优化 - 紧凑布局，无需水平滚动 */
+.table-responsive {
+    max-height: 70vh; /* 设置最大高度为视窗高度的70% */
+    overflow-y: auto; /* 垂直滚动 */
+    overflow-x: auto; /* 水平滚动 */
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+}
+
+/* 全局强制居中样式 */
+.table-responsive table td,
+.table-responsive table th,
+.table td,
+.table th {
+    text-align: center !important;
+    vertical-align: middle !important;
+}
+
+.inventory-table {
+    table-layout: fixed;
+    width: 100%;
+    font-size: 10px !important; /* 更小的字体 */
+    margin-bottom: 0; /* 移除底部边距 */
+}
+
+/* 具体列宽分配 - 重新优化，合理分配空间 */
+.inventory-table th:nth-child(1),  /* 序号 */
+.inventory-table td:nth-child(1) {
+    width: 2.5%;
+    min-width: 35px;
+    text-align: center;
+}
+
+.inventory-table th:nth-child(2),  /* 入库日期 */
+.inventory-table td:nth-child(2) {
+    width: 4.5%;
+    min-width: 70px;
+    text-align: center;
+}
+
+.inventory-table th:nth-child(3),  /* 入库车牌 */
+.inventory-table td:nth-child(3) {
+    width: 4.5%;
+    min-width: 70px;
+    text-align: center;
+}
+
+.inventory-table th:nth-child(4),  /* 客户名称 */
+.inventory-table td:nth-child(4) {
+    width: 6%;
+    min-width: 80px;
+    text-align: center;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+}
+
+.inventory-table th:nth-child(5),  /* 订单类型 */
+.inventory-table td:nth-child(5) {
+    width: 3.5%;
+    min-width: 50px;
+    text-align: center;
+}
+
+.inventory-table th:nth-child(6),  /* 识别编码 */
+.inventory-table td:nth-child(6) {
+    width: 20%;
+    min-width: 250px;
+    text-align: center;
+    font-family: 'Courier New', monospace;
+    font-size: 12px !important; /* 加大字体 */
+    font-weight: 500;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    line-height: 1.2;
+}
+
+.inventory-table th:nth-child(7),  /* 入库板数 */
+.inventory-table td:nth-child(7) {
+    width: 3%;
+    min-width: 40px;
+    text-align: center;
+}
+
+.inventory-table th:nth-child(8),  /* 入库件数 */
+.inventory-table td:nth-child(8) {
+    width: 3%;
+    min-width: 40px;
+    text-align: center;
+}
+
+.inventory-table th:nth-child(9),  /* 库存板数 */
+.inventory-table td:nth-child(9) {
+    width: 3%;
+    min-width: 40px;
+    text-align: center;
+    font-weight: bold;
+    color: #007bff;
+}
+
+.inventory-table th:nth-child(10), /* 库存件数 */
+.inventory-table td:nth-child(10) {
+    width: 3%;
+    min-width: 40px;
+    text-align: center;
+    font-weight: bold;
+    color: #007bff;
+}
+
+.inventory-table th:nth-child(11), /* 重量 */
+.inventory-table td:nth-child(11) {
+    width: 4%;
+    min-width: 50px;
+    text-align: center;
+    font-family: 'Courier New', monospace;
+}
+
+.inventory-table th:nth-child(12), /* 体积 */
+.inventory-table td:nth-child(12) {
+    width: 4%;
+    min-width: 50px;
+    text-align: center;
+    font-family: 'Courier New', monospace;
+}
+
+.inventory-table th:nth-child(13), /* 出境模式 */
+.inventory-table td:nth-child(13) {
+    width: 3%;
+    min-width: 40px;
+    text-align: center;
+}
+
+.inventory-table th:nth-child(14), /* 报关行 */
+.inventory-table td:nth-child(14) {
+    width: 4.5%;
+    min-width: 60px;
+    text-align: center;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+}
+
+.inventory-table th:nth-child(15), /* 单据 */
+.inventory-table td:nth-child(15) {
+    width: 2.5%;
+    min-width: 35px;
+    text-align: center;
+}
+
+.inventory-table th:nth-child(16), /* 跟单客服 */
+.inventory-table td:nth-child(16) {
+    width: 3.5%;
+    min-width: 45px;
+    text-align: center;
+}
+
+.inventory-table th:nth-child(17), /* 库位 */
+.inventory-table td:nth-child(17) {
+    width: 2.5%;
+    min-width: 35px;
+    text-align: center;
+}
+
+.inventory-table th:nth-child(18), /* 所属仓库 */
+.inventory-table td:nth-child(18) {
+    width: 4%;
+    min-width: 55px;
+    text-align: center;
+    font-weight: 500;
+}
+
+.inventory-table th:nth-child(19), /* 货物当前状态 */
+.inventory-table td:nth-child(19) {
+    width: 5%;
+    min-width: 65px;
+    text-align: center;
+}
+
+.inventory-table th:nth-child(20), /* 最后更新时间 */
+.inventory-table td:nth-child(20) {
+    width: 6.5%;
+    min-width: 85px;
+    text-align: center;
+    font-size: 9px;
+}
+
+.inventory-table th:nth-child(21), /* 操作 */
+.inventory-table td:nth-child(21) {
+    width: 3.5%;
+    min-width: 45px;
+    text-align: center;
+}
+
+/* 表格整体样式优化 - 合理布局 */
+.inventory-table {
+    font-size: 11px !important;
+    line-height: 1.2;
+    width: 100% !important;
+    table-layout: fixed !important;
+}
+
+/* 所有表格内容居中显示 */
+.table td, .table th {
+    text-align: center !important;
+    vertical-align: middle !important;
+}
+
+/* 强制所有单元格居中 */
+.inventory-table td, .inventory-table th {
+    text-align: center !important;
+    vertical-align: middle !important;
+}
+
+/* 特别强调识别编码居中 */
+.inventory-table td:nth-child(6), .inventory-table th:nth-child(6) {
+    text-align: center !important;
+}
+
+/* 表头样式 - 允许被页面级样式覆盖 */
+.inventory-table th {
+    background-color: #f8f9fa;
+    font-weight: 600;
+    font-size: 10px !important;
+    padding: 4px 2px !important;
+    vertical-align: middle;
+    border: 1px solid #dee2e6;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    height: 32px;
+    /* 固定表头 */
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    /* 移除强制背景色，允许页面级样式覆盖 */
+}
+
+.inventory-table td {
+    padding: 3px 2px !important;
+    vertical-align: middle;
+    border: 1px solid #dee2e6;
+    max-height: 36px;
+    overflow: hidden;
+    line-height: 1.1;
+    font-size: 10px !important;
+}
+
+/* 重要数据突出显示 */
+.inventory-table td:nth-child(9),  /* 库存板数 */
+.inventory-table td:nth-child(10) { /* 库存件数 */
+    background-color: #f0f8ff;
+}
+
+/* 识别编码特殊样式 */
+.inventory-table td:nth-child(6) {
+    background-color: #fafafa;
+    border-left: 3px solid #007bff;
+}
+
+/* 客户名称和报关行文字换行 - 居中对齐 */
+.inventory-table td:nth-child(4),  /* 客户名称 */
+.inventory-table td:nth-child(14) { /* 报关行 */
+    white-space: normal;
+    word-break: break-all;
+    line-height: 1.1;
+    font-size: 9px;
+    text-align: center;
+}
+
+/* 数字列右对齐 */
+.inventory-table td:nth-child(7),  /* 入库板数 */
+.inventory-table td:nth-child(8),  /* 入库件数 */
+.inventory-table td:nth-child(9),  /* 库存板数 */
+.inventory-table td:nth-child(10), /* 库存件数 */
+.inventory-table td:nth-child(11), /* 重量 */
+.inventory-table td:nth-child(12) { /* 体积 */
+    font-family: 'Courier New', 'Consolas', monospace;
+    font-size: 11px;
+    font-weight: 500;
+}
+
+/* 识别编码特殊处理 - 已在上面定义，这里删除重复 */
+
+/* 时间列特殊处理 */
+.inventory-table td:nth-child(20) {
+    font-size: 9px !important;
+    line-height: 1.1;
+}
+
+/* 移除响应式隐藏，确保所有列都显示 */
+.inventory-table th,
+.inventory-table td {
+    display: table-cell !important;
+}
+
+/* 确保表格不会超出容器 */
+.table-responsive {
+    overflow-x: auto;
+}
+
+/* 针对小屏幕的进一步优化 */
+@media (max-width: 1400px) {
+    .inventory-table {
+        font-size: 9px !important;
+    }
+
+    .inventory-table th {
+        font-size: 8px !important;
+        padding: 3px 1px !important;
+    }
+
+    .inventory-table td {
+        padding: 2px 1px !important;
+        font-size: 9px !important;
+    }
+
+    .inventory-table td:nth-child(6) {
+        font-size: 7px !important;
+    }
+
+    .inventory-table td:nth-child(20) {
+        font-size: 7px !important;
+    }
+}
+
+/* 超小屏幕优化 */
+@media (max-width: 1200px) {
+    .inventory-table {
+        font-size: 8px !important;
+    }
+
+    .inventory-table th {
+        font-size: 7px !important;
+        padding: 2px 1px !important;
+    }
+
+    .inventory-table td {
+        padding: 1px 1px !important;
+        font-size: 8px !important;
+    }
+
+    .inventory-table td:nth-child(6),
+    .inventory-table td:nth-child(20) {
+        font-size: 6px !important;
+    }
+}
+
+/* 表格容器优化 - 确保无水平滚动 */
+.table-responsive {
+    border-radius: 6px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    overflow-x: auto;
+    width: 100%;
+    margin-bottom: 20px; /* 确保与下方内容有间距 */
+    position: relative;
+    z-index: 1;
+}
+
+/* 强制表格适应容器宽度 */
+.inventory-table {
+    width: 100% !important;
+    max-width: 100% !important;
+    table-layout: fixed !important;
+}
+
+/* 确保所有列的总宽度不超过100% */
+.inventory-table th,
+.inventory-table td {
+    box-sizing: border-box;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* 超长文本处理 */
+.inventory-table td:nth-child(4),  /* 客户名称 */
+.inventory-table td:nth-child(6),  /* 识别编码 */
+.inventory-table td:nth-child(14) { /* 报关行 */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* 鼠标悬停显示完整内容 */
+.inventory-table td:nth-child(4):hover,
+.inventory-table td:nth-child(6):hover,
+.inventory-table td:nth-child(14):hover {
+    white-space: normal;
+    overflow: visible;
+    position: relative;
+    z-index: 10;
+    background-color: #fff;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    border: 2px solid #007bff;
+}
+
+/* 滚动条样式（如果需要的话） */
+.table-responsive::-webkit-scrollbar {
+    height: 6px;
+}
+
+.table-responsive::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 3px;
+}
+
+.table-responsive::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 3px;
+}
+
+.table-responsive::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
+}
+
+/* 总计信息样式 */
+.inventory-summary {
+    background-color: #f8f9fa;
+    padding: 10px 15px;
+    border-radius: 4px;
+    margin-top: 15px;
+    margin-bottom: 10px;
+    font-size: 13px;
+    color: #495057;
+    border-left: 3px solid #007bff;
+    clear: both;
+    position: relative;
+    z-index: 2;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+/* 确保分页和总计信息不重叠 */
+.pagination-container {
+    clear: both;
+    margin-top: 20px;
+    padding-top: 15px;
+    border-top: 1px solid #dee2e6;
+    position: relative;
+    z-index: 3;
+    width: 100%;
+}

@@ -1,0 +1,848 @@
+{% extends "base.html" %}
+
+{% from 'macros/pagination.html' import render_pagination %}
+
+{% block styles %}
+<style>
+/* 批次分组样式 - 紧凑版 */
+.batch-group {
+    margin-bottom: 20px;
+    border: 1px solid #dee2e6;
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.batch-header {
+    background: linear-gradient(135deg, #198754 0%, #20c997 100%);
+    color: white;
+    padding: 10px 15px;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.batch-summary {
+    background-color: transparent;
+    padding: 15px 20px;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.batch-details {
+    padding: 0;
+}
+
+/* 汇总信息网格 */
+.summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+    margin-top: 10px;
+}
+
+.summary-item {
+    background: transparent;
+    padding: 10px 15px;
+    border-radius: 6px;
+    border-left: 4px solid #198754;
+}
+
+.summary-label {
+    font-size: 12px;
+    color: #6c757d;
+    margin-bottom: 5px;
+}
+
+.summary-value {
+    font-size: 16px;
+    font-weight: 600;
+    color: #212529;
+}
+
+/* 数量卡片分隔线样式 */
+.quantity-divider {
+    border-left: 1px solid #dee2e6;
+    height: 40px;
+    margin: 0 12px;
+}
+
+/* 数量卡片内容样式 */
+.quantity-section {
+    flex: 1;
+    text-align: center;
+}
+
+.quantity-section h4 {
+    font-size: 22px !important;
+    font-weight: 800 !important;
+    margin-bottom: 3px !important;
+}
+
+.quantity-section small {
+    font-size: 12px !important;
+    font-weight: 600 !important;
+    color: #495057 !important;
+}
+
+/* 汇总卡片统一高度 */
+.summary-card {
+    min-height: 80px;
+}
+
+/* 确保所有汇总卡片高度一致 */
+.card-body .row [class*="col-"] > div {
+    min-height: 80px;
+}
+
+/* 汇总卡片字体样式优化 */
+.card-body .row [class*="col-"] h4 {
+    font-size: 24px !important;
+    font-weight: 800 !important;
+    margin-bottom: 4px !important;
+}
+
+.card-body .row [class*="col-"] small {
+    font-size: 13px !important;
+    font-weight: 600 !important;
+    color: #495057 !important;
+}
+
+/* 头部内联统计信息样式 - 紧凑版 */
+.batch-stats-inline {
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 6px;
+    padding: 8px;
+    margin-top: 3px;
+    box-shadow: none;
+}
+
+/* 导出按钮样式 */
+.btn-export {
+    background-color: #28a745;
+    border-color: #28a745;
+    color: white;
+    min-width: 110px;
+    padding-left: 12px;
+    padding-right: 12px;
+    white-space: nowrap;
+}
+
+.btn-export:hover {
+    background-color: #218838;
+    border-color: #1e7e34;
+    color: white;
+}
+
+.stat-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 2px 0;
+    font-size: 11px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    line-height: 1.2;
+}
+
+.stat-item:last-child {
+    border-bottom: none;
+}
+
+.stat-label {
+    color: rgba(255, 255, 255, 0.9);
+    font-weight: 600;
+    font-size: 10px;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.stat-value {
+    color: #ffffff;
+    font-weight: 500;
+    font-family: inherit;
+    font-size: 0.875rem;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+    background: transparent;
+    padding: 1px 4px;
+    border-radius: 3px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* 单行统计信息样式 - 增强显眼度 */
+.stat-item-inline {
+    text-align: center;
+    flex: 1;
+}
+
+.stat-label-inline {
+    display: block;
+    color: rgba(255, 255, 255, 0.95);
+    font-weight: 700;
+    font-size: 13px;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+    margin-bottom: 3px;
+    letter-spacing: 0.5px;
+}
+
+.stat-value-inline {
+    display: block;
+    color: #ffffff;
+    font-weight: 500;
+    font-family: inherit;
+    font-size: 1.25rem;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
+    background: transparent;
+    padding: 4px 8px;
+    border-radius: 6px;
+    border: 2px solid rgba(255, 255, 255, 0.4);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+    letter-spacing: 0.5px;
+}
+
+/* 出库时间显示样式 */
+.outbound-time-display {
+    color: #ffffff;
+    font-weight: 900;
+    font-family: 'Arial Black', 'Helvetica', sans-serif;
+    font-size: 16px;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
+    background: transparent;
+    padding: 4px 8px;
+    border-radius: 6px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+    letter-spacing: 0.5px;
+    margin-top: 2px;
+}
+
+/* 表格样式 */
+.batch-table {
+    font-size: 13px;
+    margin-bottom: 0;
+}
+
+.batch-table th, .batch-table td {
+    padding: 8px 6px;
+    text-align: left;
+    vertical-align: middle;
+    border: 1px solid #dee2e6;
+    white-space: normal;
+    word-wrap: break-word;
+}
+
+.batch-table th {
+    background-color: #e9ecef;
+    color: #495057;
+    font-weight: 600;
+    font-size: 12px;
+    text-align: center;
+}
+
+/* 数字列居中 */
+.batch-table td:nth-child(6), .batch-table td:nth-child(7), .batch-table td:nth-child(8),
+.batch-table td:nth-child(9), .batch-table td:nth-child(10), .batch-table td:nth-child(11), .batch-table td:nth-child(12) {
+    text-align: center;
+    font-family: 'Courier New', monospace;
+    font-weight: 500;
+}
+
+/* 状态标签 */
+.badge {
+    font-size: 10px;
+    padding: 3px 8px;
+}
+
+/* 响应式调整 */
+@media (max-width: 768px) {
+    .summary-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .batch-table {
+        font-size: 12px;
+    }
+
+    .batch-table th, .batch-table td {
+        padding: 6px 4px;
+    }
+}
+
+
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+
+
+    <!-- 页面标题 -->
+    <div class="row mb-3">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2 class="text-success mb-0">
+                        <i class="fas fa-truck-loading me-2"></i>前端仓出库记录
+                        <small class="text-muted">(按批次分组)</small>
+                    </h2>
+                    <p class="text-muted mb-0">查看和管理前端仓的出库记录</p>
+                </div>
+                <div class="d-flex align-items-center">
+                    <span class="badge bg-info me-2">共 {{ batch_groups.total }} 个批次</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 搜索框 -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title" style="font-size: 16px;">搜索条件</h3>
+                    <div class="card-tools">
+                        <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                            <i class="fas fa-minus"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body search-form">
+                    <form action="{{ url_for('main.frontend_outbound_list') }}" method="get" id="searchForm">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                        <div class="row">
+                            <!-- 仓库选择器 -->
+                            <div class="col-md-2">
+                                <div class="form-group">
+                                    <label for="warehouse_id">仓库</label>
+                                    <select class="form-control" id="warehouse_id" name="warehouse_id">
+                                        <option value="">全部仓库</option>
+                                        {% for warehouse in warehouses %}
+                                        <option value="{{ warehouse.id }}" {{ 'selected' if search_params.warehouse_id == warehouse.id|string else '' }}>
+                                            {{ warehouse.warehouse_name }}
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- 搜索字段选择器 -->
+                            <div class="col-md-2">
+                                <div class="form-group">
+                                    <label for="search_field">搜索字段</label>
+                                    <select class="form-control" id="search_field" name="search_field">
+                                        <option value="customer_name" {{ 'selected' if search_params.search_field == 'customer_name' else '' }}>客户名称</option>
+                                        <option value="plate_number" {{ 'selected' if search_params.search_field == 'plate_number' else '' }}>出库车牌</option>
+                                        <option value="batch_no" {{ 'selected' if search_params.search_field == 'batch_no' else '' }}>批次号</option>
+                                        <option value="identification_code" {{ 'selected' if search_params.search_field == 'identification_code' else '' }}>识别编码</option>
+                                        <option value="destination" {{ 'selected' if search_params.search_field == 'destination' else '' }}>目的地</option>
+                                        <option value="customs_broker" {{ 'selected' if search_params.search_field == 'customs_broker' else '' }}>报关行</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- 搜索值输入框 -->
+                            <div class="col-md-2">
+                                <div class="form-group">
+                                    <label for="search_value">搜索内容</label>
+                                    <input type="text" class="form-control" id="search_value" name="search_value"
+                                           value="{{ search_params.search_value or '' }}" placeholder="请输入搜索内容">
+                                </div>
+                            </div>
+
+                            <!-- 日期范围 -->
+                            <div class="col-md-2">
+                                <div class="form-group">
+                                    <label for="date_start">开始日期</label>
+                                    <input type="date" class="form-control" id="date_start" name="date_start"
+                                           value="{{ search_params.date_start or '' }}">
+                                </div>
+                            </div>
+
+                            <div class="col-md-2">
+                                <div class="form-group">
+                                    <label for="date_end">结束日期</label>
+                                    <input type="date" class="form-control" id="date_end" name="date_end"
+                                           value="{{ search_params.date_end or '' }}">
+                                </div>
+                            </div>
+
+                            <!-- 操作按钮 -->
+                            <div class="col-md-2">
+                                <div class="form-group">
+                                    <label>&nbsp;</label>
+                                    <div class="d-flex flex-wrap">
+                                        <button type="submit" class="btn btn-primary mr-2 mb-1">
+                                            <i class="fas fa-search"></i> 搜索
+                                        </button>
+                                        <button type="button" class="btn btn-secondary mr-2 mb-1" onclick="resetSearch()">
+                                            <i class="fas fa-undo"></i> 重置
+                                        </button>
+                                        <button type="button" class="btn btn-info mr-2 mb-1" onclick="setYesterdayToday()">
+                                            <i class="fas fa-calendar-day"></i> 昨今
+                                        </button>
+                                        <button type="button" class="btn btn-export mb-1" id="exportBtn" onclick="handleExport()">
+                                            <i class="fas fa-file-export me-2"></i>导出Excel
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 数据汇总区域 -->
+    {% if summary_data %}
+    <div class="row mb-3">
+        <div class="col-12">
+            <div class="card border-info">
+                <div class="card-header bg-info text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-chart-bar me-2"></i>数据汇总
+                        <small class="ms-2">(按离仓发运时间降序排列)</small>
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-md-2">
+                            <div class="border rounded p-3 bg-light h-100 d-flex flex-column justify-content-center">
+                                <h4 class="text-warning mb-1">{{ summary_data.total_shipments }}</h4>
+                                <small class="text-muted">总票数</small>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="border rounded p-3 bg-light h-100">
+                                <div class="d-flex align-items-center justify-content-center h-100">
+                                    <div class="quantity-section">
+                                        <h4 class="text-success mb-0">{{ summary_data.total_pallets }}</h4>
+                                        <small class="text-muted">总板数</small>
+                                    </div>
+                                    <div class="quantity-divider"></div>
+                                    <div class="quantity-section">
+                                        <h4 class="text-success mb-0">{{ summary_data.total_packages }}</h4>
+                                        <small class="text-muted">总件数</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="border rounded p-3 bg-light h-100">
+                                <div class="d-flex align-items-center justify-content-center h-100">
+                                    <div class="quantity-section">
+                                        <h4 class="text-info mb-0">{{ "%.1f"|format(summary_data.total_weight) }}</h4>
+                                        <small class="text-muted">总重量(kg)</small>
+                                    </div>
+                                    <div class="quantity-divider"></div>
+                                    <div class="quantity-section">
+                                        <h4 class="text-secondary mb-0">{{ "%.2f"|format(summary_data.total_volume) }}</h4>
+                                        <small class="text-muted">总体积(m³)</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="border rounded p-3 bg-light h-100 d-flex flex-column justify-content-center">
+                                <h4 class="text-primary mb-1">{{ summary_data.total_vehicle_trips }}</h4>
+                                <small class="text-muted">出库车次</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- 批次分组显示 -->
+    <div class="row">
+        <div class="col-12">
+            {% if batch_groups.items %}
+                {% for batch in batch_groups.items %}
+                <div class="batch-group">
+                    <!-- 批次头部信息 -->
+                    <div class="batch-header">
+                        <div class="row align-items-center">
+                            <div class="col-md-5">
+                                <h5 class="mb-1">
+                                    <i class="fas fa-layer-group me-2"></i>批次号: {{ batch.batch_no }}
+                                    <span class="badge bg-secondary text-white ms-2">{{ batch.record_count }} 条</span>
+                                </h5>
+                                <div class="d-flex flex-wrap gap-2 mt-1" style="font-size: 12px;">
+                                    <span><i class="fas fa-truck me-1"></i>出库车牌: {{ batch.plate_number or '-' }}</span>
+                                    <span><i class="fas fa-map-marker-alt me-1"></i>目的地:
+                                        {% if batch.destination == '直接配送客户工厂' %}
+                                            直接配送
+                                        {% elif batch.destination_warehouse %}
+                                            {{ batch.destination_warehouse.warehouse_name }}
+                                        {% else %}
+                                            {{ batch.destination or '-' }}
+                                        {% endif %}
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="col-md-5">
+                                <!-- 统计信息 - 两行显示 -->
+                                <div class="batch-stats-inline">
+                                    <!-- 第一行：数量统计 -->
+                                    <div class="d-flex justify-content-between align-items-center mb-1">
+                                        <div class="stat-item-inline">
+                                            <span class="stat-label-inline">板数</span>
+                                            <span class="stat-value-inline">{{ batch.total_pallet }}</span>
+                                        </div>
+                                        <div class="stat-item-inline">
+                                            <span class="stat-label-inline">件数</span>
+                                            <span class="stat-value-inline">{{ batch.total_package }}</span>
+                                        </div>
+                                        <div class="stat-item-inline">
+                                            <span class="stat-label-inline">票数</span>
+                                            <span class="stat-value-inline">{{ batch.total_documents or 0 }}</span>
+                                        </div>
+                                    </div>
+                                    <!-- 第二行：重量体积和状态 -->
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div class="stat-item-inline">
+                                            <span class="stat-label-inline">重量</span>
+                                            <span class="stat-value-inline">{{ "%.1f"|format(batch.total_weight) }}KG</span>
+                                        </div>
+                                        <div class="stat-item-inline">
+                                            <span class="stat-label-inline">体积</span>
+                                            <span class="stat-value-inline">{{ "%.2f"|format(batch.total_volume) }}CBM</span>
+                                        </div>
+                                        <div class="stat-item-inline">
+                                            <span class="stat-label-inline">状态</span>
+                                            <span class="stat-value-inline">
+                                                {% if batch.receive_status == 'not_received' %}
+                                                    <span class="badge bg-warning text-dark">未接收</span>
+                                                {% elif batch.receive_status == 'fully_received' %}
+                                                    <span class="badge bg-success">已接收</span>
+                                                {% elif batch.receive_status == 'partially_received' %}
+                                                    <span class="badge bg-info">部分接收 ({{ batch.received_count }}/{{ batch.total_count }})</span>
+                                                {% else %}
+                                                    <span class="badge bg-secondary">未知</span>
+                                                {% endif %}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-2 text-end">
+                                <div class="text-white-50">
+                                    <div style="font-size: 16px; font-weight: bold; margin-bottom: 3px; color: #ffffff; text-shadow: 1px 1px 2px rgba(0,0,0,0.5);">出库时间</div>
+                                    <div class="outbound-time-display">
+                                        {% if batch.departure_time %}
+                                            {{ batch.departure_time.strftime('%m-%d %H:%M') }}
+                                        {% elif batch.outbound_time %}
+                                            {{ batch.outbound_time.strftime('%m-%d %H:%M') }}
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </div>
+                                    <!-- 批量删除按钮 -->
+                                    <div class="mt-2">
+                                        <button type="button" class="btn btn-danger btn-sm" onclick="deleteBatch('{{ batch.batch_no }}', {{ batch.record_count }})">
+                                            <i class="fas fa-trash"></i> 删除批次
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+
+
+                    <!-- 批次详细记录 -->
+                    <div class="batch-details">
+                        <div class="table-responsive">
+                            <table class="table batch-table">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 120px;">客户名称</th>
+                                        <th style="width: 150px;">识别编码</th>
+                                        <th style="width: 90px;">入库车牌</th>
+                                        <th style="width: 80px;">订单类型</th>
+                                        <th style="width: 80px;">报关行</th>
+                                        <th style="width: 80px;">跟单客服</th>
+                                        <th style="width: 60px;">板数</th>
+                                        <th style="width: 60px;">件数</th>
+                                        <th style="width: 50px;">大层板</th>
+                                        <th style="width: 50px;">小层板</th>
+                                        <th style="width: 50px;">卡板</th>
+                                        <th style="width: 80px;">重量(KG)</th>
+                                        <th style="width: 80px;">体积(CBM)</th>
+                                        <th style="width: 80px;">单据</th>
+                                        <th style="width: 90px;">入库日期</th>
+                                        <th style="width: 100px;">备注1</th>
+                                        <th style="width: 100px;">备注2</th>
+                                        <th style="width: 80px;">操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for record in batch.records %}
+                                    <tr>
+                                        <td>{{ record.customer_name or '-' }}</td>
+                                        <td>{{ record.identification_code or '-' }}</td>
+                                        <td>{{ record.inbound_plate or '-' }}</td>
+                                        <td>{{ record.order_type or '-' }}</td>
+                                        <td>{{ record.customs_broker or '-' }}</td>
+                                        <td>{{ record.service_staff or '-' }}</td>
+                                        <td>{{ record.pallet_count or 0 }}</td>
+                                        <td>{{ record.package_count or 0 }}</td>
+                                        <td>{{ record.large_layer or 0 }}</td>
+                                        <td>{{ record.small_layer or 0 }}</td>
+                                        <td>{{ record.pallet_board or 0 }}</td>
+                                        <td>{{ "%.1f"|format(record.weight or 0) }}</td>
+                                        <td>{{ "%.2f"|format(record.volume or 0) }}</td>
+                                        <td>{{ record.documents or '-' }}</td>
+                                        <td>{{ record.inbound_date.strftime('%Y-%m-%d') if record.inbound_date else '-' }}</td>
+                                        <td>{{ record.remark1 or '-' }}</td>
+                                        <td>{{ record.remark2 or '-' }}</td>
+                                        <td>
+                                            <button type="button" class="btn btn-info btn-sm" onclick="viewRecord({{ record.id }})">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-body text-center py-5">
+                            <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                            <h5 class="text-muted">暂无出库记录</h5>
+                            <p class="text-muted">请调整搜索条件或检查数据</p>
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- 分页 -->
+    {% if batch_groups.pages > 1 %}
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-footer">
+                    {{ render_pagination(batch_groups, 'main.frontend_outbound_list', search_params) }}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- 查看记录详情模态框 -->
+<div class="modal fade" id="viewRecordModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">出库记录详情</h5>
+                <button type="button" class="close" data-dismiss="modal">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <div class="modal-body" id="recordDetailContent">
+                <!-- 详情内容将通过AJAX加载 -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">关闭</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+$(document).ready(function() {
+    // 初始化
+    console.log('前端仓出库记录页面加载完成');
+});
+
+// 重置搜索
+function resetSearch() {
+    $('#searchForm')[0].reset();
+    window.location.href = "{{ url_for('main.frontend_outbound_list') }}";
+}
+
+// 设置两天的日期（昨天和今天）
+function setYesterdayToday() {
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+
+    // 格式化日期为 YYYY-MM-DD
+    const formatDate = (date) => {
+        return date.getFullYear() + '-' +
+               String(date.getMonth() + 1).padStart(2, '0') + '-' +
+               String(date.getDate()).padStart(2, '0');
+    };
+
+    $('#date_start').val(formatDate(yesterday));
+    $('#date_end').val(formatDate(today));
+}
+
+// 查看记录详情
+function viewRecord(recordId) {
+    $('#recordDetailContent').html('<div class="text-center"><i class="fas fa-spinner fa-spin"></i> 加载中...</div>');
+    $('#viewRecordModal').modal('show');
+
+    // 这里可以添加AJAX请求获取详情
+    setTimeout(function() {
+        $('#recordDetailContent').html('<p>记录ID: ' + recordId + '</p><p>详情功能待完善...</p>');
+    }, 500);
+}
+
+
+
+// 删除整个批次
+function deleteBatch(batchNo, recordCount) {
+    if (!confirm(`确定要删除整个批次吗？\n\n批次号：${batchNo}\n记录数：${recordCount} 条\n\n删除后将返回所有库存，且只能在后端仓未接收的情况下删除。`)) {
+        return;
+    }
+
+    // 显示加载状态
+    const button = event.target.closest('button');
+    const originalHtml = button.innerHTML;
+    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 删除中...';
+    button.disabled = true;
+
+    $.ajax({
+        url: '/api/frontend/outbound/delete-batch',
+        method: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify({
+            batch_no: batchNo
+        }),
+        success: function(response) {
+            if (response.success) {
+                // 显示成功消息
+                showMessage('success', response.message || `批次 ${batchNo} 删除成功，共删除 ${response.deleted_count || recordCount} 条记录，库存已返回`);
+                // 刷新页面
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1500);
+            } else {
+                showMessage('error', response.message || '批次删除失败');
+                // 恢复按钮状态
+                button.innerHTML = originalHtml;
+                button.disabled = false;
+            }
+        },
+        error: function(xhr) {
+            let errorMsg = '批次删除失败';
+            if (xhr.responseJSON && xhr.responseJSON.message) {
+                errorMsg = xhr.responseJSON.message;
+            }
+            showMessage('error', errorMsg);
+            // 恢复按钮状态
+            button.innerHTML = originalHtml;
+            button.disabled = false;
+        }
+    });
+}
+
+// 显示消息提示
+function showMessage(type, message) {
+    // 移除现有的消息
+    $('.alert').remove();
+
+    // 创建新的消息
+    const alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
+    const icon = type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle';
+
+    const alertHtml = `
+        <div class="alert ${alertClass} alert-dismissible fade show" role="alert" style="position: fixed; top: 20px; right: 20px; z-index: 9999; min-width: 300px;">
+            <i class="fas ${icon} me-2"></i>${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    `;
+
+    $('body').append(alertHtml);
+
+    // 3秒后自动消失
+    setTimeout(() => {
+        $('.alert').fadeOut();
+    }, 3000);
+}
+
+// 处理导出功能
+function handleExport() {
+    const exportBtn = document.getElementById('exportBtn');
+    const originalText = exportBtn.innerHTML;
+
+    // 显示加载状态
+    exportBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>正在导出...';
+    exportBtn.disabled = true;
+    exportBtn.style.pointerEvents = 'none';
+
+    // 构建导出URL
+    const currentUrl = new URL(window.location);
+    const exportUrl = new URL('{{ url_for("main.export_frontend_outbound") }}', window.location.origin);
+
+    // 复制当前页面的查询参数到导出URL
+    currentUrl.searchParams.forEach((value, key) => {
+        if (key !== 'page') { // 排除分页参数
+            exportUrl.searchParams.set(key, value);
+        }
+    });
+
+    // 创建隐藏的iframe来处理下载
+    const iframe = document.createElement('iframe');
+    iframe.style.display = 'none';
+    iframe.src = exportUrl.toString();
+    document.body.appendChild(iframe);
+
+    // 监听iframe加载完成
+    iframe.onload = function() {
+        // 检查是否是重定向到登录页面
+        try {
+            const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+            if (iframeDoc.title.includes('登录') || iframeDoc.URL.includes('/auth/login')) {
+                // 重定向到登录页面
+                window.location.href = exportUrl.toString();
+                return;
+            }
+        } catch (e) {
+            // 跨域访问限制，说明下载成功
+        }
+
+        // 恢复按钮状态
+        setTimeout(function() {
+            exportBtn.innerHTML = originalText;
+            exportBtn.disabled = false;
+            exportBtn.style.pointerEvents = 'auto';
+            document.body.removeChild(iframe);
+        }, 2000);
+    };
+
+    // 设置超时恢复按钮状态（30秒后）
+    setTimeout(function() {
+        if (exportBtn.disabled) {
+            exportBtn.innerHTML = originalText;
+            exportBtn.disabled = false;
+            exportBtn.style.pointerEvents = 'auto';
+            if (document.body.contains(iframe)) {
+                document.body.removeChild(iframe);
+            }
+        }
+    }, 30000);
+}
+
+
+
+// 页面加载完成后绑定事件
+document.addEventListener('DOMContentLoaded', function() {
+    // 页面加载完成，确保导出按钮状态正常
+    const exportBtn = document.getElementById('exportBtn');
+    if (exportBtn) {
+        exportBtn.innerHTML = '<i class="fas fa-file-export me-2"></i>导出Excel';
+        exportBtn.disabled = false;
+        exportBtn.style.pointerEvents = 'auto';
+    }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,103 @@
+/* 库存表格表头样式修复 */
+
+/* 全库存查询页面 - 蓝色表头 */
+.inventory-list-page .table th,
+.inventory-list-page .table thead th,
+.inventory-list-page .table > thead > tr > th,
+.inventory-list-page .table-striped > thead > tr > th,
+.inventory-list-page .table-bordered > thead > tr > th,
+.inventory-list-page .inventory-table thead th {
+    background-color: #007bff !important;
+    background: #007bff !important;
+    color: white !important;
+    font-weight: 600 !important;
+    border-color: #007bff !important;
+}
+
+/* 前端仓库存页面 - 绿色表头 */
+.frontend-inventory-page .table th,
+.frontend-inventory-page .table thead th,
+.frontend-inventory-page .table > thead > tr > th,
+.frontend-inventory-page .table-striped > thead > tr > th,
+.frontend-inventory-page .table-bordered > thead > tr > th,
+.frontend-inventory-page .inventory-table thead th {
+    background-color: #198754 !important;
+    background: #198754 !important;
+    color: white !important;
+    font-weight: 600 !important;
+    border-color: #198754 !important;
+}
+
+/* 后端仓库存页面 - 橙色表头 */
+.backend-inventory-page .table th,
+.backend-inventory-page .table thead th,
+.backend-inventory-page .table > thead > tr > th,
+.backend-inventory-page .table-striped > thead > tr > th,
+.backend-inventory-page .table-bordered > thead > tr > th,
+.backend-inventory-page .inventory-table thead th {
+    background-color: #fd7e14 !important;
+    background: #fd7e14 !important;
+    color: white !important;
+    font-weight: 600 !important;
+    border-color: #fd7e14 !important;
+}
+
+/* 通用表头样式强制覆盖 */
+.table thead th {
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 100 !important;
+}
+
+/* 确保表头文字可见 */
+.table th {
+    text-shadow: none !important;
+    opacity: 1 !important;
+}
+
+/* 移除可能的伪元素干扰 */
+.table th::before,
+.table th::after {
+    content: none !important;
+    display: none !important;
+}
+
+/* 仓库管理页面 - 深色表头 */
+.warehouse-management-page .table th,
+.warehouse-management-page .table thead th,
+.warehouse-management-page .table > thead > tr > th,
+.warehouse-management-page .table-striped > thead > tr > th,
+.warehouse-management-page .table-bordered > thead > tr > th,
+.warehouse-management-page .table-dark th {
+    background-color: #212529 !important;
+    background: #212529 !important;
+    color: white !important;
+    font-weight: 600 !important;
+    border-color: #32383e !important;
+}
+
+/* 用户管理页面 - 深蓝色表头 */
+.user-management-page .table th,
+.user-management-page .table thead th,
+.user-management-page .table > thead > tr > th,
+.user-management-page .table-striped > thead > tr > th,
+.user-management-page .table-bordered > thead > tr > th {
+    background-color: #0d6efd !important;
+    background: #0d6efd !important;
+    color: white !important;
+    font-weight: 600 !important;
+    border-color: #0d6efd !important;
+}
+
+/* 权限管理页面 - 紫色表头 */
+.permission-management-page .table th,
+.permission-management-page .table thead th,
+.permission-management-page .table > thead > tr > th,
+.permission-management-page .table-striped > thead > tr > th,
+.permission-management-page .table-bordered > thead > tr > th {
+    background-color: #6f42c1 !important;
+    background: #6f42c1 !important;
+    color: white !important;
+    font-weight: 600 !important;
+    border-color: #6f42c1 !important;
+}

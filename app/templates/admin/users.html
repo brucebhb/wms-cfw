@@ -1,0 +1,1129 @@
+{% extends "base.html" %}
+
+{% block title %}用户管理 - 仓储管理系统{% endblock %}
+
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/inventory-table-header-fix.css') }}">
+<style>
+/* 用户管理页面特定样式 */
+.user-management-page .table-dark th {
+    background-color: #0d6efd !important;
+    color: white !important;
+    border-color: #0d6efd !important;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid user-management-page">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h3 class="card-title">
+                        <i class="fas fa-users me-2"></i>用户管理
+                    </h3>
+                    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createUserModal">
+                        <i class="fas fa-plus me-1"></i>新增用户
+                    </button>
+                </div>
+                
+                <div class="card-body">
+                    <!-- 搜索过滤器 -->
+                    <div class="row mb-3">
+                        <div class="col-md-3">
+                            <input type="text" class="form-control ajax-handled" id="searchInput" placeholder="搜索用户名、姓名或邮箱">
+                        </div>
+                        <div class="col-md-3">
+                            <select class="form-select ajax-handled" id="warehouseFilter">
+                                <option value="">所有仓库</option>
+                                {% for warehouse in warehouses %}
+                                <option value="{{ warehouse.id }}">{{ warehouse.warehouse_name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <select class="form-select ajax-handled" id="statusFilter">
+                                <option value="">所有状态</option>
+                                <option value="active">活跃</option>
+                                <option value="inactive">禁用</option>
+                                <option value="locked">锁定</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <button type="button" class="btn btn-outline-secondary" id="resetFilter">
+                                <i class="fas fa-redo me-1"></i>重置
+                            </button>
+                            <!-- 紧急清理按钮（隐藏，双击重置按钮显示） -->
+                            <button type="button" id="emergencyCleanupBtn" class="btn btn-warning ms-2" onclick="emergencyCleanup()" style="display: none;">
+                                <i class="fas fa-broom me-1"></i>清理页面状态
+                            </button>
+                            <!-- 测试提示按钮（隐藏，三击重置按钮显示） -->
+                            <button type="button" id="testAlertBtn" class="btn btn-info ms-2" onclick="testAlert()" style="display: none;">
+                                <i class="fas fa-bell me-1"></i>测试提示
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- 用户列表表格 -->
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover table-bordered" id="usersTable">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th style="width: 60px;">ID</th>
+                                    <th style="width: 120px;">用户名</th>
+                                    <th style="width: 120px;">真实姓名</th>
+                                    <th style="width: 180px;">邮箱</th>
+                                    <th style="width: 120px;">所属仓库</th>
+                                    <th style="width: 100px;">角色类型</th>
+                                    <th style="width: 80px;">状态</th>
+                                    <th style="width: 150px;">操作</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- 数据将通过JavaScript动态加载 -->
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <!-- 分页 -->
+                    <nav aria-label="用户列表分页">
+                        <ul class="pagination justify-content-center" id="pagination">
+                            <!-- 分页将通过JavaScript动态生成 -->
+                        </ul>
+                    </nav>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 用户权限配置模态框 -->
+<div class="modal fade" id="userPermissionModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-user-cog me-2"></i><span id="modalUserName">用户权限配置</span>
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <!-- 用户基本信息 -->
+                <div class="row mb-4" style="display: none;">
+                    <div class="col-md-12">
+                        <div class="card">
+                            <div class="card-header">
+                                <h6 class="mb-0"><i class="fas fa-user me-2"></i>用户基本信息</h6>
+                            </div>
+                            <div class="card-body">
+                                <form id="userBasicForm">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                                    <input type="hidden" id="editUserId" name="user_id">
+                                    <div class="row">
+                                        <div class="col-md-3">
+                                            <div class="mb-3">
+                                                <label for="editUsername" class="form-label">用户名 *</label>
+                                                <input type="text" class="form-control" id="editUsername" name="username" required>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="mb-3">
+                                                <label for="editRealName" class="form-label">真实姓名 *</label>
+                                                <input type="text" class="form-control" id="editRealName" name="real_name" required>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="mb-3">
+                                                <label for="editEmail" class="form-label">邮箱</label>
+                                                <input type="email" class="form-control" id="editEmail" name="email">
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="mb-3">
+                                                <label for="editWarehouse" class="form-label">所属仓库 *</label>
+                                                <select class="form-select" id="editWarehouse" name="warehouse_id" required>
+                                                    <option value="">请选择仓库</option>
+                                                    {% for warehouse in warehouses %}
+                                                    <option value="{{ warehouse.id }}">{{ warehouse.warehouse_name }}</option>
+                                                    {% endfor %}
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-md-4">
+                                            <div class="mb-3">
+                                                <label for="editUserType" class="form-label">用户类型 *</label>
+                                                <select class="form-select" id="editUserType" name="user_type" required>
+                                                    <option value="">请选择用户类型</option>
+                                                    <option value="admin">超级管理员</option>
+                                                    <option value="manager">管理员</option>
+                                                    <option value="operator">操作员</option>
+                                                    <option value="customer">客户</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="mb-3">
+                                                <label for="editStatus" class="form-label">状态</label>
+                                                <select class="form-select" id="editStatus" name="status">
+                                                    <option value="active">活跃</option>
+                                                    <option value="inactive">禁用</option>
+                                                    <option value="locked">锁定</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="mb-3">
+                                                <label for="editPassword" class="form-label">新密码（留空不修改）</label>
+                                                <input type="password" class="form-control" id="editPassword" name="password" autocomplete="new-password">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 权限配置标签页 -->
+                <div class="row">
+                    <div class="col-md-12">
+                        <div class="card">
+                            <div class="card-header">
+                                <h6 class="mb-0"><i class="fas fa-shield-alt me-2"></i>权限配置</h6>
+                            </div>
+                            <div class="card-body">
+                                <!-- 权限配置标签页 -->
+                                <ul class="nav nav-tabs" id="permissionTabs" role="tablist">
+                                    <li class="nav-item" role="presentation">
+                                        <button class="nav-link active" id="menu-tab" data-bs-toggle="tab" data-bs-target="#menu-permissions" type="button" role="tab">
+                                            <i class="fas fa-bars me-1"></i>菜单权限
+                                        </button>
+                                    </li>
+                                    <li class="nav-item" role="presentation">
+                                        <button class="nav-link" id="page-tab" data-bs-toggle="tab" data-bs-target="#page-permissions" type="button" role="tab">
+                                            <i class="fas fa-file me-1"></i>页面权限
+                                        </button>
+                                    </li>
+                                    <li class="nav-item" role="presentation">
+                                        <button class="nav-link" id="operation-tab" data-bs-toggle="tab" data-bs-target="#operation-permissions" type="button" role="tab">
+                                            <i class="fas fa-cogs me-1"></i>操作权限
+                                        </button>
+                                    </li>
+                                    <li class="nav-item" role="presentation">
+                                        <button class="nav-link" id="warehouse-tab" data-bs-toggle="tab" data-bs-target="#warehouse-permissions" type="button" role="tab">
+                                            <i class="fas fa-warehouse me-1"></i>仓库权限
+                                        </button>
+                                    </li>
+                                </ul>
+
+                                <div class="tab-content mt-3" id="permissionTabContent">
+                                    <!-- 菜单权限 -->
+                                    <div class="tab-pane fade show active" id="menu-permissions" role="tabpanel">
+                                        <div class="d-flex justify-content-between align-items-center mb-3">
+                                            <h6 class="mb-0">菜单访问权限</h6>
+                                            <div>
+                                                <button type="button" class="btn btn-sm btn-outline-success me-2" id="selectAllMenus">全选</button>
+                                                <button type="button" class="btn btn-sm btn-outline-danger" id="clearAllMenus">清空</button>
+                                            </div>
+                                        </div>
+                                        <div id="menuPermissions" class="permission-container">
+                                            <!-- 菜单权限将通过JavaScript动态加载 -->
+                                        </div>
+                                    </div>
+
+                                    <!-- 页面权限 -->
+                                    <div class="tab-pane fade" id="page-permissions" role="tabpanel">
+                                        <div class="d-flex justify-content-between align-items-center mb-3">
+                                            <h6 class="mb-0">页面访问权限</h6>
+                                            <div>
+                                                <button type="button" class="btn btn-sm btn-outline-success me-2" id="selectAllPages">全选</button>
+                                                <button type="button" class="btn btn-sm btn-outline-danger" id="clearAllPages">清空</button>
+                                            </div>
+                                        </div>
+                                        <div id="pagePermissions" class="permission-container">
+                                            <!-- 页面权限将通过JavaScript动态加载 -->
+                                        </div>
+                                    </div>
+
+                                    <!-- 操作权限 -->
+                                    <div class="tab-pane fade" id="operation-permissions" role="tabpanel">
+                                        <div class="d-flex justify-content-between align-items-center mb-3">
+                                            <h6 class="mb-0">功能操作权限</h6>
+                                            <div>
+                                                <button type="button" class="btn btn-sm btn-outline-success me-2" id="selectAllOperations">全选</button>
+                                                <button type="button" class="btn btn-sm btn-outline-danger" id="clearAllOperations">清空</button>
+                                            </div>
+                                        </div>
+                                        <div id="operationPermissions" class="permission-container">
+                                            <!-- 操作权限将通过JavaScript动态加载 -->
+                                        </div>
+                                    </div>
+
+                                    <!-- 仓库权限 -->
+                                    <div class="tab-pane fade" id="warehouse-permissions" role="tabpanel">
+                                        <div class="d-flex justify-content-between align-items-center mb-3">
+                                            <h6 class="mb-0">仓库操作权限</h6>
+                                            <div>
+                                                <button type="button" class="btn btn-sm btn-outline-success me-2" id="selectAllWarehouses">全选</button>
+                                                <button type="button" class="btn btn-sm btn-outline-danger" id="clearAllWarehouses">清空</button>
+                                            </div>
+                                        </div>
+                                        <div id="warehousePermissions" class="permission-container">
+                                            <!-- 仓库权限将通过JavaScript动态加载 -->
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-1"></i>取消
+                </button>
+                <button type="button" class="btn btn-primary" id="saveUserPermissions">
+                    <i class="fas fa-save me-1"></i>保存配置
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 创建用户模态框 -->
+<div class="modal fade" id="createUserModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-user-plus me-2"></i>新增用户
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="createUserForm">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="username" class="form-label">用户名 *</label>
+                                <input type="text" class="form-control" id="username" name="username" required autocomplete="username">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="real_name" class="form-label">真实姓名 *</label>
+                                <input type="text" class="form-control" id="real_name" name="real_name" required autocomplete="name">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="email" class="form-label">邮箱</label>
+                                <input type="email" class="form-control" id="email" name="email" autocomplete="email">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="phone" class="form-label">手机号</label>
+                                <input type="tel" class="form-control" id="phone" name="phone" autocomplete="tel">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="employee_id" class="form-label">员工编号</label>
+                                <input type="text" class="form-control" id="employee_id" name="employee_id" autocomplete="off">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="warehouse_id" class="form-label">所属仓库</label>
+                                <select class="form-select" id="warehouse_id" name="warehouse_id">
+                                    <option value="">请选择仓库</option>
+                                    {% for warehouse in warehouses %}
+                                    <option value="{{ warehouse.id }}">{{ warehouse.warehouse_name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="password" class="form-label">密码 *</label>
+                                <input type="password" class="form-control" id="password" name="password" required autocomplete="new-password">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="status" class="form-label">状态</label>
+                                <select class="form-select" id="status" name="status">
+                                    <option value="active">活跃</option>
+                                    <option value="inactive">禁用</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">角色分配</label>
+                        <div class="row">
+                            {% for role in roles %}
+                            <div class="col-md-4">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="role_ids" value="{{ role.id }}" id="role_{{ role.id }}">
+                                    <label class="form-check-label" for="role_{{ role.id }}">
+                                        {{ role.role_name }}
+                                        <small class="text-muted d-block">{{ role.description }}</small>
+                                    </label>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary" id="saveUserBtn">
+                    <i class="fas fa-save me-1"></i>保存
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 编辑用户模态框 -->
+<div class="modal fade" id="editUserModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-user-edit me-2"></i>编辑用户
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editUserForm">
+                    <input type="hidden" id="edit_user_id" name="user_id">
+                    <!-- 表单内容与创建用户相同，但密码字段为可选 -->
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="edit_username" class="form-label">用户名 *</label>
+                                <input type="text" class="form-control" id="edit_username" name="username" required autocomplete="username" {% if current_user.username != 'admin' %}readonly{% endif %}>
+                                {% if current_user.username != 'admin' %}
+                                <small class="text-muted">只有管理员才能修改用户名</small>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="edit_real_name" class="form-label">真实姓名 *</label>
+                                <input type="text" class="form-control" id="edit_real_name" name="real_name" required autocomplete="name">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="edit_email" class="form-label">邮箱</label>
+                                <input type="email" class="form-control" id="edit_email" name="email" autocomplete="email">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="edit_phone" class="form-label">手机号</label>
+                                <input type="tel" class="form-control" id="edit_phone" name="phone" autocomplete="tel">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="edit_employee_id" class="form-label">员工编号</label>
+                                <input type="text" class="form-control" id="edit_employee_id" name="employee_id" autocomplete="off">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="edit_warehouse_id" class="form-label">所属仓库</label>
+                                <select class="form-select" id="edit_warehouse_id" name="warehouse_id">
+                                    <option value="">请选择仓库</option>
+                                    {% for warehouse in warehouses %}
+                                    <option value="{{ warehouse.id }}">{{ warehouse.warehouse_name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="edit_password" class="form-label">新密码（留空则不修改）</label>
+                                <input type="password" class="form-control" id="edit_password" name="password" autocomplete="new-password">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="edit_status" class="form-label">状态</label>
+                                <select class="form-select" id="edit_status" name="status">
+                                    <option value="active">活跃</option>
+                                    <option value="inactive">禁用</option>
+                                    <option value="locked">锁定</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary" id="updateUserBtn">
+                    <i class="fas fa-save me-1"></i>更新
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// 强制设置表头样式
+function forceUserTableHeaderStyle() {
+    const tableHeaders = document.querySelectorAll('.table-dark th, .table thead th');
+    tableHeaders.forEach(th => {
+        th.style.setProperty('background-color', '#0d6efd', 'important');
+        th.style.setProperty('background', '#0d6efd', 'important');
+        th.style.setProperty('color', 'white', 'important');
+        th.style.setProperty('border-color', '#0d6efd', 'important');
+    });
+}
+
+// 用户管理JavaScript代码
+// 全局变量
+let currentPage = 1;
+let totalPages = 1;
+let searchTimeout = null;
+
+// 加载用户列表 - 移到全局作用域
+function loadUsers(page = 1) {
+        const search = $('#searchInput').val();
+        const warehouseId = $('#warehouseFilter').val();
+        const status = $('#statusFilter').val();
+
+        // 显示加载指示器
+        const tbody = $('#usersTable tbody');
+        tbody.html('<tr><td colspan="8" class="text-center"><i class="fas fa-spinner fa-spin me-2"></i>加载中...</td></tr>');
+
+        $.ajax({
+            url: '/admin/api/users',
+            method: 'GET',
+            data: {
+                page: page,
+                per_page: 20,
+                search: search,
+                warehouse_id: warehouseId,
+                status: status
+            },
+            success: function(response) {
+                renderUsersTable(response.users);
+                renderPagination(response.current_page, response.pages, response.total);
+                currentPage = response.current_page;
+                totalPages = response.pages;
+            },
+            error: function(xhr) {
+                console.error('加载用户列表失败:', xhr.responseText);
+                tbody.html('<tr><td colspan="8" class="text-center text-danger"><i class="fas fa-exclamation-triangle me-2"></i>加载失败，请重试</td></tr>');
+            }
+        });
+    }
+    
+    // 渲染用户表格
+    function renderUsersTable(users) {
+        const tbody = $('#usersTable tbody');
+
+        // 使用文档片段优化DOM操作
+        let htmlContent = '';
+
+        users.forEach(function(user) {
+            const statusBadge = getStatusBadge(user.status);
+            const warehouseName = user.warehouse_name || '未分配';
+            const userTypeBadge = getUserTypeBadge(user.user_type);
+
+            htmlContent += `
+                <tr>
+                    <td>${user.id}</td>
+                    <td>${user.username}</td>
+                    <td>${user.real_name}</td>
+                    <td>${user.email || '-'}</td>
+                    <td>${warehouseName}</td>
+                    <td>${userTypeBadge}</td>
+                    <td>${statusBadge}</td>
+                    <td>
+                        <button class="btn btn-sm btn-primary me-1 config-permissions-btn"
+                                data-user-id="${user.id}"
+                                data-user-name="${user.real_name || user.username}"
+                                title="配置权限">
+                            <i class="fas fa-user-cog"></i>
+                        </button>
+                        <button class="btn btn-sm btn-outline-primary me-1" onclick="editUser(${user.id})" title="编辑用户">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="btn btn-sm btn-outline-danger" onclick="deleteUser(${user.id}, '${user.username}')" title="删除用户">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+            `;
+        });
+
+        // 一次性更新DOM
+        tbody.html(htmlContent);
+
+        // 强制设置表头样式
+        setTimeout(forceUserTableHeaderStyle, 50);
+    }
+    
+    // 获取状态徽章
+    function getStatusBadge(status) {
+        const badges = {
+            'active': '<span class="badge bg-success">活跃</span>',
+            'inactive': '<span class="badge bg-secondary">禁用</span>',
+            'locked': '<span class="badge bg-danger">锁定</span>'
+        };
+        return badges[status] || '<span class="badge bg-secondary">未知</span>';
+    }
+
+    // 获取用户类型徽章
+    function getUserTypeBadge(userType) {
+        const badges = {
+            'admin': '<span class="badge bg-danger">超级管理员</span>',
+            'manager': '<span class="badge bg-warning">管理员</span>',
+            'operator': '<span class="badge bg-info">操作员</span>',
+            'customer': '<span class="badge bg-secondary">客户</span>'
+        };
+        return badges[userType] || '<span class="badge bg-light text-dark">未设置</span>';
+    }
+    
+    // 渲染分页
+    function renderPagination(current, total, totalCount) {
+        const pagination = $('#pagination');
+        pagination.empty();
+        
+        if (total <= 1) return;
+        
+        // 上一页
+        const prevDisabled = current === 1 ? 'disabled' : '';
+        pagination.append(`
+            <li class="page-item ${prevDisabled}">
+                <a class="page-link" href="#" onclick="loadUsers(${current - 1})">上一页</a>
+            </li>
+        `);
+        
+        // 页码
+        for (let i = Math.max(1, current - 2); i <= Math.min(total, current + 2); i++) {
+            const active = i === current ? 'active' : '';
+            pagination.append(`
+                <li class="page-item ${active}">
+                    <a class="page-link" href="#" onclick="loadUsers(${i})">${i}</a>
+                </li>
+            `);
+        }
+        
+        // 下一页
+        const nextDisabled = current === total ? 'disabled' : '';
+        pagination.append(`
+            <li class="page-item ${nextDisabled}">
+                <a class="page-link" href="#" onclick="loadUsers(${current + 1})">下一页</a>
+            </li>
+        `);
+    }
+
+$(document).ready(function() {
+    // 搜索和过滤事件 - 添加防抖
+    $('#searchInput').on('keyup', function() {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(function() {
+            loadUsers(1);
+        }, 300); // 300ms防抖
+    });
+
+    $('#warehouseFilter, #statusFilter').on('change', function() {
+        loadUsers(1);
+    });
+
+    // 重置过滤器
+    $('#resetFilter').click(function() {
+        $('#searchInput').val('');
+        $('#warehouseFilter').val('');
+        $('#statusFilter').val('');
+        loadUsers(1);
+    });
+
+    // 双击重置按钮显示紧急清理按钮
+    $('#resetFilter').dblclick(function() {
+        $('#emergencyCleanupBtn').show();
+        console.log('紧急清理按钮已显示');
+    });
+
+    // 三击重置按钮显示测试提示按钮
+    let clickCount = 0;
+    $('#resetFilter').click(function() {
+        clickCount++;
+        setTimeout(() => { clickCount = 0; }, 1000); // 1秒内重置计数
+        if (clickCount === 3) {
+            $('#testAlertBtn').show();
+            console.log('测试提示按钮已显示');
+        }
+    });
+
+    // 保存用户
+    $('#saveUserBtn').click(function() {
+        const formData = new FormData($('#createUserForm')[0]);
+        const data = Object.fromEntries(formData.entries());
+
+        // 收集选中的角色
+        const roleIds = [];
+        $('input[name="role_ids"]:checked').each(function() {
+            roleIds.push(parseInt($(this).val()));
+        });
+        data.role_ids = roleIds;
+
+        $.ajax({
+            url: '/admin/api/users',
+            method: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify(data),
+            success: function(response) {
+                alert('用户创建成功');
+                $('#createUserModal').modal('hide');
+                $('#createUserForm')[0].reset();
+                loadUsers(currentPage);
+            },
+            error: function(xhr) {
+                const error = JSON.parse(xhr.responseText);
+                alert('创建用户失败: ' + error.error);
+            }
+        });
+    });
+
+    // 更新用户
+    $('#updateUserBtn').click(function() {
+        const userId = $('#edit_user_id').val();
+        const formData = new FormData($('#editUserForm')[0]);
+        const data = Object.fromEntries(formData.entries());
+
+        // 如果密码为空，则不更新密码
+        if (!data.password) {
+            delete data.password;
+        }
+
+        $.ajax({
+            url: `/admin/api/users/${userId}`,
+            method: 'PUT',
+            contentType: 'application/json',
+            data: JSON.stringify(data),
+            success: function(response) {
+                const message = response.message || '用户更新成功';
+                alert(message);
+                $('#editUserModal').modal('hide');
+                loadUsers(currentPage);
+            },
+            error: function(xhr) {
+                let errorMessage = '更新用户失败';
+                try {
+                    const error = JSON.parse(xhr.responseText);
+                    errorMessage = error.message || error.error || errorMessage;
+                } catch (e) {
+                    errorMessage = xhr.statusText || errorMessage;
+                }
+                alert(errorMessage);
+            }
+        });
+    });
+
+    // 初始加载
+    loadUsers(1);
+
+    // 权限配置按钮点击事件
+    $(document).on('click', '.config-permissions-btn', function() {
+        const userId = $(this).data('user-id');
+        const userName = $(this).data('user-name');
+
+        // 设置模态框标题
+        $('#modalUserName').text(`${userName} - 权限配置`);
+
+        // 加载用户权限数据
+        loadUserPermissions(userId);
+
+        // 显示权限配置模态框
+        $('#userPermissionModal').modal('show');
+    });
+
+    // 保存权限配置 - 已由 user_permission_manager.js 处理，这里注释掉避免重复调用
+    // $('#saveUserPermissions').click(function() {
+    //     const userId = getCurrentUserId();
+    //     if (!userId) {
+    //         alert('用户ID获取失败');
+    //         return;
+    //     }
+
+    //     saveUserPermissions(userId);
+    // });
+
+    // 菜单权限全选/清空
+    $('#selectAllMenus').click(function() {
+        $('.menu-permission').prop('checked', true);
+    });
+
+    $('#clearAllMenus').click(function() {
+        $('.menu-permission').prop('checked', false);
+    });
+});
+
+// 编辑用户
+function editUser(userId) {
+    // 获取用户详情
+    $.ajax({
+        url: `/admin/api/users/${userId}`,
+        method: 'GET',
+        success: function(response) {
+            // 检查响应格式
+            const user = response.success ? response.data : response;
+
+            // 填充编辑表单
+            $('#edit_user_id').val(user.id);
+            $('#edit_username').val(user.username);
+            $('#edit_real_name').val(user.real_name);
+            $('#edit_email').val(user.email || '');
+            $('#edit_phone').val(user.phone || '');
+            $('#edit_employee_id').val(user.employee_id || '');
+            $('#edit_warehouse_id').val(user.warehouse_id || '');
+            $('#edit_status').val(user.status);
+
+            // 显示编辑模态框
+            $('#editUserModal').modal('show');
+        },
+        error: function(xhr) {
+            let errorMessage = '获取用户信息失败';
+            try {
+                const error = JSON.parse(xhr.responseText);
+                errorMessage = error.message || error.error || errorMessage;
+            } catch (e) {
+                errorMessage = xhr.statusText || errorMessage;
+            }
+            alert(errorMessage);
+        }
+    });
+}
+
+// 删除用户
+function deleteUser(userId, username) {
+    if (confirm(`确定要删除用户 "${username}" 吗？此操作不可恢复。`)) {
+        $.ajax({
+            url: `/admin/api/users/${userId}`,
+            method: 'DELETE',
+            success: function(response) {
+                alert('用户删除成功');
+                loadUsers(currentPage);
+            },
+            error: function(xhr) {
+                const error = JSON.parse(xhr.responseText);
+                alert('删除用户失败: ' + error.error);
+            }
+        });
+    }
+}
+</script>
+
+<!-- 引入用户权限管理器 -->
+<script src="{{ url_for('static', filename='js/user_permission_manager.js') }}"></script>
+
+<script>
+// 初始化权限管理器
+let permissionManager;
+
+$(document).ready(function() {
+    // 强制设置表头样式
+    setTimeout(forceUserTableHeaderStyle, 100);
+
+    // 创建权限管理器实例
+    permissionManager = new UserPermissionManager();
+    console.log('权限管理器已初始化');
+
+    // 添加紧急清理功能（开发调试用）
+    window.emergencyCleanup = function() {
+        console.log('执行紧急清理');
+
+        // 移除所有模态框相关的类
+        document.body.classList.remove('modal-open');
+        document.body.style.overflow = '';
+        document.body.style.paddingRight = '';
+
+        // 移除所有背景遮罩
+        const backdrops = document.querySelectorAll('.modal-backdrop');
+        backdrops.forEach(backdrop => {
+            backdrop.remove();
+        });
+
+        // 重置所有模态框状态
+        const modals = document.querySelectorAll('.modal');
+        modals.forEach(modal => {
+            modal.classList.remove('show');
+            modal.style.display = 'none';
+            modal.setAttribute('aria-hidden', 'true');
+            modal.removeAttribute('aria-modal');
+        });
+
+        console.log('紧急清理完成');
+        alert('页面状态已清理，如果问题仍然存在请刷新页面');
+    };
+
+    // 测试提示功能
+    window.testAlert = function() {
+        console.log('测试提示功能');
+        if (permissionManager && typeof permissionManager.showAlert === 'function') {
+            permissionManager.showAlert('这是一个测试提示！', 'success');
+            setTimeout(() => {
+                permissionManager.showAlert('这是警告提示！', 'warning');
+            }, 2000);
+            setTimeout(() => {
+                permissionManager.showAlert('这是错误提示！', 'danger');
+            }, 4000);
+        } else {
+            alert('权限管理器未初始化或showAlert方法不存在');
+        }
+    };
+});
+
+// 权限配置相关函数
+// 加载用户权限数据
+function loadUserPermissions(userId) {
+    // 存储当前用户ID
+    $('#userPermissionModal').data('user-id', userId);
+
+    // 加载菜单权限
+    loadMenuPermissions(userId);
+}
+
+// 获取当前用户ID
+function getCurrentUserId() {
+    return $('#userPermissionModal').data('user-id');
+}
+
+// 加载菜单权限
+function loadMenuPermissions(userId) {
+    $.ajax({
+        url: `/admin/api/users/${userId}/menu-permissions`,
+        method: 'GET',
+        success: function(response) {
+            if (response.success) {
+                renderMenuPermissions(response.permissions);
+            } else {
+                console.error('加载菜单权限失败:', response.error);
+                // 如果API不存在，使用模拟数据
+                loadMockMenuPermissions();
+            }
+        },
+        error: function(xhr) {
+            console.error('加载菜单权限失败:', xhr.responseText);
+            // 如果API不存在，使用模拟数据
+            loadMockMenuPermissions();
+        }
+    });
+}
+
+// 加载模拟菜单权限数据
+function loadMockMenuPermissions() {
+    const mockPermissions = [
+        { menu_code: 'home', menu_name: '首页', menu_icon: 'home', granted: true },
+        { menu_code: 'inbound_mgmt', menu_name: '入库管理', menu_icon: 'truck-loading', granted: true },
+        { menu_code: 'outbound_mgmt', menu_name: '出库管理', menu_icon: 'truck', granted: true },
+        { menu_code: 'print_mgmt', menu_name: '单据打印', menu_icon: 'print', granted: true },
+        { menu_code: 'inventory_mgmt', menu_name: '库存管理', menu_icon: 'boxes', granted: true },
+        { menu_code: 'statistics', menu_name: '统计报表', menu_icon: 'chart-line', granted: false },
+        { menu_code: 'user_mgmt', menu_name: '用户管理', menu_icon: 'users-cog', granted: false },
+        { menu_code: 'system_settings', menu_name: '系统设置', menu_icon: 'cog', granted: false }
+    ];
+
+    renderMenuPermissions(mockPermissions);
+}
+
+// 渲染菜单权限
+function renderMenuPermissions(permissions) {
+    const container = $('#menuPermissions');
+    let html = '';
+
+    permissions.forEach(function(permission) {
+        const checked = permission.granted ? 'checked' : '';
+        html += `
+            <div class="form-check mb-2">
+                <input class="form-check-input menu-permission"
+                       type="checkbox"
+                       value="${permission.menu_code}"
+                       id="menu_${permission.menu_code}"
+                       ${checked}>
+                <label class="form-check-label" for="menu_${permission.menu_code}">
+                    <i class="fas fa-${permission.menu_icon || 'circle'} me-2"></i>
+                    ${permission.menu_name}
+                </label>
+            </div>
+        `;
+    });
+
+    container.html(html);
+}
+
+// 保存用户权限 - 已由 user_permission_manager.js 处理，这里删除避免冲突
+// function saveUserPermissions(userId) {
+//     // 此函数已被 user_permission_manager.js 中的新权限管理器替代
+//     console.warn('旧的 saveUserPermissions 函数被调用，请使用新的权限管理器');
+// }
+</script>
+
+{% block extra_css %}
+<style>
+/* 确保表头显示 */
+#usersTable thead {
+    display: table-header-group !important;
+}
+
+#usersTable thead th {
+    display: table-cell !important;
+    background-color: #212529 !important;
+    color: white !important;
+    border-color: #454d55 !important;
+    padding: 0.75rem !important;
+    vertical-align: bottom !important;
+    border-bottom: 2px solid #dee2e6 !important;
+}
+
+/* 权限配置样式 */
+.permission-container {
+    max-height: 400px;
+    overflow-y: auto;
+    border: 1px solid #dee2e6;
+    border-radius: 0.375rem;
+    padding: 1rem;
+    background-color: #f8f9fa;
+}
+
+.menu-item {
+    margin-bottom: 0.5rem;
+}
+
+.menu-item.level-1 {
+    font-weight: bold;
+    border-left: 3px solid #007bff;
+    padding-left: 0.5rem;
+    background-color: #e3f2fd;
+    border-radius: 0.25rem;
+}
+
+.menu-item.level-2 {
+    margin-left: 1.5rem;
+    border-left: 2px solid #6c757d;
+    padding-left: 0.5rem;
+    background-color: #f5f5f5;
+    border-radius: 0.25rem;
+}
+
+.permission-item {
+    padding: 0.5rem;
+    border: 1px solid #e9ecef;
+    border-radius: 0.25rem;
+    margin-bottom: 0.5rem;
+    background-color: white;
+}
+
+.permission-item:hover {
+    background-color: #f8f9fa;
+}
+
+.permission-group {
+    margin-bottom: 1rem;
+}
+
+.permission-group-title {
+    font-weight: bold;
+    color: #495057;
+    border-bottom: 1px solid #dee2e6;
+    padding-bottom: 0.5rem;
+    margin-bottom: 0.75rem;
+    font-size: 1.1rem;
+}
+
+.permission-subgroup {
+    margin-bottom: 1rem;
+    margin-left: 1rem;
+}
+
+.permission-subgroup-title {
+    font-weight: 600;
+    color: #6c757d;
+    border-bottom: 1px solid #e9ecef;
+    padding-bottom: 0.3rem;
+    margin-bottom: 0.5rem;
+    font-size: 0.95rem;
+}
+
+.warehouse-permission-matrix {
+    display: grid;
+    gap: 1rem;
+}
+
+.warehouse-item {
+    border: 1px solid #dee2e6;
+    border-radius: 0.375rem;
+    padding: 1rem;
+    background-color: white;
+}
+
+.warehouse-item h6 {
+    color: #495057;
+    margin-bottom: 0.75rem;
+    border-bottom: 1px solid #e9ecef;
+    padding-bottom: 0.5rem;
+}
+
+.form-check-input:checked {
+    background-color: #198754;
+    border-color: #198754;
+}
+
+.nav-tabs .nav-link {
+    color: #495057;
+}
+
+.nav-tabs .nav-link.active {
+    color: #007bff;
+    font-weight: 500;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+    .modal-xl {
+        max-width: 95%;
+    }
+
+    .menu-item.level-2 {
+        margin-left: 1rem;
+    }
+}
+</style>
+{% endblock %}
+
+{% endblock %}

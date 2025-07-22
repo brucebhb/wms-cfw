@@ -1,0 +1,468 @@
+{% extends "base.html" %}
+
+{% block title %}后端仓出库记录打印{% endblock %}
+
+{% block styles %}
+{{ super() }}
+<!-- 使用jsuites日期选择器 -->
+<link rel="stylesheet" href="{{ url_for('static', filename='vendor/css/jsuites.css') }}">
+<style>
+    /* 页面整体样式 */
+    body {
+        background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    .container-fluid {
+        background: rgba(255, 255, 255, 0.95);
+        border-radius: 15px;
+        padding: 30px;
+        margin: 20px auto;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        backdrop-filter: blur(10px);
+    }
+
+    /* 页面标题美化 */
+    .page-title {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 20px 30px;
+        border-radius: 12px;
+        margin-bottom: 25px;
+        box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+    }
+
+    .page-title h1 {
+        margin: 0;
+        font-size: 1.8rem;
+        font-weight: 600;
+        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    }
+
+    .search-box {
+        margin-bottom: 25px;
+        background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+        padding: 25px;
+        border-radius: 15px;
+        border: 1px solid #e3e6f0;
+        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
+        width: 100%;
+        overflow: hidden;
+    }
+    .search-form-row {
+        display: flex;
+        align-items: center;
+        margin-bottom: 15px;
+        flex-wrap: wrap;
+        width: 100%;
+    }
+    .search-label {
+        min-width: 80px;
+        margin-right: 10px;
+        color: #333;
+        font-weight: normal;
+        text-align: right;
+        flex-shrink: 0;
+    }
+    .search-control {
+        margin-right: 15px;
+        flex-shrink: 0;
+    }
+    .search-buttons {
+        margin-left: auto;
+        display: flex;
+        flex-shrink: 0;
+    }
+    .search-buttons .btn {
+        margin-left: 10px;
+        min-width: 90px;
+        height: 38px;
+    }
+    /* 商务风格按钮样式 */
+    .btn-primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+        border: none !important;
+        color: white !important;
+        font-weight: 600 !important;
+        padding: 10px 20px !important;
+        border-radius: 8px !important;
+        transition: all 0.3s ease !important;
+        box-shadow: 0 3px 10px rgba(102, 126, 234, 0.3) !important;
+        text-transform: uppercase !important;
+        letter-spacing: 0.5px !important;
+    }
+    .btn-primary:hover {
+        background: linear-gradient(135deg, #764ba2 0%, #667eea 100%) !important;
+        transform: translateY(-2px) !important;
+        box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4) !important;
+    }
+
+    .btn-outline-secondary {
+        background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%) !important;
+        border: none !important;
+        color: white !important;
+        font-weight: 600 !important;
+        padding: 10px 20px !important;
+        border-radius: 8px !important;
+        transition: all 0.3s ease !important;
+        box-shadow: 0 3px 10px rgba(108, 117, 125, 0.3) !important;
+        text-transform: uppercase !important;
+        letter-spacing: 0.5px !important;
+    }
+    .btn-outline-secondary:hover {
+        background: linear-gradient(135deg, #5a6268 0%, #495057 100%) !important;
+        transform: translateY(-2px) !important;
+        box-shadow: 0 5px 15px rgba(108, 117, 125, 0.4) !important;
+    }
+
+    .btn-success {
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%) !important;
+        border: none !important;
+        color: white !important;
+        font-weight: 600 !important;
+        padding: 10px 20px !important;
+        border-radius: 8px !important;
+        transition: all 0.3s ease !important;
+        box-shadow: 0 3px 10px rgba(40, 167, 69, 0.3) !important;
+        text-transform: uppercase !important;
+        letter-spacing: 0.5px !important;
+        min-width: 110px !important;
+        white-space: nowrap !important;
+    }
+    .btn-success:hover {
+        background: linear-gradient(135deg, #20c997 0%, #17a2b8 100%) !important;
+        transform: translateY(-2px) !important;
+        box-shadow: 0 5px 15px rgba(40, 167, 69, 0.4) !important;
+    }
+
+    /* 现代商务风格表格样式 */
+    .table-responsive {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
+        overflow: hidden;
+        margin-bottom: 25px;
+    }
+
+    .table {
+        font-size: 13px;
+        width: 100%;
+        max-width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+        table-layout: fixed;
+        margin-bottom: 0;
+        background: white;
+    }
+
+    .table th, .table td {
+        padding: 12px 10px;
+        vertical-align: middle;
+        border: none;
+        border-bottom: 1px solid #f1f3f4;
+        text-align: center;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+        hyphens: auto;
+    }
+
+    .table th {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        font-weight: 600;
+        font-size: 13px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+        border-bottom: 2px solid #5a67d8;
+    }
+
+    .table tbody tr {
+        transition: all 0.2s ease;
+    }
+
+    .table tbody tr:nth-child(even) {
+        background-color: #f8f9fc;
+    }
+
+    .table tbody tr:nth-child(odd) {
+        background-color: #ffffff;
+    }
+
+    .table tbody tr:hover {
+        background: linear-gradient(135deg, #f0f8ff 0%, #e6f3ff 100%);
+        transform: translateY(-1px);
+        box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    /* 数据列特殊样式 */
+    .table td:nth-child(7),  /* 总板数 */
+    .table td:nth-child(8),  /* 总件数 */
+    .table td:nth-child(9),  /* 总重量 */
+    .table td:nth-child(10) { /* 总体积 */
+        font-weight: 600;
+        color: #667eea;
+        background-color: rgba(102, 126, 234, 0.05);
+    }
+
+    .table td:nth-child(2) { /* 批次号 */
+        font-weight: 600;
+        color: #764ba2;
+        font-family: 'Courier New', monospace;
+    }
+
+    /* 列宽设置 */
+    .col-checkbox { width: 60px; }
+    .col-batch { width: 140px; }
+    .col-time { width: 110px; }
+    .col-destination { width: 120px; }
+    .col-driver { width: 100px; }
+    .col-plate { width: 120px; }
+    .col-count { width: 90px; }
+    .col-weight { width: 100px; }
+    .col-volume { width: 100px; }
+    .col-records { width: 90px; }
+
+    /* 打印样式 */
+    @media print {
+        .search-box, .pagination, .btn, .no-print {
+            display: none !important;
+        }
+        .table {
+            font-size: 10px;
+        }
+        .table th, .table td {
+            padding: 4px 2px;
+        }
+    }
+
+    /* 现代分页样式 */
+    .pagination {
+        justify-content: center;
+        margin-top: 30px;
+    }
+
+    .pagination .page-link {
+        color: #667eea;
+        border: none;
+        background: white;
+        margin: 0 3px;
+        border-radius: 8px;
+        padding: 10px 15px;
+        font-weight: 500;
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    }
+
+    .pagination .page-item.active .page-link {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        box-shadow: 0 4px 10px rgba(102, 126, 234, 0.3);
+        transform: translateY(-1px);
+    }
+
+    .pagination .page-link:hover {
+        color: white;
+        background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+    }
+
+    /* 表单控件美化 */
+    .form-control, .form-select {
+        border: 2px solid #e9ecef;
+        border-radius: 8px;
+        padding: 8px 12px;
+        transition: all 0.3s ease;
+        font-size: 13px;
+    }
+
+    .form-control:focus, .form-select:focus {
+        border-color: #667eea;
+        box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+        outline: none;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- 美化的页面标题 -->
+    <div class="page-title">
+        <div class="d-flex align-items-center justify-content-between">
+            <div>
+                <h1 class="mb-0">
+                    <i class="fas fa-print me-3"></i>后端仓出库单打印
+                </h1>
+                <p class="mb-0 mt-2 opacity-75">
+                    <i class="fas fa-info-circle me-1"></i>
+                    凭祥北投仓出库记录打印管理
+                </p>
+            </div>
+            <div>
+                <span class="badge bg-light text-primary fs-6 px-3 py-2">
+                    <i class="fas fa-warehouse me-1"></i>Backend Warehouse
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <!-- 搜索表单 -->
+    <div class="search-box no-print">
+        <form method="GET" action="{{ url_for('main.backend_outbound_print_regular') }}">
+            <div class="search-form-row">
+                <label class="search-label">时间范围:</label>
+                <input type="date" class="form-control search-control" id="date_start" name="date_start"
+                       style="width: 150px;"
+                       value="{{ search_params.date_start if search_params is defined and search_params.date_start else '' }}">
+                <span style="margin: 0 10px;">至</span>
+                <input type="date" class="form-control search-control" id="date_end" name="date_end"
+                       style="width: 150px;"
+                       value="{{ search_params.date_end if search_params is defined and search_params.date_end else '' }}">
+
+                <label class="search-label" style="margin-left: 20px;">搜索字段:</label>
+                <select class="form-select search-control" id="search_field" name="search_field" style="width: 120px;">
+                    <option value="customer_name" {{ 'selected' if search_params is defined and search_params.search_field == 'customer_name' else '' }}>客户名称</option>
+                    <option value="identification_code" {{ 'selected' if search_params is defined and search_params.search_field == 'identification_code' else '' }}>识别编码</option>
+                    <option value="batch_no" {{ 'selected' if search_params is defined and search_params.search_field == 'batch_no' else '' }}>批次号</option>
+                    <option value="destination" {{ 'selected' if search_params is defined and search_params.search_field == 'destination' else '' }}>目的地</option>
+                    <option value="driver_name" {{ 'selected' if search_params is defined and search_params.search_field == 'driver_name' else '' }}>司机姓名</option>
+                    <option value="delivery_plate_number" {{ 'selected' if search_params is defined and search_params.search_field == 'delivery_plate_number' else '' }}>车牌号</option>
+                </select>
+
+                <select class="form-select search-control" id="search_type" name="search_type" style="width: 100px;">
+                    <option value="contains" {{ 'selected' if search_params is defined and search_params.search_type == 'contains' else '' }}>包含</option>
+                    <option value="exact" {{ 'selected' if search_params is defined and search_params.search_type == 'exact' else '' }}>完全匹配</option>
+                    <option value="startswith" {{ 'selected' if search_params is defined and search_params.search_type == 'startswith' else '' }}>开头是</option>
+                    <option value="endswith" {{ 'selected' if search_params is defined and search_params.search_type == 'endswith' else '' }}>结尾是</option>
+                </select>
+
+                <input type="text" class="form-control search-control" id="search_value" name="search_value"
+                       placeholder="请输入搜索内容" style="width: 260px; margin-left: 15px;"
+                       value="{{ search_params.search_value if search_params is defined and search_params.search_value else '' }}">
+
+                <div class="search-buttons">
+                    <button type="submit" id="search_btn" class="btn btn-primary">
+                        <i class="fas fa-search me-1"></i> 搜索
+                    </button>
+                    <button type="button" id="reset_btn" class="btn btn-outline-secondary ms-2">
+                        <i class="fas fa-redo me-1"></i> 刷新
+                    </button>
+                    <button type="button" id="print_btn" class="btn btn-success ms-2" onclick="window.print()">
+                        <i class="fas fa-print me-2"></i>打印页面
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- 批次统计表格 -->
+    <div class="table-responsive">
+        <table class="table table-bordered table-hover">
+            <thead>
+                <tr>
+                    <th class="col-checkbox no-print">
+                        <input type="checkbox" id="select_all" title="全选/取消全选">
+                    </th>
+                    <th class="col-batch">批次号</th>
+                    <th class="col-time">出库时间</th>
+                    <th class="col-destination">目的地</th>
+                    <th class="col-driver">司机</th>
+                    <th class="col-plate">车牌号</th>
+                    <th class="col-count">总板数</th>
+                    <th class="col-count">总件数</th>
+                    <th class="col-weight">总重量(kg)</th>
+                    <th class="col-volume">总体积(m³)</th>
+                    <th class="col-records">记录数</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if batch_groups and batch_groups.items %}
+                    {% for batch in batch_groups.items %}
+                    <tr>
+                        <td class="no-print">
+                            <input type="checkbox" name="batch_checkbox" value="{{ batch.batch_no }}" 
+                                   data-records="{{ batch.records|length }}">
+                        </td>
+                        <td>{{ batch.batch_no }}</td>
+                        <td>{{ batch.outbound_time.strftime('%m-%d') if batch.outbound_time else '' }}</td>
+                        <td>{{ batch.destination or '' }}</td>
+                        <td>{{ batch.driver_name or '' }}</td>
+                        <td>{{ batch.delivery_plate_number or '' }}</td>
+                        <td>{{ batch.total_pallet if batch.total_pallet else '' }}</td>
+                        <td>{{ batch.total_package if batch.total_package else '' }}</td>
+                        <td>{{ "%.1f"|format(batch.total_weight) if batch.total_weight else '' }}</td>
+                        <td>{{ "%.1f"|format(batch.total_volume) if batch.total_volume else '' }}</td>
+                        <td>{{ batch.records|length }}</td>
+                    </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr>
+                        <td colspan="11" class="text-center text-muted">暂无数据</td>
+                    </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- 分页 -->
+    {% if batch_groups and batch_groups.pages > 1 %}
+    <nav aria-label="分页导航" class="no-print">
+        <ul class="pagination">
+            {% if batch_groups.has_prev %}
+                <li class="page-item">
+                    <a class="page-link" href="{{ url_for('main.backend_outbound_print_regular', page=batch_groups.prev_num, **search_params) }}">上一页</a>
+                </li>
+            {% endif %}
+            
+            {% for page_num in range(1, batch_groups.pages + 1) %}
+                {% if page_num == batch_groups.page %}
+                    <li class="page-item active">
+                        <span class="page-link">{{ page_num }}</span>
+                    </li>
+                {% else %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('main.backend_outbound_print_regular', page=page_num, **search_params) }}">{{ page_num }}</a>
+                    </li>
+                {% endif %}
+            {% endfor %}
+            
+            {% if batch_groups.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="{{ url_for('main.backend_outbound_print_regular', page=batch_groups.next_num, **search_params) }}">下一页</a>
+                </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script src="{{ url_for('static', filename='vendor/js/jsuites.js') }}"></script>
+<script>
+$(document).ready(function() {
+    // 日期选择器
+    jSuites.calendar(document.getElementById('date_start'), {
+        format: 'YYYY-MM-DD'
+    });
+    jSuites.calendar(document.getElementById('date_end'), {
+        format: 'YYYY-MM-DD'
+    });
+
+    // 全选/取消全选
+    $('#select_all').change(function() {
+        $('input[name="batch_checkbox"]').prop('checked', this.checked);
+    });
+
+    // 刷新按钮
+    $('#reset_btn').click(function() {
+        window.location.href = "{{ url_for('main.backend_outbound_print_regular') }}";
+    });
+});
+</script>
+{% endblock %}

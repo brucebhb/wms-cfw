@@ -1,0 +1,194 @@
+/**
+ * 后端仓入库操作页面优化样式
+ * 专门优化前端仓发货批次列表的显示效果
+ */
+
+/* 前端仓发货批次列表（待接收）样式优化 */
+.pending-batches-table {
+    font-size: 14px !important; /* 增大字体 */
+    line-height: 1.6 !important; /* 增加行高 */
+}
+
+.pending-batches-table th {
+    font-size: 14px !important;
+    font-weight: 600 !important;
+    padding: 12px 8px !important; /* 增加内边距 */
+    background-color: #f8f9fa !important;
+    border-bottom: 2px solid #dee2e6 !important;
+}
+
+.pending-batches-table td {
+    font-size: 14px !important;
+    padding: 12px 8px !important; /* 增加内边距 */
+    vertical-align: middle !important;
+    line-height: 1.6 !important;
+}
+
+/* 特别优化识别编码列 */
+.pending-batches-table .identification-code {
+    font-size: 15px !important; /* 识别编码字体更大 */
+    font-weight: 500 !important;
+    word-wrap: break-word !important;
+    white-space: normal !important;
+}
+
+/* 优化批次号列 */
+.pending-batches-table .batch-number {
+    font-size: 14px !important;
+    font-weight: 500 !important;
+}
+
+/* 优化数量相关列 */
+.pending-batches-table .quantity-column {
+    font-size: 14px !important;
+    text-align: center !important;
+    font-weight: 500 !important;
+}
+
+/* 优化操作按钮列 */
+.pending-batches-table .action-buttons {
+    padding: 8px 4px !important;
+}
+
+.pending-batches-table .action-buttons .btn {
+    font-size: 12px !important;
+    padding: 4px 8px !important;
+    margin: 1px !important;
+}
+
+/* 表格整体优化 */
+.pending-batches-table {
+    border-collapse: separate !important;
+    border-spacing: 0 !important;
+    border: 1px solid #dee2e6 !important;
+    border-radius: 6px !important;
+    overflow: hidden !important;
+}
+
+.pending-batches-table tbody tr {
+    transition: background-color 0.2s ease !important;
+}
+
+.pending-batches-table tbody tr:hover {
+    background-color: #f8f9fa !important;
+}
+
+.pending-batches-table tbody tr:nth-child(even) {
+    background-color: #fdfdfd !important;
+}
+
+.pending-batches-table tbody tr:nth-child(odd) {
+    background-color: #ffffff !important;
+}
+
+/* 响应式优化 */
+@media (max-width: 1200px) {
+    .pending-batches-table {
+        font-size: 13px !important;
+    }
+    
+    .pending-batches-table th,
+    .pending-batches-table td {
+        padding: 10px 6px !important;
+    }
+}
+
+@media (max-width: 768px) {
+    .pending-batches-table {
+        font-size: 12px !important;
+    }
+    
+    .pending-batches-table th,
+    .pending-batches-table td {
+        padding: 8px 4px !important;
+    }
+}
+
+/* 如果表格有特定的ID或类名，可以更精确地定位 */
+#pendingBatchesTable {
+    font-size: 14px !important;
+    line-height: 1.6 !important;
+}
+
+#pendingBatchesTable th {
+    font-size: 14px !important;
+    padding: 12px 8px !important;
+    font-weight: 600 !important;
+}
+
+#pendingBatchesTable td {
+    font-size: 14px !important;
+    padding: 12px 8px !important;
+    line-height: 1.6 !important;
+}
+
+/* 针对可能的表格容器 */
+.table-responsive .table {
+    font-size: 14px !important;
+    line-height: 1.6 !important;
+}
+
+.table-responsive .table th,
+.table-responsive .table td {
+    padding: 12px 8px !important;
+    font-size: 14px !important;
+}
+
+/* 确保在后端仓页面生效 */
+.backend-inbound-page .table {
+    font-size: 14px !important;
+    line-height: 1.6 !important;
+}
+
+.backend-inbound-page .table th {
+    font-size: 14px !important;
+    padding: 12px 8px !important;
+    font-weight: 600 !important;
+}
+
+.backend-inbound-page .table td {
+    font-size: 14px !important;
+    padding: 12px 8px !important;
+    line-height: 1.6 !important;
+}
+
+/* 通用表格优化 - 适用于所有包含"待接收"的表格 */
+.card-body:has(.table) .table {
+    font-size: 14px !important;
+    line-height: 1.6 !important;
+}
+
+.card-body .table th {
+    font-size: 14px !important;
+    padding: 12px 8px !important;
+    font-weight: 600 !important;
+    background-color: #f8f9fa !important;
+}
+
+.card-body .table td {
+    font-size: 14px !important;
+    padding: 12px 8px !important;
+    line-height: 1.6 !important;
+    vertical-align: middle !important;
+}
+
+/* 特别针对包含"前端仓发货批次"的表格 */
+.table-container .table,
+.batch-list-table {
+    font-size: 14px !important;
+    line-height: 1.6 !important;
+}
+
+.table-container .table th,
+.batch-list-table th {
+    font-size: 14px !important;
+    padding: 12px 8px !important;
+    font-weight: 600 !important;
+}
+
+.table-container .table td,
+.batch-list-table td {
+    font-size: 14px !important;
+    padding: 12px 8px !important;
+    line-height: 1.6 !important;
+}

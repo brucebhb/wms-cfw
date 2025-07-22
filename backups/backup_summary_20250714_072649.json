@@ -1,0 +1,19 @@
+{
+  "backup_time": "20250714_072649",
+  "backup_files": {
+    "users": "backups\\users_backup_20250714_072649.json",
+    "receivers": "backups\\receivers_backup_20250714_072649.json",
+    "warehouses": "backups\\warehouses_backup_20250714_072649.json",
+    "permissions": "backups\\permissions_backup_20250714_072649.json"
+  },
+  "record_counts": {
+    "users": 7,
+    "receivers": 6,
+    "warehouses": 5,
+    "total_permissions": 228,
+    "menu_permissions": 33,
+    "page_permissions": 60,
+    "operation_permissions": 57,
+    "warehouse_permissions": 78
+  }
+}

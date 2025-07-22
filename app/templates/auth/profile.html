@@ -1,0 +1,363 @@
+{% extends "base.html" %}
+
+{% block title %}个人资料{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- 页面标题 -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-primary">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="card-title mb-0">
+                        <i class="fas fa-user me-2"></i>个人资料
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <p class="card-text mb-0">
+                        <i class="fas fa-info-circle me-1"></i>
+                        查看和管理您的个人账户信息
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- 基本信息 -->
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title">
+                        <i class="fas fa-id-card me-2"></i>基本信息
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-sm-3">
+                            <strong>用户名：</strong>
+                        </div>
+                        <div class="col-sm-9">
+                            {{ user.username }}
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-sm-3">
+                            <strong>真实姓名：</strong>
+                        </div>
+                        <div class="col-sm-9">
+                            {{ user.real_name or '未设置' }}
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-sm-3">
+                            <strong>员工编号：</strong>
+                        </div>
+                        <div class="col-sm-9">
+                            {{ user.employee_id or '未设置' }}
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-sm-3">
+                            <strong>邮箱：</strong>
+                        </div>
+                        <div class="col-sm-9">
+                            {{ user.email or '未设置' }}
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-sm-3">
+                            <strong>手机号：</strong>
+                        </div>
+                        <div class="col-sm-9">
+                            {{ user.phone or '未设置' }}
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-sm-3">
+                            <strong>所属仓库：</strong>
+                        </div>
+                        <div class="col-sm-9">
+                            {% if user.warehouse %}
+                                <span class="badge bg-{% if user.warehouse.warehouse_type == 'frontend' %}success{% else %}danger{% endif %}">
+                                    {{ user.warehouse.warehouse_name }}
+                                    ({{ '前端仓' if user.warehouse.warehouse_type == 'frontend' else '后端仓' }})
+                                </span>
+                            {% else %}
+                                <span class="text-muted">未分配仓库</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-sm-3">
+                            <strong>账号状态：</strong>
+                        </div>
+                        <div class="col-sm-9">
+                            {% if user.status == 'active' %}
+                                <span class="badge bg-success">正常</span>
+                            {% elif user.status == 'inactive' %}
+                                <span class="badge bg-secondary">未激活</span>
+                            {% elif user.status == 'locked' %}
+                                <span class="badge bg-danger">已锁定</span>
+                            {% else %}
+                                <span class="badge bg-warning">{{ user.status }}</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-sm-3">
+                            <strong>最后登录：</strong>
+                        </div>
+                        <div class="col-sm-9">
+                            {{ user.last_login_at.strftime('%Y-%m-%d %H:%M:%S') if user.last_login_at else '从未登录' }}
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-sm-3">
+                            <strong>创建时间：</strong>
+                        </div>
+                        <div class="col-sm-9">
+                            {{ user.created_at.strftime('%Y-%m-%d %H:%M:%S') if user.created_at else '未知' }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 操作面板 -->
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title">
+                        <i class="fas fa-cogs me-2"></i>账户操作
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <button type="button" class="btn btn-primary" onclick="changePassword()">
+                            <i class="fas fa-key me-1"></i>修改密码
+                        </button>
+                        
+                        <button type="button" class="btn btn-info" onclick="editProfile()">
+                            <i class="fas fa-edit me-1"></i>编辑资料
+                        </button>
+                        
+                        <hr>
+                        
+                        <a href="{{ url_for('main.index') }}" class="btn btn-success">
+                            <i class="fas fa-home me-1"></i>返回首页
+                        </a>
+                        
+                        <a href="{{ url_for('auth.logout') }}" class="btn btn-outline-danger">
+                            <i class="fas fa-sign-out-alt me-1"></i>退出登录
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 权限信息 -->
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h5 class="card-title">
+                        <i class="fas fa-shield-alt me-2"></i>权限信息
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if user.user_roles %}
+                        <div class="mb-3">
+                            <strong>当前角色：</strong>
+                            <div class="mt-2">
+                                {% for user_role in user.user_roles %}
+                                    {% if user_role.status == 'active' %}
+                                        <span class="badge bg-primary me-1 mb-1">
+                                            {{ user_role.role.role_name }}
+                                        </span>
+                                    {% endif %}
+                                {% endfor %}
+                            </div>
+                        </div>
+                    {% else %}
+                        <p class="text-muted">暂无分配角色</p>
+                    {% endif %}
+                    
+                    <div class="mt-3">
+                        <small class="text-muted">
+                            <i class="fas fa-info-circle me-1"></i>
+                            如需修改权限，请联系系统管理员
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 修改密码模态框 -->
+<div class="modal fade" id="changePasswordModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">修改密码</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="changePasswordForm">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                    <div class="mb-3">
+                        <label for="currentPassword" class="form-label">当前密码</label>
+                        <input type="password" class="form-control" id="currentPassword" autocomplete="current-password" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="newPassword" class="form-label">新密码</label>
+                        <input type="password" class="form-control" id="newPassword" autocomplete="new-password" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="confirmPassword" class="form-label">确认新密码</label>
+                        <input type="password" class="form-control" id="confirmPassword" autocomplete="new-password" required>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary" onclick="submitPasswordChange()">确认修改</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 编辑资料模态框 -->
+<div class="modal fade" id="editProfileModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">编辑个人资料</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editProfileForm">
+                    <div class="mb-3">
+                        <label for="realName" class="form-label">真实姓名</label>
+                        <input type="text" class="form-control" id="realName" autocomplete="name" value="{{ user.real_name or '' }}">
+                    </div>
+                    <div class="mb-3">
+                        <label for="email" class="form-label">邮箱</label>
+                        <input type="email" class="form-control" id="email" autocomplete="email" value="{{ user.email or '' }}">
+                    </div>
+                    <div class="mb-3">
+                        <label for="phone" class="form-label">手机号</label>
+                        <input type="tel" class="form-control" id="phone" autocomplete="tel" value="{{ user.phone or '' }}">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary" onclick="submitProfileEdit()">保存修改</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// 修改密码
+function changePassword() {
+    const modal = new bootstrap.Modal(document.getElementById('changePasswordModal'));
+    modal.show();
+}
+
+function submitPasswordChange() {
+    const currentPassword = document.getElementById('currentPassword').value;
+    const newPassword = document.getElementById('newPassword').value;
+    const confirmPassword = document.getElementById('confirmPassword').value;
+    
+    if (!currentPassword || !newPassword || !confirmPassword) {
+        alert('请填写所有密码字段');
+        return;
+    }
+    
+    if (newPassword !== confirmPassword) {
+        alert('新密码和确认密码不匹配');
+        return;
+    }
+    
+    if (newPassword.length < 6) {
+        alert('新密码长度至少6位');
+        return;
+    }
+    
+    // 发送修改密码请求
+    fetch('/auth/change-password', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            current_password: currentPassword,
+            new_password: newPassword
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('密码修改成功');
+            const modal = bootstrap.Modal.getInstance(document.getElementById('changePasswordModal'));
+            modal.hide();
+            document.getElementById('changePasswordForm').reset();
+        } else {
+            alert('密码修改失败：' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('修改密码失败：', error);
+        alert('修改密码失败，请稍后重试');
+    });
+}
+
+// 编辑资料
+function editProfile() {
+    const modal = new bootstrap.Modal(document.getElementById('editProfileModal'));
+    modal.show();
+}
+
+function submitProfileEdit() {
+    const realName = document.getElementById('realName').value;
+    const email = document.getElementById('email').value;
+    const phone = document.getElementById('phone').value;
+    
+    // 发送编辑资料请求
+    fetch('/auth/update-profile', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            real_name: realName,
+            email: email,
+            phone: phone
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('资料更新成功');
+            location.reload(); // 刷新页面显示新信息
+        } else {
+            alert('资料更新失败：' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('更新资料失败：', error);
+        alert('更新资料失败，请稍后重试');
+    });
+}
+</script>
+{% endblock %}

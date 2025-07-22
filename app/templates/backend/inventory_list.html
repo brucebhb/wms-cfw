@@ -1,0 +1,527 @@
+{% extends "base.html" %}
+
+{% block title %}后端仓库存管理{% endblock %}
+
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/inventory-table-header-fix.css') }}">
+<style>
+/* 简洁的表格样式 - 放大字体，合理列宽分配 */
+.table {
+    font-size: 14px;  /* 放大字体大小 */
+    width: 100%;
+    min-width: 1600px;  /* 设置最小宽度 */
+    table-layout: fixed;  /* 固定表格布局 */
+}
+
+.table th, .table td {
+    padding: 8px 6px;  /* 增加内边距 */
+    white-space: normal !important;  /* 允许自动换行 */
+    word-wrap: break-word !important;  /* 强制换行 */
+    word-break: break-all !important;  /* 在任意字符间换行 */
+    text-align: center !important; /* 所有内容居中 */
+    vertical-align: middle !important; /* 垂直居中 */
+    border: 1px solid #dee2e6 !important;  /* 添加边框 */
+    font-size: 14px !important;  /* 放大统一字体大小 */
+    line-height: 1.5 !important;  /* 增加行高适应换行 */
+    max-width: 120px;  /* 默认最大宽度 */
+}
+
+/* 强制设置表头样式 - 后端仓红色主题 */
+.table th,
+.table thead th,
+.table > thead > tr > th,
+.table-striped > thead > tr > th,
+.table-bordered > thead > tr > th {
+    background-color: #dc3545 !important;  /* 红色表头 */
+    background: #dc3545 !important;
+    color: white !important;
+    font-weight: 600 !important;
+    font-size: 15px !important;  /* 放大表头字体 */
+    padding: 10px 6px !important;  /* 增加表头内边距 */
+    border-color: #dc3545 !important;
+}
+
+/* 不同列的宽度控制 - 根据内容长度合理分配 */
+.table th:nth-child(1), .table td:nth-child(1) {
+    max-width: 35px; min-width: 35px; width: 35px;
+}   /* 序号 - 最小 */
+
+.table th:nth-child(2), .table td:nth-child(2) {
+    max-width: 85px; min-width: 85px; width: 85px;
+}   /* 入库日期 - 固定格式 */
+
+.table th:nth-child(3), .table td:nth-child(3) {
+    max-width: 90px; min-width: 90px; width: 90px;
+}   /* 入库车牌 - 中等 */
+
+.table th:nth-child(4), .table td:nth-child(4) {
+    max-width: 160px; min-width: 120px; width: 140px;
+}  /* 客户名称 - 较宽，内容较长 */
+
+.table th:nth-child(5), .table td:nth-child(5) {
+    max-width: 70px; min-width: 70px; width: 70px;
+}   /* 订单类型 - 较小 */
+
+.table th:nth-child(6), .table td:nth-child(6) {
+    max-width: 200px; min-width: 150px; width: 180px;
+}  /* 识别编码 - 最宽，内容最长 */
+
+.table th:nth-child(7), .table td:nth-child(7) {
+    max-width: 55px; min-width: 55px; width: 55px;
+}   /* 入库板数 - 数字 */
+
+.table th:nth-child(8), .table td:nth-child(8) {
+    max-width: 55px; min-width: 55px; width: 55px;
+}   /* 入库件数 - 数字 */
+
+.table th:nth-child(9), .table td:nth-child(9) {
+    max-width: 55px; min-width: 55px; width: 55px;
+}   /* 库存板数 - 数字 */
+
+.table th:nth-child(10), .table td:nth-child(10) {
+    max-width: 55px; min-width: 55px; width: 55px;
+} /* 库存件数 - 数字 */
+
+.table th:nth-child(11), .table td:nth-child(11) {
+    max-width: 65px; min-width: 65px; width: 65px;
+} /* 重量 - 数字稍宽 */
+
+.table th:nth-child(12), .table td:nth-child(12) {
+    max-width: 65px; min-width: 65px; width: 65px;
+} /* 体积 - 数字稍宽 */
+
+.table th:nth-child(13), .table td:nth-child(13) {
+    max-width: 90px; min-width: 80px; width: 85px;
+} /* 出境模式 - 中等 */
+
+.table th:nth-child(14), .table td:nth-child(14) {
+    max-width: 120px; min-width: 100px; width: 110px;
+}/* 报关行 - 较宽 */
+
+.table th:nth-child(15), .table td:nth-child(15) {
+    max-width: 70px; min-width: 60px; width: 65px;
+} /* 单据 - 较小 */
+
+.table th:nth-child(16), .table td:nth-child(16) {
+    max-width: 80px; min-width: 70px; width: 75px;
+} /* 跟单客服 - 中等 */
+
+.table th:nth-child(17), .table td:nth-child(17) {
+    max-width: 50px; min-width: 50px; width: 50px;
+} /* 库位 - 较小 */
+
+.table th:nth-child(18), .table td:nth-child(18) {
+    max-width: 75px; min-width: 70px; width: 72px;
+} /* 所属仓库 - 中等 */
+
+.table th:nth-child(19), .table td:nth-child(19) {
+    max-width: 140px; min-width: 130px; width: 135px;
+}/* 最后更新时间 - 较宽，时间格式长 */
+
+.table th:nth-child(20), .table td:nth-child(20) {
+    max-width: 90px; min-width: 85px; width: 88px;
+}/* 操作 - 按钮宽度 */
+
+/* 数字列样式 */
+.table td:nth-child(7), .table td:nth-child(8),  /* 入库板数、入库件数 */
+.table td:nth-child(9), .table td:nth-child(10) { /* 库存板数、库存件数 */
+    font-family: 'Courier New', monospace;
+    font-weight: 500;
+    font-size: 13px !important;  /* 放大数字字体 */
+    white-space: nowrap !important;  /* 数字不换行 */
+}
+
+/* 重量、体积列样式 - 支持换行 */
+.table td:nth-child(11), .table td:nth-child(12) { /* 重量、体积 */
+    font-family: 'Courier New', monospace;
+    font-weight: 500;
+    font-size: 13px !important;  /* 放大数字字体 */
+    white-space: normal !important;  /* 允许换行 */
+    word-wrap: break-word !important;  /* 自动换行 */
+}
+
+/* 确保按钮也居中 */
+.table td .btn {
+    margin: 0 auto;
+    padding: 4px 6px;  /* 增加按钮内边距 */
+    font-size: 12px;   /* 放大按钮字体 */
+    white-space: nowrap !important;  /* 按钮文字不换行 */
+}
+
+/* 后端仓红色主题 */
+.card-header {
+    background-color: #dc3545;
+    color: white;
+}
+
+.btn-danger {
+    background-color: #dc3545;
+    border-color: #dc3545;
+}
+
+/* 识别编码列特殊处理 - 允许更好的换行 */
+.table td:nth-child(6) {
+    word-break: break-all !important;
+    font-size: 13px !important;  /* 放大字体 */
+    padding: 6px 4px !important;  /* 增加内边距 */
+    line-height: 1.4 !important;
+}
+
+/* 客户名称列特殊处理 */
+.table td:nth-child(4) {
+    word-break: break-word !important;
+    font-size: 13px !important;  /* 放大字体 */
+    padding: 6px 4px !important;
+    line-height: 1.4 !important;
+}
+
+/* 报关行列特殊处理 */
+.table td:nth-child(14) {
+    word-break: break-word !important;
+    font-size: 13px !important;  /* 放大字体 */
+    line-height: 1.4 !important;
+}
+
+/* 时间列特殊处理 - 防止不必要的换行 */
+.table td:nth-child(2), .table td:nth-child(19) {
+    white-space: nowrap !important;
+    font-size: 12px !important;  /* 放大字体 */
+}
+
+/* 徽章样式优化 */
+.badge {
+    font-size: 12px;  /* 放大字体 */
+    padding: 4px 6px;  /* 增加内边距 */
+    white-space: nowrap !important;  /* 徽章文字不换行 */
+    display: inline-block;
+    margin: 1px;
+}
+
+/* 表格容器优化 */
+.table-responsive {
+    overflow-x: auto;
+    max-height: 70vh;  /* 限制表格高度 */
+}
+
+/* 表格行高度自适应 */
+.table tbody tr {
+    height: auto !important;
+    min-height: 40px;  /* 增加最小行高以适应放大的字体 */
+}
+
+/* 样式更新时间戳 */
+/* 后端仓库存界面列宽和字体优化 - 2025-07-10 07:35 */
+/* 字体大小调整优化 - 2025-07-10 07:40 */
+/* 字体放大优化 - 2025-07-21 */
+/*
+列宽分配原则：
+- 序号、数字列：最小宽度(35-65px)
+- 日期、车牌：固定宽度(85-90px)
+- 客户名称：较宽(140px)，内容较长
+- 识别编码：最宽(180px)，内容最长
+- 报关行、时间：较宽(110-135px)
+- 其他文本：中等宽度(65-90px)
+- 字体大小：整体14px，表头15px，数字13px，按钮12px，时间12px，徽章12px
+*/
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="content-wrapper">
+    <div class="content-header">
+        <div class="container-fluid">
+            <div class="row mb-2">
+                <div class="col-sm-6">
+                    <h1 class="m-0">后端仓库存管理</h1>
+                </div>
+                <div class="col-sm-6">
+                    <ol class="breadcrumb float-sm-right">
+                        <li class="breadcrumb-item"><a href="{{ url_for('main.index') }}">首页</a></li>
+                        <li class="breadcrumb-item active">后端仓库存管理</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <section class="content">
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">后端仓库存列表</h3>
+                            <div class="card-tools">
+                                <span class="badge badge-light">共 {{ records.total }} 条记录</span>
+                            </div>
+                        </div>
+                        
+                        <!-- 搜索表单 -->
+                        <div class="card-body">
+                            <form method="GET" class="mb-3">
+                                <div class="row">
+                                    <div class="col-md-3">
+                                        <input type="text" class="form-control" name="customer_name" 
+                                               placeholder="客户名称" value="{{ search_params.customer_name or '' }}">
+                                    </div>
+                                    <div class="col-md-3">
+                                        <input type="text" class="form-control" name="identification_code" 
+                                               placeholder="识别编码" value="{{ search_params.identification_code or '' }}">
+                                    </div>
+                                    <div class="col-md-3">
+                                        <input type="text" class="form-control" name="location" 
+                                               placeholder="库位" value="{{ search_params.location or '' }}">
+                                    </div>
+                                    <div class="col-md-3">
+                                        <button type="submit" class="btn btn-danger">
+                                            <i class="fas fa-search"></i> 搜索
+                                        </button>
+                                        <a href="{{ url_for('main.backend_inventory_list') }}" class="btn btn-outline-secondary">
+                                            <i class="fas fa-undo"></i> 重置
+                                        </a>
+                                    </div>
+                                </div>
+                            </form>
+
+                            <!-- 导出按钮 -->
+                            <div class="mb-3">
+                                <a href="{{ url_for('main.export_backend_inventory') }}?{{ request.query_string.decode('utf-8') }}"
+                                   class="btn btn-primary" id="exportBtn">
+                                    <i class="fas fa-file-export me-1"></i>导出数据
+                                </a>
+                            </div>
+                            
+                            {% if records.items %}
+                            <div class="table-responsive">
+                                <table class="table table-bordered table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th>序号</th>
+                                            <th>入库日期</th>
+                                            <th>入库车牌</th>
+                                            <th>客户名称</th>
+                                            <th>订单类型</th>
+                                            <th>识别编码</th>
+                                            <th>入库板数</th>
+                                            <th>入库件数</th>
+                                            <th>库存板数</th>
+                                            <th>库存件数</th>
+                                            <th>重量(kg)</th>
+                                            <th>体积(m³)</th>
+                                            <th>出境模式</th>
+                                            <th>报关行</th>
+                                            <th>单据</th>
+                                            <th>跟单客服</th>
+                                            <th>库位</th>
+                                            <th>所属仓库</th>
+                                            <th>最后更新时间</th>
+                                            <th>操作</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for record in records.items %}
+                                        {% set frontend_inbound = get_frontend_inbound_record(record.identification_code) if get_frontend_inbound_record is defined else None %}
+                                        <tr>
+                                            <td>{{ loop.index + (records.page - 1) * records.per_page }}</td>
+                                            <td>{{ record.inbound_time.strftime('%Y-%m-%d') if record.inbound_time else '' }}</td>
+                                            {# 入库车牌：优先显示前端仓入库车牌，如果没有则显示后端仓车牌 #}
+                                            <td>
+                                                {% if frontend_inbound %}
+                                                    {{ frontend_inbound.plate_number or '' }}
+                                                {% else %}
+                                                    {{ record.plate_number or '' }}
+                                                {% endif %}
+                                            </td>
+                                            <td>{{ record.customer_name }}</td>
+                                            <td>{{ record.order_type or '' }}</td>
+                                            <td>{{ record.identification_code or '' }}</td>
+                                            {# 入库板数：前端仓转入显示前端仓入库数量，后端仓直接入库显示当前库存数量 #}
+                                            <td>
+                                                {% if frontend_inbound %}
+                                                    {{ frontend_inbound.pallet_count or 0 }}
+                                                {% else %}
+                                                    {{ record.pallet_count or 0 }}
+                                                {% endif %}
+                                            </td>
+                                            {# 入库件数：前端仓转入显示前端仓入库数量，后端仓直接入库显示当前库存数量 #}
+                                            <td>
+                                                {% if frontend_inbound %}
+                                                    {{ frontend_inbound.package_count or 0 }}
+                                                {% else %}
+                                                    {{ record.package_count or 0 }}
+                                                {% endif %}
+                                            </td>
+                                            <td>{{ record.pallet_count }}</td>
+                                            <td>{{ record.package_count }}</td>
+                                            <td>
+                                                {% if record.weight is not none %}
+                                                    {% if record.weight > 0 %}
+                                                        {% if record.weight == record.weight|int %}
+                                                            {{ record.weight|int }}
+                                                        {% else %}
+                                                            {{ "%.1f"|format(record.weight) }}
+                                                        {% endif %}
+                                                    {% endif %}
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                {% if record.volume is not none %}
+                                                    {% if record.volume > 0 %}
+                                                        {% if record.volume == record.volume|int %}
+                                                            {{ record.volume|int }}
+                                                        {% else %}
+                                                            {{ "%.2f"|format(record.volume) }}
+                                                        {% endif %}
+                                                    {% endif %}
+                                                {% endif %}
+                                            </td>
+                                            <td>{{ record.export_mode or '' }}</td>
+                                            <td>{{ record.customs_broker or '' }}</td>
+                                            <td>{{ record.documents or '' }}</td>
+                                            <td>{{ record.service_staff or '' }}</td>
+                                            <td>{{ record.location or '' }}</td>
+                                            <td>
+                                                <span class="badge bg-danger">{{ record.operated_warehouse.warehouse_name if record.operated_warehouse else '-' }}</span>
+                                            </td>
+                                            <td>{{ record.last_updated.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                                            <td>
+                                                <button type="button" class="btn btn-danger btn-sm" onclick="openEditModal({{ record.id }}, '{{ record.customer_name|replace("'", "\\'") }}', '{{ record.location|replace("'", "\\'") }}')">
+                                                    <i class="fas fa-edit"></i> 设置库位
+                                                </button>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            
+                            <!-- 分页 -->
+                            {% if records.pages > 1 %}
+                            <div class="d-flex justify-content-between mt-3">
+                                <div>
+                                    总计: {{ records.total }} 条记录
+                                </div>
+                                <ul class="pagination pagination-sm m-0">
+                                    <li class="page-item {% if not records.has_prev %}disabled{% endif %}">
+                                        <a class="page-link" href="{{ url_for('main.backend_inventory_list', page=records.prev_num, customer_name=search_params.customer_name, location=search_params.location) }}">«</a>
+                                    </li>
+                                    {% for page_num in records.iter_pages() %}
+                                        {% if page_num %}
+                                            {% if page_num != records.page %}
+                                                <li class="page-item">
+                                                    <a class="page-link" href="{{ url_for('main.backend_inventory_list', page=page_num, customer_name=search_params.customer_name, location=search_params.location) }}">{{ page_num }}</a>
+                                                </li>
+                                            {% else %}
+                                                <li class="page-item active">
+                                                    <span class="page-link">{{ page_num }}</span>
+                                                </li>
+                                            {% endif %}
+                                        {% else %}
+                                            <li class="page-item disabled">
+                                                <span class="page-link">…</span>
+                                            </li>
+                                        {% endif %}
+                                    {% endfor %}
+                                    <li class="page-item {% if not records.has_next %}disabled{% endif %}">
+                                        <a class="page-link" href="{{ url_for('main.backend_inventory_list', page=records.next_num, customer_name=search_params.customer_name, location=search_params.location) }}">»</a>
+                                    </li>
+                                </ul>
+                            </div>
+                            {% endif %}
+                            {% else %}
+                            <div class="text-center text-muted py-4">
+                                <i class="fas fa-inbox fa-3x mb-3"></i>
+                                <h5>暂无库存记录</h5>
+                                <p>当前后端仓没有库存数据</p>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
+
+<!-- 编辑库位模态框 -->
+<div class="modal fade" id="editModal" tabindex="-1" role="dialog" aria-labelledby="editModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editModalLabel">设置库位</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="editForm">
+                    <input type="hidden" id="recordId" name="recordId">
+                    <div class="form-group">
+                        <label for="customerName">客户名称</label>
+                        <input type="text" class="form-control" id="customerName" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label for="location">库位</label>
+                        <input type="text" class="form-control" id="location" name="location" placeholder="请输入库位">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-danger" onclick="saveLocation()">保存</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function openEditModal(id, customerName, location) {
+    $('#recordId').val(id);
+    $('#customerName').val(customerName);
+    $('#location').val(location);
+    $('#editModal').modal('show');
+}
+
+function saveLocation() {
+    const recordId = $('#recordId').val();
+    const location = $('#location').val();
+    
+    $.ajax({
+        url: '{{ url_for("main.edit_inventory", id=0) }}'.replace('0', recordId),
+        method: 'POST',
+        data: {
+            location: location,
+            csrf_token: '{{ csrf_token() }}'
+        },
+        success: function(response) {
+            if (response.success) {
+                location.reload();
+            } else {
+                alert('保存失败: ' + response.message);
+            }
+        },
+        error: function() {
+            alert('保存失败，请重试');
+        }
+    });
+}
+
+// 强制设置表头样式
+function forceBackendInventoryTableHeaderStyle() {
+    const tableHeaders = document.querySelectorAll('.table thead th');
+    tableHeaders.forEach(th => {
+        th.style.setProperty('background-color', '#dc3545', 'important');
+        th.style.setProperty('background', '#dc3545', 'important');
+        th.style.setProperty('color', 'white', 'important');
+        th.style.setProperty('border-color', '#dc3545', 'important');
+    });
+}
+
+// 页面加载完成后强制设置表头样式
+document.addEventListener('DOMContentLoaded', function() {
+    setTimeout(forceBackendInventoryTableHeaderStyle, 100);
+    // 定期检查表头样式
+    setInterval(forceBackendInventoryTableHeaderStyle, 30000);
+});
+</script>
+{% endblock %}

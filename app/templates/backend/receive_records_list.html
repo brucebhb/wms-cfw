@@ -1,0 +1,717 @@
+{% extends "base.html" %}
+
+{% block title %}后端仓接收记录{% endblock %}
+
+{% block styles %}
+{{ super() }}
+<!-- CSRF令牌 -->
+<meta name="csrf-token" content="{{ csrf_token() }}">
+<!-- 使用jsuites日期选择器 -->
+<link rel="stylesheet" href="{{ url_for('static', filename='vendor/css/jsuites.css') }}">
+<style>
+    .search-box {
+        margin-bottom: 20px;
+        background-color: #f5f5f5;
+        padding: 15px 20px;
+        border-radius: 4px;
+    }
+    .search-form-row {
+        display: flex;
+        align-items: center;
+        margin-bottom: 15px;
+    }
+    .search-label {
+        min-width: 80px;
+        margin-right: 10px;
+        color: #333;
+        font-weight: normal;
+        text-align: right;
+    }
+    .search-control {
+        margin-right: 15px;
+    }
+    .search-buttons {
+        margin-left: auto;
+        display: flex;
+    }
+    .search-buttons .btn {
+        margin-left: 10px;
+        min-width: 90px;
+        height: 38px;
+    }
+    /* 接近截图中的蓝色按钮 */
+    .btn-primary, .btn-export {
+        background-color: #0d6efd;
+        border-color: #0d6efd;
+        color: white;
+    }
+    .btn-primary:hover, .btn-export:hover {
+        background-color: #0b5ed7;
+        border-color: #0a58ca;
+    }
+    /* 导出数据按钮样式 */
+    .btn-export {
+        min-width: 110px !important;
+        padding-left: 12px;
+        padding-right: 12px;
+        white-space: nowrap;
+    }
+
+    /* 表格内容居中显示 */
+    .table-center th, .table-center td {
+        text-align: center;
+        vertical-align: middle;
+    }
+
+    /* 确保按钮也居中 */
+    .table-center td .btn-group {
+        margin: 0 auto;
+    }
+
+    /* 优化表格字体和列宽 - 更小字体 */
+    .table-optimized {
+        font-size: 10px !important; /* 大幅缩小字体 */
+        line-height: 1.2 !important;
+    }
+
+    .table-optimized th {
+        font-size: 9px !important;
+        font-weight: 600 !important;
+        padding: 4px 3px !important;
+        white-space: nowrap;
+    }
+
+    .table-optimized td {
+        padding: 4px 3px !important;
+        font-size: 10px !important;
+    }
+
+    /* 数字列使用稍大字体但仍保持紧凑 */
+    .table-optimized .numeric-col,
+    .table-optimized .col-pallet,
+    .table-optimized .col-package,
+    .table-optimized .col-pallet-recv,
+    .table-optimized .col-package-recv,
+    .table-optimized .col-weight,
+    .table-optimized .col-volume {
+        font-size: 11px !important;
+        font-weight: 500 !important;
+    }
+
+    /* 列宽优化 */
+    .table-optimized .col-seq { width: 50px; }           /* 序号 */
+    .table-optimized .col-time { width: 120px; }         /* 接收时间 */
+    .table-optimized .col-source { width: 90px; }        /* 来源仓库 */
+    .table-optimized .col-status { width: 80px; }        /* 状态 */
+    .table-optimized .col-customer { width: 120px; }     /* 客户名称 */
+    .table-optimized .col-code { width: 140px; }         /* 识别编码 */
+    .table-optimized .col-order-type { width: 80px; }    /* 订单类型 */
+    .table-optimized .col-customs { width: 90px; }       /* 报关行 */
+    .table-optimized .col-export-mode { width: 80px; }   /* 出境模式 */
+    .table-optimized .col-service { width: 80px; }       /* 跟单客服 */
+    .table-optimized .col-inbound-plate { width: 85px; } /* 入库车牌 */
+    .table-optimized .col-pallet { width: 60px; }        /* 送货板数 */
+    .table-optimized .col-package { width: 60px; }       /* 送货件数 */
+    .table-optimized .col-pallet-recv { width: 60px; }   /* 接收板数 */
+    .table-optimized .col-package-recv { width: 60px; }  /* 接收件数 */
+    .table-optimized .col-weight { width: 80px; }        /* 重量 */
+    .table-optimized .col-volume { width: 80px; }        /* 体积 */
+    .table-optimized .col-docs { width: 70px; }          /* 单据份数 */
+    .table-optimized .col-location { width: 70px; }      /* 库位 */
+    .table-optimized .col-seq-batch { width: 80px; }     /* 批次序号 */
+    .table-optimized .col-remark { width: 70px; }        /* 备注 */
+    .table-optimized .col-action { width: 90px; }        /* 操作 */
+
+    /* 文本内容自动换行 */
+    .table-optimized .text-wrap {
+        word-wrap: break-word;
+        word-break: break-all;
+        white-space: normal;
+    }
+
+    /* 重要信息突出显示 */
+    .table-optimized .highlight-text {
+        font-weight: 600;
+        color: #0d6efd;
+    }
+
+    /* 徽章样式优化 */
+    .table-optimized .badge {
+        font-size: 11px;
+        padding: 3px 6px;
+    }
+
+    /* 表格整体优化 */
+    .table-optimized {
+        margin-bottom: 0;
+    }
+
+    .table-optimized tbody tr:hover {
+        background-color: #f8f9fa;
+    }
+
+    /* 按钮组优化 */
+    .table-optimized .btn-group-sm .btn {
+        padding: 2px 6px;
+        font-size: 12px;
+        border-radius: 3px;
+    }
+
+    /* 响应式优化 */
+    @media (max-width: 1400px) {
+        .table-optimized {
+            font-size: 9px !important;
+        }
+        .table-optimized th,
+        .table-optimized td {
+            padding: 3px 2px !important;
+            font-size: 9px !important;
+        }
+        .table-optimized .col-code {
+            width: 120px;
+        }
+        .table-optimized .col-batch {
+            width: 110px;
+        }
+    }
+
+    /* 表格容器优化 */
+    .table-responsive {
+        border-radius: 6px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    /* 批次分组样式 */
+    .batch-group {
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        overflow: hidden;
+    }
+
+    .batch-header {
+        background-color: #f8f9fa;
+        border-bottom: 1px solid #dee2e6;
+        padding: 12px 16px;
+    }
+
+    .batch-info h6 {
+        margin-bottom: 4px;
+        font-size: 14px;
+        font-weight: 600;
+    }
+
+    .batch-summary {
+        display: flex;
+        align-items: center;
+        gap: 20px;
+    }
+
+    .summary-item {
+        display: flex;
+        align-items: center;
+        font-size: 13px;
+    }
+
+    .summary-value {
+        font-size: 16px;
+        font-weight: 600;
+        margin-right: 4px;
+    }
+
+    .summary-label {
+        font-size: 11px;
+        color: #6c757d;
+    }
+
+    .batch-group .table {
+        margin-bottom: 0;
+    }
+
+    .batch-group .table thead th {
+        background-color: #ffc107 !important;
+        font-size: 9px !important;
+        padding: 4px 3px !important;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- 页面标题 -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-danger">
+                <div class="card-header bg-danger text-white">
+                    <h3 class="card-title mb-0">
+                        <i class="fas fa-list me-2"></i>后端仓接收记录
+                        <span class="badge bg-light text-danger ms-2">前端仓转入</span>
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-8">
+                            <p class="card-text mb-0">
+                                <i class="fas fa-info-circle me-1"></i>
+                                查看从前端仓（平湖仓、昆山仓、成都仓）接收的货物记录
+                            </p>
+                        </div>
+                        <div class="col-md-4 text-end">
+                            <a href="{{ url_for('main.backend_receive') }}" class="btn btn-danger me-2">
+                                <i class="fas fa-plus me-1"></i>接收货物
+                            </a>
+                            <a href="{{ url_for('main.export_backend_receive') }}?{{ request.query_string.decode('utf-8') }}"
+                               class="btn btn-primary" onclick="showExportLoading(this)">
+                                <i class="fas fa-file-export me-1"></i>导出Excel
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 简化的搜索区域 -->
+    <div class="search-box">
+        <form id="searchForm" action="{{ url_for('main.backend_receive_records') }}" method="get">
+            <!-- 日期范围行 -->
+            <div class="search-form-row">
+                <label class="search-label">接收时间:</label>
+                <div class="date-picker-container search-control" style="width: 160px;">
+                    <input type="date" class="form-control" id="date_start" name="date_start"
+                           value="{{ search_params.get('date_start', '') if search_params else '' }}">
+                </div>
+                <span class="mx-2">至</span>
+                <div class="date-picker-container search-control" style="width: 160px;">
+                    <input type="date" class="form-control" id="date_end" name="date_end"
+                           value="{{ search_params.get('date_end', '') if search_params else '' }}">
+                </div>
+            </div>
+
+            <!-- 搜索条件行 -->
+            <div class="search-form-row">
+                <label class="search-label">筛选字段:</label>
+                <select class="form-select search-control" id="search_field" name="search_field" style="width: 160px;">
+                    <option value="customer_name" selected>客户名称</option>
+                    <option value="batch_no">批次号</option>
+                    <option value="plate_number">车牌号</option>
+                    <option value="identification_code">识别编码</option>
+                    <option value="source_warehouse">来源仓库</option>
+                    <option value="receive_status">接收状态</option>
+                    <option value="export_mode">出境模式</option>
+                    <option value="customs_broker">报关行</option>
+                    <option value="order_type">订单类型</option>
+                    <option value="service_staff">跟单客服</option>
+                    <option value="location">库位</option>
+                </select>
+
+                <label class="search-label" style="margin-left: 15px;">搜索条件:</label>
+                <select class="form-select search-control" id="search_condition" name="search_condition" style="width: 160px;">
+                    <option value="contains" selected>包含</option>
+                    <option value="exact">完全匹配</option>
+                    <option value="startswith">开头是</option>
+                    <option value="endswith">结尾是</option>
+                </select>
+
+                <input type="text" class="form-control search-control" id="search_value" name="search_value"
+                       placeholder="请输入搜索内容" style="width: 260px; margin-left: 15px;"
+                       value="{{ search_params.get('search_value', '') if search_params else '' }}">
+
+                <div class="search-buttons">
+                    <button type="submit" id="search_btn" class="btn btn-primary">
+                        <i class="fas fa-search me-1"></i> 搜索
+                    </button>
+                    <button type="button" id="reset_btn" class="btn btn-outline-secondary ms-2">
+                        <i class="fas fa-redo me-1"></i> 刷新
+                    </button>
+                    <a href="{{ url_for('main.export_backend_receive') }}?{{ request.query_string.decode('utf-8') }}"
+                       class="btn btn-export ms-2" id="exportBtn" onclick="showExportLoading(this)">
+                        <i class="fas fa-file-export me-2"></i>导出数据
+                    </a>
+                </div>
+            </div>
+
+            <!-- 隐藏字段，用于后端处理 -->
+            <input type="hidden" name="customer_name" id="customer_name_hidden" value="{{ search_params.get('customer_name', '') if search_params else '' }}">
+            <input type="hidden" name="batch_no" id="batch_no_hidden" value="{{ search_params.get('batch_no', '') if search_params else '' }}">
+            <input type="hidden" name="plate_number" id="plate_number_hidden" value="{{ search_params.get('plate_number', '') if search_params else '' }}">
+            <input type="hidden" name="identification_code" id="identification_code_hidden" value="{{ search_params.get('identification_code', '') if search_params else '' }}">
+            <input type="hidden" name="source_warehouse" id="source_warehouse_hidden" value="{{ search_params.get('source_warehouse', '') if search_params else '' }}">
+            <input type="hidden" name="receive_status" id="receive_status_hidden" value="{{ search_params.get('receive_status', '') if search_params else '' }}">
+            <input type="hidden" name="export_mode" id="export_mode_hidden" value="{{ search_params.get('export_mode', '') if search_params else '' }}">
+            <input type="hidden" name="customs_broker" id="customs_broker_hidden" value="{{ search_params.get('customs_broker', '') if search_params else '' }}">
+            <input type="hidden" name="order_type" id="order_type_hidden" value="{{ search_params.get('order_type', '') if search_params else '' }}">
+            <input type="hidden" name="service_staff" id="service_staff_hidden" value="{{ search_params.get('service_staff', '') if search_params else '' }}">
+            <input type="hidden" name="location" id="location_hidden" value="{{ search_params.get('location', '') if search_params else '' }}">
+        </form>
+    </div>
+
+    <!-- 记录列表 -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-table me-2"></i>接收记录列表（按批次分组）
+                    </h5>
+                    <div>
+                        <span class="badge bg-warning">后端仓专用</span>
+                        {% if batch_groups.total %}
+                        <span class="badge bg-info">共 {{ batch_groups.total }} 个批次</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% if batch_groups.items %}
+                    <!-- 按批次分组显示 -->
+                    {% for batch_no, batch_data in batch_groups.items %}
+                    <div class="batch-group mb-4">
+                        <!-- 批次公共信息 -->
+                        <div class="batch-header bg-light p-2 rounded mb-2">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <!-- 左侧：批次信息和汇总数据 -->
+                                <div class="d-flex align-items-center">
+                                    <!-- 批次基本信息 -->
+                                    <div class="batch-info me-4">
+                                        <h6 class="mb-1 text-primary">
+                                            <i class="fas fa-layer-group me-1"></i>{{ batch_data.batch_info.batch_no }}
+                                        </h6>
+
+                                        <!-- 来源仓库信息 - 突出显示 -->
+                                        <div class="mb-2">
+                                            <span class="badge bg-primary me-2">
+                                                <i class="fas fa-warehouse me-1"></i>来源: {{ batch_data.batch_info.source_warehouse_name or '未知来源' }}
+                                            </span>
+                                            <span class="badge bg-secondary">
+                                                <i class="fas fa-truck me-1"></i>{{ batch_data.batch_info.delivery_plate_number or '未知车牌' }}
+                                            </span>
+                                        </div>
+
+                                        <small class="text-muted">
+                                            {% if batch_data.batch_info.first_receive_time == batch_data.batch_info.last_receive_time %}
+                                                {{ batch_data.batch_info.first_receive_time.strftime('%Y-%m-%d') if batch_data.batch_info.first_receive_time else '-' }}
+                                            {% else %}
+                                                {{ batch_data.batch_info.first_receive_time.strftime('%Y-%m-%d') if batch_data.batch_info.first_receive_time else '-' }} ~
+                                                {{ batch_data.batch_info.last_receive_time.strftime('%Y-%m-%d') if batch_data.batch_info.last_receive_time else '-' }}
+                                            {% endif %}
+                                        </small>
+                                    </div>
+
+                                    <!-- 汇总数据 - 水平排列 -->
+                                    <div class="batch-summary d-flex">
+                                        <div class="summary-item me-3">
+                                            <span class="summary-value text-primary fw-bold">{{ batch_data.batch_info.total_pallet_count }}</span>
+                                            <small class="summary-label text-muted ms-1">板</small>
+                                        </div>
+                                        <div class="summary-item me-3">
+                                            <span class="summary-value text-success fw-bold">{{ batch_data.batch_info.total_package_count }}</span>
+                                            <small class="summary-label text-muted ms-1">件</small>
+                                        </div>
+                                        <div class="summary-item me-3">
+                                            <span class="summary-value text-info fw-bold">{{ "%.1f"|format(batch_data.batch_info.total_weight) }}</span>
+                                            <small class="summary-label text-muted ms-1">kg</small>
+                                        </div>
+                                        <div class="summary-item">
+                                            <span class="summary-value text-warning fw-bold">{{ batch_data.batch_info.record_count }}</span>
+                                            <small class="summary-label text-muted ms-1">条记录</small>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- 右侧：删除按钮 -->
+                                <div class="batch-actions">
+                                    <button type="button" class="btn btn-outline-danger btn-sm"
+                                            onclick="deleteBatch('{{ batch_data.batch_info.batch_no }}')" title="删除整个批次">
+                                        <i class="fas fa-trash me-1"></i>删除批次
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 批次详细记录表格 -->
+                        <div class="table-responsive">
+                            <table class="table table-sm table-striped table-hover table-center table-optimized">
+                                <thead class="table-warning">
+                                    <tr>
+                                        <th class="col-seq">序号</th>
+                                        <th class="col-time">接收时间</th>
+                                        <th class="col-source">来源仓库</th>
+                                        <th class="col-customer">客户名称</th>
+                                        <th class="col-code">识别编码</th>
+                                        <th class="col-order-type">订单类型</th>
+                                        <th class="col-customs">报关行</th>
+                                        <th class="col-export-mode">出境模式</th>
+                                        <th class="col-service">跟单客服</th>
+                                        <th class="col-inbound-plate">入库车牌</th>
+                                        <th class="col-pallet">送货板数</th>
+                                        <th class="col-package">送货件数</th>
+                                        <th class="col-pallet-recv">接收板数</th>
+                                        <th class="col-package-recv">接收件数</th>
+                                        <th class="col-weight">重量(kg)</th>
+                                        <th class="col-volume">体积(m³)</th>
+                                        <th class="col-docs">单据份数</th>
+                                        <th class="col-location">库位</th>
+                                        <th class="col-seq-batch">批次序号</th>
+                                        <th class="col-remark">备注1</th>
+                                        <th class="col-remark">备注2</th>
+                                        <th class="col-action">操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for record in batch_data.records %}
+                                    <tr data-record-id="{{ record.id }}">
+                                        <td class="col-seq">{{ loop.index }}</td>
+                                        <td class="col-time">{{ record.receive_time.strftime('%Y-%m-%d %H:%M') if record.receive_time else '-' }}</td>
+                                        <td class="col-source">
+                                            <span class="badge bg-info">{{ record.source_warehouse_name or '前端仓' }}</span>
+                                        </td>
+                                        <td class="col-customer">{{ record.customer_name or '-' }}</td>
+                                        <td class="col-code">{{ record.identification_code or '-' }}</td>
+                                        <td class="col-order-type">{{ record.order_type or '-' }}</td>
+                                        <td class="col-customs">{{ record.customs_broker or '-' }}</td>
+                                        <td class="col-export-mode">{{ record.export_mode or '-' }}</td>
+                                        <td class="col-service">{{ record.service_staff or '-' }}</td>
+                                        <td class="col-inbound-plate">{{ record.inbound_plate or '-' }}</td>
+                                        <td class="col-pallet">{{ record.pallet_count or '-' }}</td>
+                                        <td class="col-package">{{ record.package_count or '-' }}</td>
+                                        <td class="col-pallet-recv">{{ record.pallet_count or '-' }}</td>
+                                        <td class="col-package-recv">{{ record.package_count or '-' }}</td>
+                                        <td class="col-weight">{{ record.weight or '-' }}</td>
+                                        <td class="col-volume">{{ record.volume or '-' }}</td>
+                                        <td class="col-docs">{{ record.documents or '-' }}</td>
+                                        <td class="col-location">{{ record.storage_location or '-' }}</td>
+                                        <td class="col-seq-batch">
+                                            {% if record.batch_sequence %}
+                                                {% if record.batch_total and record.batch_total > 0 %}
+                                                    {{ record.batch_sequence }}/{{ record.batch_total }}
+                                                {% else %}
+                                                    {{ record.batch_sequence }}
+                                                {% endif %}
+                                            {% else %}
+                                                -
+                                            {% endif %}
+                                        </td>
+                                        <td class="col-remark">{{ record.remark1 or '-' }}</td>
+                                        <td class="col-remark">{{ record.remark2 or '-' }}</td>
+                                        <td class="col-action">
+                                            <div class="btn-group btn-group-sm">
+                                                <a href="{{ url_for('main.view_inbound', id=record.id) }}"
+                                                   class="btn btn-outline-info btn-sm" title="查看详情">
+                                                    <i class="fas fa-eye"></i>
+                                                </a>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    {% endfor %}
+
+                    <!-- 分页 -->
+                    {% if batch_groups.pages > 1 %}
+                    <nav aria-label="分页导航" class="mt-3">
+                        <ul class="pagination pagination-sm justify-content-center">
+                            {% if batch_groups.has_prev %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('main.backend_receive_records', page=batch_groups.prev_num, **search_params) }}">上一页</a>
+                            </li>
+                            {% endif %}
+
+                            {% for page_num in range(1, batch_groups.pages + 1) %}
+                                {% if page_num == batch_groups.page %}
+                                <li class="page-item active">
+                                    <span class="page-link">{{ page_num }}</span>
+                                </li>
+                                {% elif page_num <= 3 or page_num > batch_groups.pages - 3 or (page_num >= batch_groups.page - 2 and page_num <= batch_groups.page + 2) %}
+                                <li class="page-item">
+                                    <a class="page-link" href="{{ url_for('main.backend_receive_records', page=page_num, **search_params) }}">{{ page_num }}</a>
+                                </li>
+                                {% elif page_num == 4 and batch_groups.page > 6 %}
+                                <li class="page-item disabled">
+                                    <span class="page-link">...</span>
+                                </li>
+                                {% elif page_num == batch_groups.pages - 3 and batch_groups.page < batch_groups.pages - 5 %}
+                                <li class="page-item disabled">
+                                    <span class="page-link">...</span>
+                                </li>
+                                {% endif %}
+                            {% endfor %}
+
+                            {% if batch_groups.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('main.backend_receive_records', page=batch_groups.next_num, **search_params) }}">下一页</a>
+                            </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                    {% endif %}
+
+                    {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">暂无接收记录</h5>
+                        <p class="text-muted">您可以点击上方的"接收货物"按钮接收前端仓的货物</p>
+                        <a href="{{ url_for('main.backend_receive') }}" class="btn btn-danger">
+                            <i class="fas fa-plus me-1"></i>接收货物
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<!-- 使用jsuites日期选择器 -->
+<script src="{{ url_for('static', filename='vendor/js/jsuites.js') }}"></script>
+<script>
+$(document).ready(function() {
+    console.log('后端仓接收记录页面已加载');
+
+    // 设置日期输入框的默认值
+    const urlParams = new URLSearchParams(window.location.search);
+    const dateStart = urlParams.get('date_start') || '{{ search_params.get("date_start", "") if search_params else "" }}';
+    const dateEnd = urlParams.get('date_end') || '{{ search_params.get("date_end", "") if search_params else "" }}';
+
+    if (dateStart) {
+        document.getElementById('date_start').value = dateStart;
+    }
+    if (dateEnd) {
+        document.getElementById('date_end').value = dateEnd;
+    }
+
+    // 设置搜索字段和值
+    const searchField = urlParams.get('search_field') || 'customer_name';
+    const searchValue = urlParams.get('search_value') || '';
+
+    document.getElementById('search_field').value = searchField;
+    document.getElementById('search_value').value = searchValue;
+
+    // 根据搜索字段设置隐藏字段的值
+    updateHiddenFields();
+
+    // 表格行点击高亮
+    $('.table tbody tr').hover(
+        function() {
+            $(this).addClass('table-active');
+        },
+        function() {
+            $(this).removeClass('table-active');
+        }
+    );
+});
+
+// 搜索字段变化时更新隐藏字段
+document.getElementById('search_field').addEventListener('change', function() {
+    updateHiddenFields();
+});
+
+// 搜索值变化时更新隐藏字段
+document.getElementById('search_value').addEventListener('input', function() {
+    updateHiddenFields();
+});
+
+// 更新隐藏字段
+function updateHiddenFields() {
+    const searchField = document.getElementById('search_field').value;
+    const searchValue = document.getElementById('search_value').value;
+
+    // 清空所有隐藏字段
+    document.getElementById('customer_name_hidden').value = '';
+    document.getElementById('batch_no_hidden').value = '';
+    document.getElementById('plate_number_hidden').value = '';
+    document.getElementById('identification_code_hidden').value = '';
+    document.getElementById('source_warehouse_hidden').value = '';
+    document.getElementById('receive_status_hidden').value = '';
+    document.getElementById('export_mode_hidden').value = '';
+    document.getElementById('customs_broker_hidden').value = '';
+    document.getElementById('order_type_hidden').value = '';
+    document.getElementById('service_staff_hidden').value = '';
+    document.getElementById('location_hidden').value = '';
+
+    // 根据选择的字段设置对应的隐藏字段值
+    if (searchValue) {
+        const hiddenField = document.getElementById(searchField + '_hidden');
+        if (hiddenField) {
+            hiddenField.value = searchValue;
+        }
+    }
+}
+
+// 重置按钮事件
+document.getElementById('reset_btn').addEventListener('click', function() {
+    location.href = '{{ url_for("main.backend_receive_records") }}';
+});
+
+// 删除批次函数
+function deleteBatch(batchNo) {
+    if (confirm('确定要删除批次 ' + batchNo + ' 的所有接收记录吗？\n删除后这些记录将变为待接收状态。')) {
+        // 获取CSRF令牌
+        const csrfToken = document.querySelector('meta[name=csrf-token]')?.getAttribute('content');
+
+        fetch('/delete_batch_receive', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
+            },
+            body: JSON.stringify({
+                batch_no: batchNo
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('批次删除成功！');
+                location.reload();
+            } else {
+                alert('删除失败：' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('删除失败，请重试');
+        });
+    }
+}
+
+// 导出加载状态处理
+function showExportLoading(button) {
+    // 显示加载状态
+    const originalText = button.innerHTML;
+    button.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>正在导出...';
+    button.disabled = true;
+    button.style.pointerEvents = 'none';
+
+    // 设置超时恢复按钮状态（30秒后）
+    setTimeout(function() {
+        button.innerHTML = originalText;
+        button.disabled = false;
+        button.style.pointerEvents = 'auto';
+    }, 30000);
+
+    // 返回true允许链接继续执行
+    return true;
+}
+
+// 页面加载完成后绑定事件
+document.addEventListener('DOMContentLoaded', function() {
+    // 监听页面卸载事件，如果是因为下载文件导致的，恢复按钮状态
+    window.addEventListener('beforeunload', function() {
+        const exportBtn = document.getElementById('exportBtn');
+        if (exportBtn && exportBtn.disabled) {
+            setTimeout(function() {
+                exportBtn.innerHTML = '<i class="fas fa-file-export me-2"></i>导出数据';
+                exportBtn.disabled = false;
+                exportBtn.style.pointerEvents = 'auto';
+            }, 2000);
+        }
+    });
+});
+</script>
+{% endblock %}

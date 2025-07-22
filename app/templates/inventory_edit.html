@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h3 class="card-title">编辑库存信息</h3>
+                        <div>
+                            <a href="{{ url_for('main.inventory_list') }}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left"></i> 返回列表
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <form action="{{ url_for('main.edit_inventory', id=inventory.id) }}" method="post">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        
+                        <div class="form-group row">
+                            <label class="col-sm-2 col-form-label">客户名称</label>
+                            <div class="col-sm-10">
+                                <input type="text" readonly class="form-control-plaintext" value="{{ inventory.customer_name }}">
+                            </div>
+                        </div>
+                        
+                        <div class="form-group row">
+                            <label class="col-sm-2 col-form-label">板数</label>
+                            <div class="col-sm-10">
+                                <input type="text" readonly class="form-control-plaintext" value="{{ inventory.pallet_count }}">
+                            </div>
+                        </div>
+                        
+                        <div class="form-group row">
+                            <label class="col-sm-2 col-form-label">件数</label>
+                            <div class="col-sm-10">
+                                <input type="text" readonly class="form-control-plaintext" value="{{ inventory.package_count }}">
+                            </div>
+                        </div>
+                        
+                        <div class="form-group row">
+                            <label class="col-sm-2 col-form-label">重量(kg)</label>
+                            <div class="col-sm-10">
+                                <input type="text" readonly class="form-control-plaintext" value="{{ inventory.weight }}">
+                            </div>
+                        </div>
+                        
+                        <div class="form-group row">
+                            <label class="col-sm-2 col-form-label">体积(m³)</label>
+                            <div class="col-sm-10">
+                                <input type="text" readonly class="form-control-plaintext" value="{{ inventory.volume }}">
+                            </div>
+                        </div>
+                        
+                        <div class="form-group row">
+                            <label class="col-sm-2 col-form-label">库位</label>
+                            <div class="col-sm-10">
+                                <input type="text" class="form-control" name="location" value="{{ inventory.location }}">
+                                <small class="form-text text-muted">请输入货物的具体库位信息</small>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group row">
+                            <label class="col-sm-2 col-form-label">最后更新时间</label>
+                            <div class="col-sm-10">
+                                <input type="text" readonly class="form-control-plaintext" value="{{ inventory.last_updated.strftime('%Y-%m-%d %H:%M:%S') }}">
+                            </div>
+                        </div>
+                        
+                        <div class="form-group row">
+                            <div class="col-sm-10 offset-sm-2">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-save"></i> 保存
+                                </button>
+                                <a href="{{ url_for('main.inventory_list') }}" class="btn btn-default ml-2">
+                                    <i class="fas fa-times"></i> 取消
+                                </a>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

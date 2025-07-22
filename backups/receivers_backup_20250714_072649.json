@@ -1,0 +1,62 @@
+[
+  {
+    "id": 1,
+    "warehouse_name": "平湖仓",
+    "address": "浙江省嘉兴市平湖市经济技术开发区兴平一路999号",
+    "contact": "张经理/0573-85123456  李主管/13812345678",
+    "phone": null,
+    "is_active": true,
+    "created_at": "2025-07-10T12:10:13",
+    "updated_at": "2025-07-14T00:28:23"
+  },
+  {
+    "id": 2,
+    "warehouse_name": "昆山仓",
+    "address": "江苏省苏州市昆山市花桥经济开发区商务城路1号",
+    "contact": "王经理/0512-57123456  陈主管/13987654321",
+    "phone": null,
+    "is_active": true,
+    "created_at": "2025-07-10T12:10:13",
+    "updated_at": "2025-07-14T00:28:23"
+  },
+  {
+    "id": 3,
+    "warehouse_name": "成都仓",
+    "address": "四川省成都市双流区西南航空港经济开发区物流大道88号",
+    "contact": "刘经理/028-85123456  赵主管/13765432109",
+    "phone": null,
+    "is_active": true,
+    "created_at": "2025-07-10T12:10:13",
+    "updated_at": "2025-07-14T00:28:23"
+  },
+  {
+    "id": 4,
+    "warehouse_name": "凭祥北投仓",
+    "address": "广西壮族自治区崇左市凭祥市北投物流园区",
+    "contact": "金英/84-971886919  石辉远/18685570447",
+    "phone": null,
+    "is_active": true,
+    "created_at": "2025-07-10T12:10:13",
+    "updated_at": "2025-07-14T00:28:23"
+  },
+  {
+    "id": 5,
+    "warehouse_name": "春疆货场",
+    "address": "广西凭祥市谅山春疆货场",
+    "contact": "金英/84-971886919    石辉远/18685570447",
+    "phone": null,
+    "is_active": true,
+    "created_at": "2025-07-07T23:23:32",
+    "updated_at": "2025-07-08T06:30:37"
+  },
+  {
+    "id": 6,
+    "warehouse_name": "凭祥保税仓",
+    "address": "凭祥市友谊镇卡凤村卡防屯友谊关口岸凭祥综合保税区卡凤物流加工区B4-1",
+    "contact": "李安章/18178680331   谭俊杰/17625737807",
+    "phone": null,
+    "is_active": true,
+    "created_at": "2025-07-07T23:23:32",
+    "updated_at": "2025-07-08T06:30:52"
+  }
+]

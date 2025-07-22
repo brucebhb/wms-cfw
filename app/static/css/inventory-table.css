@@ -1,0 +1,146 @@
+/**
+ * 库存表格专用CSS样式
+ */
+
+/* 库存表格容器 */
+.table-responsive {
+    position: relative;
+    max-height: 65vh;
+    overflow-y: auto;
+    margin-bottom: 1rem;
+}
+
+/* 固定表头 */
+#inventoryTable thead {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background-color: #f8f9fa;
+    box-shadow: 0 2px 2px -1px rgba(0,0,0,0.1);
+}
+
+/* 表格样式 */
+#inventoryTable {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+/* 表头样式 */
+#inventoryTable th {
+    padding: 12px 8px;
+    font-weight: bold;
+    text-align: center;
+    background-color: #f8f9fa;
+    border-bottom: 2px solid #dee2e6;
+    white-space: nowrap;
+}
+
+/* 单元格样式 */
+#inventoryTable td {
+    padding: 8px;
+    text-align: center;
+    vertical-align: middle;
+    border-bottom: 1px solid #dee2e6;
+}
+
+/* 行悬停效果 */
+#inventoryTable tbody tr:hover {
+    background-color: #f1f8ff;
+}
+
+/* 选中行样式 */
+#inventoryTable tr.selected {
+    background-color: #e8f4ff;
+}
+
+/* 表格内输入框样式 */
+#inventoryTable input[type="number"],
+#inventoryTable input[type="text"] {
+    width: 100%;
+    padding: 4px 6px;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    text-align: center;
+}
+
+/* 全出按钮样式 */
+#inventoryTable .btn-full-out {
+    padding: 2px 5px;
+    font-size: 12px;
+    white-space: nowrap;
+}
+
+/* 确保模态框内容可见 */
+#inventoryModal .modal-content {
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+}
+
+#inventoryModal .modal-body {
+    flex: 1;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    padding: 15px;
+}
+
+#inventoryModal .table-responsive {
+    flex: 1;
+    overflow: auto;
+}
+
+/* 搜索框样式 */
+#inventorySearch {
+    margin-bottom: 15px;
+    padding: 8px 12px;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+}
+
+/* 加载指示器样式 */
+#inventory-loading-indicator {
+    text-align: center;
+    padding: 20px;
+    color: #6c757d;
+}
+
+/* 确保滚动条样式美观 */
+.table-responsive::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+.table-responsive::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+
+.table-responsive::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 4px;
+}
+
+.table-responsive::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
+}
+
+/* 适配不同屏幕尺寸 */
+@media (max-width: 1200px) {
+    .table-responsive {
+        max-height: 60vh;
+    }
+}
+
+@media (max-width: 768px) {
+    .table-responsive {
+        max-height: 50vh;
+    }
+    
+    #inventoryTable th,
+    #inventoryTable td {
+        padding: 6px 4px;
+        font-size: 12px;
+    }
+} 

@@ -1,0 +1,179 @@
+{% extends "base.html" %}
+
+{% block title %}后端仓出库到凭祥保税仓/春疆货场{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- 页面标题 -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-success">
+                <div class="card-header bg-success text-white">
+                    <h3 class="card-title mb-0">
+                        <i class="fas fa-map-marker-alt me-2"></i>后端仓出库到凭祥保税仓/春疆货场
+                        <span class="badge bg-light text-success ms-2">Final Destination</span>
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <p class="card-text mb-0">
+                        <i class="fas fa-info-circle me-1"></i>
+                        凭祥北投仓货物最终出库到凭祥保税仓/春疆货场，订单完成
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 功能开发中提示 -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body text-center">
+                    <div class="alert alert-warning">
+                        <i class="fas fa-construction fa-3x mb-3"></i>
+                        <h4>功能开发中</h4>
+                        <p class="mb-3">出库到凭祥保税仓/春疆货场的专用界面正在开发中，请暂时使用通用出库功能。</p>
+                        
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-center">
+                            <a href="{{ url_for('main.outbound') }}" class="btn btn-success btn-lg">
+                                <i class="fas fa-arrow-right me-2"></i>使用通用出库功能
+                            </a>
+                            <a href="{{ url_for('main.backend_outbound_list') }}" class="btn btn-outline-success btn-lg">
+                                <i class="fas fa-list me-2"></i>查看出库记录
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 操作流程说明 -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title">
+                        <i class="fas fa-route me-2"></i>出库到凭祥保税仓/春疆货场流程
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6><i class="fas fa-clipboard-list me-2"></i>操作步骤：</h6>
+                            <ol class="list-group list-group-numbered">
+                                <li class="list-group-item">确认货物清单和数量</li>
+                                <li class="list-group-item">安排运输车辆和司机</li>
+                                <li class="list-group-item">货物装载和封车</li>
+                                <li class="list-group-item">生成最终出库单据</li>
+                                <li class="list-group-item">运输到凭祥保税仓/春疆货场</li>
+                                <li class="list-group-item bg-success text-white"><strong>订单完成</strong></li>
+                            </ol>
+                        </div>
+                        <div class="col-md-6">
+                            <h6><i class="fas fa-exclamation-triangle me-2"></i>注意事项：</h6>
+                            <ul class="list-group">
+                                <li class="list-group-item">
+                                    <i class="fas fa-check text-success me-2"></i>
+                                    确保所有货物已完成海关清关手续
+                                </li>
+                                <li class="list-group-item">
+                                    <i class="fas fa-check text-success me-2"></i>
+                                    核对货物数量与入库记录一致
+                                </li>
+                                <li class="list-group-item">
+                                    <i class="fas fa-check text-success me-2"></i>
+                                    确认运输车辆和司机资质
+                                </li>
+                                <li class="list-group-item">
+                                    <i class="fas fa-check text-success me-2"></i>
+                                    生成完整的出库单据和运输单
+                                </li>
+                                <li class="list-group-item">
+                                    <i class="fas fa-check text-success me-2"></i>
+                                    通知客户货物发运信息
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 快速统计 -->
+    <div class="row">
+        <div class="col-md-3">
+            <div class="card text-white bg-success">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h6 class="card-title">今日出库</h6>
+                            <h4 class="mb-0">--</h4>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-truck fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-info">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h6 class="card-title">本月出库</h6>
+                            <h4 class="mb-0">--</h4>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-calendar fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-warning">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h6 class="card-title">待出库</h6>
+                            <h4 class="mb-0">--</h4>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-clock fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-secondary">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h6 class="card-title">库存余量</h6>
+                            <h4 class="mb-0">--</h4>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-boxes fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+$(document).ready(function() {
+    console.log('后端仓出库到凭祥保税仓/春疆货场页面已加载');
+    
+    // 这里可以添加页面特定的JavaScript代码
+    // 例如：加载统计数据、实时更新等
+});
+</script>
+{% endblock %}

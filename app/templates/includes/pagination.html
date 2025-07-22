@@ -1,0 +1,39 @@
+{% if records.pages > 1 %}
+<nav aria-label="分页导航">
+    <ul class="pagination justify-content-center">
+        <!-- 上一页 -->
+        <li class="page-item {% if not records.has_prev %}disabled{% endif %}">
+            <a class="page-link" href="{{ url_for(request.endpoint, page=records.prev_num, **search_params) }}" aria-label="上一页">
+                <span aria-hidden="true">&laquo;</span>
+                <span class="sr-only">上一页</span>
+            </a>
+        </li>
+        
+        <!-- 页码 -->
+        {% for page_num in records.iter_pages() %}
+            {% if page_num %}
+                <li class="page-item {% if page_num == records.page %}active{% endif %}">
+                    <a class="page-link" href="{{ url_for(request.endpoint, page=page_num, **search_params) }}">{{ page_num }}</a>
+                </li>
+            {% else %}
+                <li class="page-item disabled">
+                    <span class="page-link">...</span>
+                </li>
+            {% endif %}
+        {% endfor %}
+        
+        <!-- 下一页 -->
+        <li class="page-item {% if not records.has_next %}disabled{% endif %}">
+            <a class="page-link" href="{{ url_for(request.endpoint, page=records.next_num, **search_params) }}" aria-label="下一页">
+                <span aria-hidden="true">&raquo;</span>
+                <span class="sr-only">下一页</span>
+            </a>
+        </li>
+    </ul>
+</nav>
+<div class="text-center mt-2">
+    <small class="text-muted">
+        显示 {{ (records.page - 1) * records.per_page + 1 }} - {{ (records.page - 1) * records.per_page + records.items|length }} 条，共 {{ records.total }} 条记录
+    </small>
+</div>
+{% endif %} 

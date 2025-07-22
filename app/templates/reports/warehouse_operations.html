@@ -1,0 +1,637 @@
+{% extends "base.html" %}
+{% set title = "仓库运营分析" %}
+
+{% block content %}
+<div class="container-fluid warehouse-operations-dashboard">
+    <!-- 页面标题 -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2 class="mb-1">
+                        <i class="fas fa-warehouse text-info"></i>
+                        仓库运营分析
+                    </h2>
+                    <p class="text-muted mb-0">运营效率对比、库存分析、时效分析和容量利用率</p>
+                </div>
+                <div>
+                    <span class="badge bg-info">运营监控</span>
+                    <span id="lastUpdateTime" class="text-muted ms-2"></span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 运营效率对比 -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-0">
+                    <h6 class="card-title mb-0">
+                        <i class="fas fa-tachometer-alt text-primary me-2"></i>
+                        运营效率对比
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div id="efficiencyComparisonContainer">
+                        <div class="text-center py-4">
+                            <i class="fas fa-spinner fa-spin text-primary"></i>
+                            <div class="mt-2 text-muted">加载中...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 库存分析和时效分析 -->
+    <div class="row mb-4">
+        <div class="col-lg-8 mb-3">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-0">
+                    <h6 class="card-title mb-0">
+                        <i class="fas fa-boxes text-success me-2"></i>
+                        库存分析
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div id="inventoryAnalysisChart" style="height: 400px;"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4 mb-3">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-0">
+                    <h6 class="card-title mb-0">
+                        <i class="fas fa-clock text-warning me-2"></i>
+                        时效分析
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div id="timeEfficiencyContainer">
+                        <div class="text-center py-4">
+                            <i class="fas fa-spinner fa-spin text-primary"></i>
+                            <div class="mt-2 text-muted">分析中...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 容量利用率和货物流向 -->
+    <div class="row mb-4">
+        <div class="col-lg-6 mb-3">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-0">
+                    <h6 class="card-title mb-0">
+                        <i class="fas fa-chart-pie text-info me-2"></i>
+                        容量利用率
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div id="capacityUtilizationChart" style="height: 350px;"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-6 mb-3">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-0">
+                    <h6 class="card-title mb-0">
+                        <i class="fas fa-route text-purple me-2"></i>
+                        货物流向分析
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div id="cargoFlowContainer">
+                        <div class="text-center py-4">
+                            <i class="fas fa-spinner fa-spin text-primary"></i>
+                            <div class="mt-2 text-muted">分析中...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 库存健康度总览 -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-0">
+                    <h6 class="card-title mb-0">
+                        <i class="fas fa-heartbeat text-danger me-2"></i>
+                        库存健康度总览
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div id="inventoryHealthContainer">
+                        <div class="text-center py-4">
+                            <i class="fas fa-spinner fa-spin text-primary"></i>
+                            <div class="mt-2 text-muted">检测中...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 刷新按钮 -->
+    <div class="row">
+        <div class="col-12 text-center">
+            <button type="button" class="btn btn-info" id="refreshBtn">
+                <i class="fas fa-sync-alt"></i> 刷新运营数据
+            </button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- ECharts -->
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+<script>
+class WarehouseOperationsDashboard {
+    constructor() {
+        this.charts = {};
+        this.init();
+    }
+
+    init() {
+        this.bindEvents();
+        this.loadData();
+        this.updateLastUpdateTime();
+
+        // 每10分钟自动刷新数据
+        setInterval(() => {
+            this.loadData();
+        }, 10 * 60 * 1000);
+    }
+
+    bindEvents() {
+        // 刷新按钮
+        document.getElementById('refreshBtn').addEventListener('click', () => {
+            this.loadData();
+        });
+    }
+
+    async loadData() {
+        try {
+            console.log('开始加载仓库运营数据...');
+
+            // 并行加载所有数据
+            const [efficiencyData, inventoryData, timeData, flowData, capacityData] = await Promise.allSettled([
+                this.fetchEfficiencyData(),
+                this.fetchInventoryData(),
+                this.fetchTimeEfficiencyData(),
+                this.fetchCargoFlowData(),
+                this.fetchCapacityData()
+            ]);
+
+            // 更新UI
+            if (efficiencyData.status === 'fulfilled') {
+                this.updateEfficiencyComparison(efficiencyData.value);
+            }
+
+            if (inventoryData.status === 'fulfilled') {
+                this.updateInventoryAnalysis(inventoryData.value);
+                this.updateInventoryHealth(inventoryData.value);
+            }
+
+            if (timeData.status === 'fulfilled') {
+                this.updateTimeEfficiency(timeData.value);
+            }
+
+            if (flowData.status === 'fulfilled') {
+                this.updateCargoFlow(flowData.value);
+            }
+
+            if (capacityData.status === 'fulfilled') {
+                this.updateCapacityUtilization(capacityData.value);
+            }
+
+            this.updateLastUpdateTime();
+
+        } catch (error) {
+            console.error('数据加载失败:', error);
+        }
+    }
+
+    async fetchEfficiencyData() {
+        const response = await fetch('/reports/api/warehouse/efficiency');
+        if (!response.ok) throw new Error('获取运营效率数据失败');
+        const result = await response.json();
+        if (!result.success) throw new Error(result.message);
+        return result.data;
+    }
+
+    async fetchInventoryData() {
+        const response = await fetch('/reports/api/warehouse/inventory');
+        if (!response.ok) throw new Error('获取库存分析数据失败');
+        const result = await response.json();
+        if (!result.success) throw new Error(result.message);
+        return result.data;
+    }
+
+    async fetchTimeEfficiencyData() {
+        const response = await fetch('/reports/api/warehouse/time_efficiency');
+        if (!response.ok) throw new Error('获取时效分析数据失败');
+        const result = await response.json();
+        if (!result.success) throw new Error(result.message);
+        return result.data;
+    }
+
+    async fetchCargoFlowData() {
+        const response = await fetch('/reports/api/warehouse/cargo_flow');
+        if (!response.ok) throw new Error('获取货物流向数据失败');
+        const result = await response.json();
+        if (!result.success) throw new Error(result.message);
+        return result.data;
+    }
+
+    async fetchCapacityData() {
+        const response = await fetch('/reports/api/warehouse/capacity');
+        if (!response.ok) throw new Error('获取容量利用率数据失败');
+        const result = await response.json();
+        if (!result.success) throw new Error(result.message);
+        return result.data;
+    }
+
+    updateEfficiencyComparison(data) {
+        const container = document.getElementById('efficiencyComparisonContainer');
+
+        if (!data.efficiency_comparison || data.efficiency_comparison.length === 0) {
+            container.innerHTML = '<div class="text-center py-4 text-muted">暂无数据</div>';
+            return;
+        }
+
+        let html = '<div class="row">';
+
+        data.efficiency_comparison.forEach(warehouse => {
+            const scoreClass = warehouse.efficiency_score >= 80 ? 'text-success' :
+                              warehouse.efficiency_score >= 60 ? 'text-warning' : 'text-danger';
+
+            html += `
+                <div class="col-lg-3 col-md-6 mb-3">
+                    <div class="card border-0 bg-light h-100">
+                        <div class="card-body text-center">
+                            <h6 class="card-title">${warehouse.warehouse_name}</h6>
+                            <div class="mb-3">
+                                <h3 class="${scoreClass}">${warehouse.efficiency_score}</h3>
+                                <small class="text-muted">效率评分</small>
+                            </div>
+                            <div class="row text-center small">
+                                <div class="col-6">
+                                    <div class="border-end">
+                                        <strong>${warehouse.daily_throughput}</strong>
+                                        <div class="text-muted">日均吞吐</div>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <strong>${warehouse.turnover_rate}</strong>
+                                    <div class="text-muted">周转率</div>
+                                </div>
+                            </div>
+                            <div class="mt-2 small text-muted">
+                                总操作: ${warehouse.total_operations} 票
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+
+        html += '</div>';
+
+        if (data.best_performer) {
+            html += `
+                <div class="alert alert-success mt-3">
+                    <i class="fas fa-trophy me-2"></i>
+                    <strong>最佳表现:</strong> ${data.best_performer.warehouse_name}
+                    (效率评分: ${data.best_performer.efficiency_score})
+                </div>
+            `;
+        }
+
+        container.innerHTML = html;
+    }
+
+    updateInventoryAnalysis(data) {
+        const chartDom = document.getElementById('inventoryAnalysisChart');
+        if (!this.charts.inventory) {
+            this.charts.inventory = echarts.init(chartDom);
+        }
+
+        const warehouses = data.warehouse_inventory.map(item => item.warehouse_name);
+        const inventoryCounts = data.warehouse_inventory.map(item => item.current_inventory.count);
+        const healthScores = data.warehouse_inventory.map(item => item.health_score);
+
+        const option = {
+            title: {
+                text: '仓库库存分析',
+                left: 'center'
+            },
+            tooltip: {
+                trigger: 'axis',
+                axisPointer: {
+                    type: 'cross'
+                }
+            },
+            legend: {
+                data: ['库存票数', '健康度评分'],
+                top: 30
+            },
+            xAxis: {
+                type: 'category',
+                data: warehouses
+            },
+            yAxis: [
+                {
+                    type: 'value',
+                    name: '库存票数',
+                    position: 'left'
+                },
+                {
+                    type: 'value',
+                    name: '健康度评分',
+                    position: 'right',
+                    max: 100
+                }
+            ],
+            series: [
+                {
+                    name: '库存票数',
+                    type: 'bar',
+                    data: inventoryCounts,
+                    itemStyle: { color: '#1890ff' }
+                },
+                {
+                    name: '健康度评分',
+                    type: 'line',
+                    yAxisIndex: 1,
+                    data: healthScores,
+                    itemStyle: { color: '#52c41a' },
+                    lineStyle: { width: 3 }
+                }
+            ]
+        };
+
+        this.charts.inventory.setOption(option);
+    }
+
+    updateTimeEfficiency(data) {
+        const container = document.getElementById('timeEfficiencyContainer');
+
+        if (!data.time_analysis || data.time_analysis.length === 0) {
+            container.innerHTML = '<div class="text-center py-4 text-muted">暂无数据</div>';
+            return;
+        }
+
+        let html = '';
+
+        data.time_analysis.forEach(warehouse => {
+            const scoreClass = warehouse.efficiency_score >= 80 ? 'text-success' :
+                              warehouse.efficiency_score >= 60 ? 'text-warning' : 'text-danger';
+
+            html += `
+                <div class="mb-3 p-3 border rounded">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <h6 class="mb-0">${warehouse.warehouse_name}</h6>
+                        <span class="badge bg-primary">${warehouse.efficiency_score}分</span>
+                    </div>
+                    <div class="row text-center small">
+                        <div class="col-4">
+                            <strong>${warehouse.avg_staying_time}</strong>
+                            <div class="text-muted">平均停留(天)</div>
+                        </div>
+                        <div class="col-4">
+                            <strong>${warehouse.time_distribution.fast}</strong>
+                            <div class="text-muted">快速(≤7天)</div>
+                        </div>
+                        <div class="col-4">
+                            <strong>${warehouse.time_distribution.slow}</strong>
+                            <div class="text-muted">缓慢(>15天)</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+
+        if (data.best_efficiency) {
+            html += `
+                <div class="alert alert-info mt-3">
+                    <i class="fas fa-clock me-2"></i>
+                    <strong>时效最佳:</strong> ${data.best_efficiency.warehouse_name}
+                    (平均停留: ${data.best_efficiency.avg_staying_time}天)
+                </div>
+            `;
+        }
+
+        container.innerHTML = html;
+    }
+
+    updateCapacityUtilization(data) {
+        const chartDom = document.getElementById('capacityUtilizationChart');
+        if (!this.charts.capacity) {
+            this.charts.capacity = echarts.init(chartDom);
+        }
+
+        const chartData = data.utilization_analysis.map(item => ({
+            name: item.warehouse_name,
+            value: item.utilization.overall_utilization,
+            itemStyle: {
+                color: item.status_color === 'danger' ? '#ff4d4f' :
+                       item.status_color === 'warning' ? '#faad14' :
+                       item.status_color === 'success' ? '#52c41a' : '#1890ff'
+            }
+        }));
+
+        const option = {
+            title: {
+                text: '容量利用率',
+                left: 'center'
+            },
+            tooltip: {
+                trigger: 'item',
+                formatter: function(params) {
+                    const warehouse = data.utilization_analysis[params.dataIndex];
+                    return `${params.name}<br/>
+                            利用率: ${params.value}%<br/>
+                            状态: ${warehouse.status}<br/>
+                            当前库存: ${warehouse.current_inventory.count}票<br/>
+                            可用容量: ${warehouse.available_capacity.pallets}板`;
+                }
+            },
+            legend: {
+                orient: 'vertical',
+                left: 'left'
+            },
+            series: [
+                {
+                    type: 'pie',
+                    radius: '50%',
+                    data: chartData,
+                    emphasis: {
+                        itemStyle: {
+                            shadowBlur: 10,
+                            shadowOffsetX: 0,
+                            shadowColor: 'rgba(0, 0, 0, 0.5)'
+                        }
+                    }
+                }
+            ]
+        };
+
+        this.charts.capacity.setOption(option);
+    }
+
+    updateCargoFlow(data) {
+        const container = document.getElementById('cargoFlowContainer');
+
+        if (!data.warehouse_flows || data.warehouse_flows.length === 0) {
+            container.innerHTML = '<div class="text-center py-4 text-muted">暂无数据</div>';
+            return;
+        }
+
+        let html = '<div class="cargo-flow-summary mb-3">';
+        html += `
+            <div class="row text-center">
+                <div class="col-4">
+                    <h5 class="text-primary">${data.total_flows.inbound_total}</h5>
+                    <small class="text-muted">总入库</small>
+                </div>
+                <div class="col-4">
+                    <h5 class="text-success">${data.total_flows.outbound_total}</h5>
+                    <small class="text-muted">总出库</small>
+                </div>
+                <div class="col-4">
+                    <h5 class="text-info">${data.total_flows.inter_warehouse_transfer}</h5>
+                    <small class="text-muted">仓间流转</small>
+                </div>
+            </div>
+        `;
+        html += '</div>';
+
+        html += '<div class="warehouse-flows">';
+        data.warehouse_flows.forEach(warehouse => {
+            html += `
+                <div class="mb-3 p-3 border rounded">
+                    <h6 class="mb-2">${warehouse.warehouse_name}</h6>
+                    <div class="row">
+                        <div class="col-6">
+                            <small class="text-muted">主要入库来源:</small>
+                            <ul class="list-unstyled small mt-1">
+            `;
+
+            warehouse.inbound_sources.slice(0, 3).forEach(source => {
+                html += `<li>• ${source.source}: ${source.count}票</li>`;
+            });
+
+            html += `
+                            </ul>
+                        </div>
+                        <div class="col-6">
+                            <small class="text-muted">主要出库目的地:</small>
+                            <ul class="list-unstyled small mt-1">
+            `;
+
+            warehouse.outbound_destinations.slice(0, 3).forEach(dest => {
+                html += `<li>• ${dest.destination}: ${dest.count}票</li>`;
+            });
+
+            html += `
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="mt-2 small text-muted">
+                        净流量: ${warehouse.totals.net_flow > 0 ? '+' : ''}${warehouse.totals.net_flow} 票
+                    </div>
+                </div>
+            `;
+        });
+        html += '</div>';
+
+        container.innerHTML = html;
+    }
+
+    updateInventoryHealth(data) {
+        const container = document.getElementById('inventoryHealthContainer');
+
+        if (!data.warehouse_inventory || data.warehouse_inventory.length === 0) {
+            container.innerHTML = '<div class="text-center py-4 text-muted">暂无数据</div>';
+            return;
+        }
+
+        let html = '<div class="row">';
+
+        data.warehouse_inventory.forEach(warehouse => {
+            const healthClass = warehouse.health_score >= 80 ? 'success' :
+                               warehouse.health_score >= 60 ? 'warning' : 'danger';
+
+            html += `
+                <div class="col-lg-3 col-md-6 mb-3">
+                    <div class="card border-${healthClass} h-100">
+                        <div class="card-header bg-${healthClass} text-white py-2">
+                            <h6 class="mb-0">${warehouse.warehouse_name}</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="text-center mb-3">
+                                <h4 class="text-${healthClass}">${warehouse.health_score}</h4>
+                                <small class="text-muted">健康度评分</small>
+                            </div>
+                            <div class="small">
+                                <div class="d-flex justify-content-between mb-1">
+                                    <span>1-7天:</span>
+                                    <strong>${warehouse.staying_distribution['1-7天']}</strong>
+                                </div>
+                                <div class="d-flex justify-content-between mb-1">
+                                    <span>8-15天:</span>
+                                    <strong>${warehouse.staying_distribution['8-15天']}</strong>
+                                </div>
+                                <div class="d-flex justify-content-between mb-1">
+                                    <span>16-30天:</span>
+                                    <strong>${warehouse.staying_distribution['16-30天']}</strong>
+                                </div>
+                                <div class="d-flex justify-content-between">
+                                    <span>30天以上:</span>
+                                    <strong class="text-danger">${warehouse.staying_distribution['30天以上']}</strong>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+
+        html += '</div>';
+
+        // 添加总体健康度
+        const avgHealth = data.warehouse_inventory.reduce((sum, w) => sum + w.health_score, 0) / data.warehouse_inventory.length;
+        const overallClass = avgHealth >= 80 ? 'success' : avgHealth >= 60 ? 'warning' : 'danger';
+
+        html += `
+            <div class="alert alert-${overallClass} mt-3">
+                <i class="fas fa-heartbeat me-2"></i>
+                <strong>整体库存健康度:</strong> ${avgHealth.toFixed(1)}分
+                <span class="ms-2">总库存: ${data.total_inventory.count}票</span>
+            </div>
+        `;
+
+        container.innerHTML = html;
+    }
+
+    updateLastUpdateTime() {
+        const now = new Date();
+        const timeStr = now.toLocaleTimeString('zh-CN');
+        document.getElementById('lastUpdateTime').textContent = `最后更新: ${timeStr}`;
+    }
+}
+
+// 页面加载完成后初始化
+document.addEventListener('DOMContentLoaded', function() {
+    const dashboard = new WarehouseOperationsDashboard();
+});
+</script>
+{% endblock %}

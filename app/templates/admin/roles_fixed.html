@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+
+{% block title %}角色权限管理 - 修复版{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="card-title mb-0">
+                        <i class="fas fa-user-shield me-2"></i>角色权限管理 - 修复版
+                        <span class="badge bg-light text-primary ms-2">Role & Permission Management</span>
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        这是修复版的角色管理页面，权限设置按钮已修复，直接跳转到权限设置页面。
+                    </div>
+                    
+                    <!-- 角色列表 -->
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>角色名称</th>
+                                    <th>角色代码</th>
+                                    <th>描述</th>
+                                    <th>状态</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><strong>超级管理员</strong></td>
+                                    <td><code>ADMIN</code></td>
+                                    <td>系统超级管理员权限</td>
+                                    <td><span class="badge bg-success">活跃</span></td>
+                                    <td>
+                                        <button class="btn btn-sm btn-outline-primary me-1" onclick="alert('编辑功能开发中')">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-info" onclick="window.location.href='/admin/permissions/role-permissions/1'">
+                                            <i class="fas fa-key"></i> 权限设置
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td><strong>仓库经理</strong></td>
+                                    <td><code>MANAGER</code></td>
+                                    <td>仓库管理权限</td>
+                                    <td><span class="badge bg-success">活跃</span></td>
+                                    <td>
+                                        <button class="btn btn-sm btn-outline-primary me-1" onclick="alert('编辑功能开发中')">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-info" onclick="window.location.href='/admin/permissions/role-permissions/2'">
+                                            <i class="fas fa-key"></i> 权限设置
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td><strong>仓库操作员</strong></td>
+                                    <td><code>OPERATOR</code></td>
+                                    <td>仓库操作权限</td>
+                                    <td><span class="badge bg-success">活跃</span></td>
+                                    <td>
+                                        <button class="btn btn-sm btn-outline-primary me-1" onclick="alert('编辑功能开发中')">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-info" onclick="window.location.href='/admin/permissions/role-permissions/3'">
+                                            <i class="fas fa-key"></i> 权限设置
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td><strong>客户</strong></td>
+                                    <td><code>CUSTOMER</code></td>
+                                    <td>客户查询权限</td>
+                                    <td><span class="badge bg-success">活跃</span></td>
+                                    <td>
+                                        <button class="btn btn-sm btn-outline-primary me-1" onclick="alert('编辑功能开发中')">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-info" onclick="window.location.href='/admin/permissions/role-permissions/4'">
+                                            <i class="fas fa-key"></i> 权限设置
+                                        </button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="mt-4">
+                        <h5>测试说明：</h5>
+                        <ul class="list-group">
+                            <li class="list-group-item">
+                                <i class="fas fa-check-circle text-success me-2"></i>
+                                点击"权限设置"按钮应该直接跳转到权限设置页面
+                            </li>
+                            <li class="list-group-item">
+                                <i class="fas fa-info-circle text-info me-2"></i>
+                                不应该再显示"设置角色权限功能开发中"的弹出框
+                            </li>
+                            <li class="list-group-item">
+                                <i class="fas fa-link text-primary me-2"></i>
+                                直接访问链接：
+                                <a href="/admin/permissions/role-permissions/1" class="ms-2">角色1权限设置</a> |
+                                <a href="/admin/permissions/role-permissions/2" class="ms-2">角色2权限设置</a>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// 修复版角色管理页面 JavaScript
+console.log('修复版角色管理页面已加载 - 无managePermissions函数冲突');
+
+// 页面加载完成后显示状态
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('页面加载完成，权限设置按钮使用直接跳转方式');
+    
+    // 检查是否有旧的managePermissions函数
+    if (typeof managePermissions !== 'undefined') {
+        console.warn('检测到旧的managePermissions函数，可能存在缓存问题');
+    } else {
+        console.log('✅ 没有检测到旧的managePermissions函数');
+    }
+});
+</script>
+{% endblock %}

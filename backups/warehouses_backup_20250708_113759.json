@@ -1,0 +1,50 @@
+[
+  {
+    "id": 1,
+    "warehouse_name": "平湖仓",
+    "warehouse_code": "PH",
+    "warehouse_type": "frontend",
+    "address": "广东省东莞市凤岗镇凤平路1号,车辆进盛辉物流园左转22-23号码头车夫网仓库",
+    "contact_person": "平湖仓管理员",
+    "contact_phone": "13800138001",
+    "status": "active",
+    "created_at": "2025-07-07T23:23:18.098515",
+    "updated_at": "2025-07-08T08:29:22.358544"
+  },
+  {
+    "id": 2,
+    "warehouse_name": "昆山仓",
+    "warehouse_code": "KS",
+    "warehouse_type": "frontend",
+    "address": "江苏省苏州市昆山普洛斯淀山湖物流园东门进去左转B7仓库码头",
+    "contact_person": "昆山仓管理员",
+    "contact_phone": "13800138002",
+    "status": "active",
+    "created_at": "2025-07-07T23:23:18.100510",
+    "updated_at": "2025-07-08T08:29:31.782954"
+  },
+  {
+    "id": 3,
+    "warehouse_name": "成都仓",
+    "warehouse_code": "CD",
+    "warehouse_type": "frontend",
+    "address": "成都市青白江区远洋物流 2楼7-128",
+    "contact_person": "成都仓管理员",
+    "contact_phone": "13800138003",
+    "status": "active",
+    "created_at": "2025-07-07T23:23:18.101509",
+    "updated_at": "2025-07-08T08:29:41.152411"
+  },
+  {
+    "id": 4,
+    "warehouse_name": "凭祥北投仓",
+    "warehouse_code": "PX",
+    "warehouse_type": "backend",
+    "address": "凭祥市凭祥镇北投跨境物流中心B8-3至B8-4门",
+    "contact_person": "凭祥仓管理员",
+    "contact_phone": "13800138004",
+    "status": "active",
+    "created_at": "2025-07-07T23:23:18.103952",
+    "updated_at": "2025-07-08T08:29:51.304772"
+  }
+]

@@ -1,0 +1,417 @@
+{% extends "base.html" %}
+
+{% block title %}后端仓入库操作{% endblock %}
+
+{% block styles %}
+{{ super() }}
+<link rel="preload" href="https://cdn.bootcdn.net/ajax/libs/handsontable/13.0.0/handsontable.full.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+<noscript><link rel="stylesheet" href="https://cdn.bootcdn.net/ajax/libs/handsontable/13.0.0/handsontable.full.min.css"></noscript>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/simple-table.css') }}" type="text/css" />
+<style>
+    .batch-options {
+        margin-bottom: 1rem;
+    }
+    #hot-container {
+        height: 600px;
+        overflow: visible;
+        margin-bottom: 20px;
+        margin-left: auto;
+        margin-right: auto;
+        position: relative;
+    }
+    /* 增加表格行高的样式 */
+    .handsontable td {
+        height: 32px !important;
+        line-height: 28px !important;
+        padding: 4px 6px !important;
+        font-size: 14px !important;
+        text-align: center !important;
+        vertical-align: middle !important;
+    }
+    /* 增加表头行高 */
+    .handsontable th {
+        height: 36px !important;
+        padding: 6px 6px !important;
+        font-size: 14px !important;
+        font-weight: bold !important;
+        text-align: center !important;
+        vertical-align: middle !important;
+    }
+    .handsontable .required {
+        color: #ff0000;
+    }
+    /* 表单标签中的必填项标识 */
+    .required {
+        color: #dc3545 !important;
+        font-weight: bold;
+    }
+    .btn-action {
+        margin-right: 8px;
+    }
+    /* 内容区域居中 */
+    .card-body {
+        text-align: center;
+    }
+    /* 表单区域左对齐 */
+    .form-container {
+        text-align: left;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- 页面标题 -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-danger">
+                <div class="card-header bg-danger text-white">
+                    <h3 class="card-title mb-0">
+                        <i class="fas fa-warehouse me-2"></i>后端仓入库操作
+                        <span class="badge bg-light text-danger ms-2">Backend Inbound</span>
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <p class="card-text mb-0">
+                        <i class="fas fa-info-circle me-1"></i>
+                        凭祥北投仓客户送货入库操作
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 上层：公共数据区域 -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title">
+                        <i class="fas fa-clipboard-list me-2"></i>公共信息
+                    </h5>
+                </div>
+                <div class="card-body form-container">
+                    <form id="commonForm">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                        <div class="row">
+                            <div class="col-md-3">
+                                <div class="mb-3">
+                                    <label for="inbound_time" class="form-label">入库时间 <span class="required">*</span></label>
+                                    <input type="datetime-local" class="form-control" id="inbound_time" name="inbound_time" required>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="mb-3">
+                                    <label for="plate_number" class="form-label">入库车牌 <span class="required">*</span></label>
+                                    <input type="text" class="form-control" id="plate_number" name="plate_number" placeholder="如：粤B12345" required>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="mb-3">
+                                    <label for="operated_warehouse" class="form-label">操作仓库</label>
+                                    <input type="text" class="form-control" id="operated_warehouse" name="operated_warehouse" value="凭祥北投仓" readonly>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="mb-3">
+                                    <label for="operator" class="form-label">操作员</label>
+                                    <input type="text" class="form-control" id="operator" name="operator" value="{{ current_user.username if current_user.is_authenticated else '系统' }}" readonly>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 下层：表格区域 -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title">
+                        <i class="fas fa-table me-2"></i>入库货物明细
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <!-- 操作说明 -->
+                    <div class="info-container">
+                        <div class="alert alert-info">
+                            <h6><i class="fas fa-info-circle me-2"></i>操作说明：</h6>
+                            <ul class="mb-0">
+                                <li>请先填写上方的公共信息（入库时间、入库车牌等）</li>
+                                <li>在下方表格中录入每个货物的详细信息</li>
+                                <li>标有 <span class="required">*</span> 的字段为必填项</li>
+                                <li>完成后点击"保存入库记录"按钮</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- 表格操作按钮 -->
+                    <div class="batch-options mb-3">
+                        <button type="button" class="btn btn-success btn-action" onclick="addRow()">
+                            <i class="fas fa-plus me-1"></i>添加行
+                        </button>
+                        <button type="button" class="btn btn-warning btn-action" onclick="removeRow()">
+                            <i class="fas fa-minus me-1"></i>删除行
+                        </button>
+                        <button type="button" class="btn btn-info btn-action" onclick="clearTable()">
+                            <i class="fas fa-eraser me-1"></i>清空表格
+                        </button>
+                        <button type="button" class="btn btn-primary btn-action" onclick="saveInboundRecords()">
+                            <i class="fas fa-save me-1"></i>保存入库记录
+                        </button>
+                        <button type="button" class="btn btn-secondary btn-action" onclick="resetForm()">
+                            <i class="fas fa-undo me-1"></i>重置表单
+                        </button>
+                    </div>
+
+                    <!-- Handsontable 容器 -->
+                    <div id="hot-container"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script src="https://cdn.bootcdn.net/ajax/libs/handsontable/13.0.0/handsontable.full.min.js" defer></script>
+<script>
+let hot = null;
+
+$(document).ready(function() {
+    console.log('后端仓直接入库页面已加载');
+    
+    // 设置默认入库时间为当前时间
+    const now = new Date();
+    const localDateTime = new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+    document.getElementById('inbound_time').value = localDateTime;
+    
+    // 初始化表格
+    initInboundTable();
+});
+
+// 初始化后端仓直接入库表格
+function initInboundTable() {
+    const container = document.getElementById('hot-container');
+    if (!container) {
+        console.error('找不到表格容器');
+        return;
+    }
+
+    // 下拉框选项定义
+    const orderTypeOptions = ['原车出境', '换车出境', '零担', 'TP订单'];
+    const exportModeOptions = ['保税', '清关'];
+    const customsBrokerOptions = ['报关行A', '报关行B', '报关行C', '报关行D'];
+
+    // 表格列定义 - 后端仓直接入库字段（不包含送货干线车）
+    const columns = [
+        { data: 'customer_name', title: '客户名称 <span class="required">*</span>', width: 120 },
+        { data: 'identification_code', title: '识别编码 <span class="required">*</span>', width: 120 },
+        { data: 'inbound_plate', title: '入库车牌', width: 100 },
+        {
+            data: 'order_type',
+            title: '订单类型',
+            width: 100,
+            type: 'dropdown',
+            source: orderTypeOptions
+        },
+        {
+            data: 'export_mode',
+            title: '出境模式',
+            width: 100,
+            type: 'dropdown',
+            source: exportModeOptions
+        },
+        {
+            data: 'customs_broker',
+            title: '报关行',
+            width: 100,
+            type: 'dropdown',
+            source: customsBrokerOptions
+        },
+        { data: 'pallet_count', title: '板数', width: 80, type: 'numeric' },
+        { data: 'package_count', title: '件数', width: 80, type: 'numeric' },
+        { data: 'weight', title: '重量(kg)', width: 80, type: 'numeric' },
+        { data: 'volume', title: '体积(m³)', width: 80, type: 'numeric' },
+        { data: 'location', title: '库位', width: 100 },
+        { data: 'documents', title: '单据', width: 80 },
+        { data: 'service_staff', title: '跟单客服', width: 100 },
+        { data: 'remark1', title: '备注1', width: 150 },
+        { data: 'remark2', title: '备注2', width: 150 }
+    ];
+
+    // 初始化Handsontable
+    hot = new Handsontable(container, {
+        data: [],
+        columns: columns,
+        colHeaders: columns.map(col => col.title),
+        rowHeaders: true,
+        width: '100%',
+        height: 500,
+        licenseKey: 'non-commercial-and-evaluation',
+        stretchH: 'all',
+        autoWrapRow: true,
+        autoWrapCol: true,
+        manualRowResize: true,
+        manualColumnResize: true,
+        contextMenu: true,
+        afterChange: function(changes, source) {
+            if (source !== 'loadData') {
+                console.log('表格数据已修改');
+            }
+        }
+    });
+
+    window.hot = hot;
+    console.log('后端仓直接入库表格初始化完成');
+}
+
+// 添加行
+function addRow() {
+    if (hot) {
+        hot.alter('insert_row', hot.countRows());
+        console.log('已添加新行');
+    }
+}
+
+// 删除行
+function removeRow() {
+    if (hot) {
+        const selected = hot.getSelected();
+        if (selected && selected.length > 0) {
+            hot.alter('remove_row', selected[0][0]);
+            console.log('已删除选中行');
+        } else {
+            alert('请先选择要删除的行');
+        }
+    }
+}
+
+// 清空表格
+function clearTable() {
+    if (hot && confirm('确定要清空表格吗？')) {
+        hot.loadData([]);
+        console.log('表格已清空');
+    }
+}
+
+// 重置表单
+function resetForm() {
+    if (confirm('确定要重置表单吗？这将清除所有已填写的数据。')) {
+        // 重置公共信息表单
+        document.getElementById('commonForm').reset();
+        
+        // 重新设置默认时间
+        const now = new Date();
+        const localDateTime = new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+        document.getElementById('inbound_time').value = localDateTime;
+        
+        // 清空表格数据
+        if (hot) {
+            hot.loadData([]);
+        }
+        
+        console.log('后端仓直接入库表单已重置');
+    }
+}
+
+// 保存入库记录
+function saveInboundRecords() {
+    // 获取公共信息
+    const inboundTime = document.getElementById('inbound_time').value;
+    const plateNumber = document.getElementById('plate_number').value.trim();
+    
+    // 验证公共信息
+    if (!inboundTime) {
+        alert('请填写入库时间');
+        return;
+    }
+    
+    if (!plateNumber) {
+        alert('请填写入库车牌');
+        return;
+    }
+    
+    // 获取表格数据
+    const tableData = hot.getData();
+    
+    // 验证表格数据
+    const validData = [];
+    const errors = [];
+    
+    tableData.forEach((row, index) => {
+        // 跳过空行
+        if (!row.some(cell => cell !== null && cell !== '')) {
+            return;
+        }
+        
+        const [customer_name, identification_code, inbound_plate, order_type, export_mode, customs_broker,
+               pallet_count, package_count, weight, volume, location, documents, service_staff, remark1, remark2] = row;
+        
+        if (!customer_name) errors.push('第' + (index + 1) + '行：客户名称不能为空');
+        if (!identification_code) errors.push('第' + (index + 1) + '行：识别编码不能为空');
+        
+        validData.push(row);
+    });
+    
+    if (errors.length > 0) {
+        alert('数据验证失败：\n' + errors.join('\n'));
+        return;
+    }
+    
+    if (validData.length === 0) {
+        alert('请至少添加一条入库记录');
+        return;
+    }
+    
+    // 构建提交数据
+    const submitData = validData.map(row => ({
+        inbound_time: inboundTime,
+        plate_number: plateNumber,
+        customer_name: row[0],
+        identification_code: row[1],
+        inbound_plate: row[2] || '',
+        order_type: row[3] || '',
+        export_mode: row[4] || '',
+        customs_broker: row[5] || '',
+        pallet_count: parseInt(row[6]) || 0,
+        package_count: parseInt(row[7]) || 0,
+        weight: parseFloat(row[8]) || 0,
+        volume: parseFloat(row[9]) || 0,
+        location: row[10] || '',
+        documents: row[11] || '',
+        service_staff: row[12] || '',
+        remark1: row[13] || '',
+        remark2: row[14] || ''
+    }));
+    
+    console.log('准备提交的后端仓直接入库数据:', submitData);
+    
+    // 提交数据到后端
+    fetch('/api/backend/inbound/direct/batch', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ records: submitData })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(`成功保存 ${data.saved_count} 条后端仓直接入库记录`);
+            resetForm();
+        } else {
+            alert('保存失败: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('保存入库记录时出错:', error);
+        alert('保存失败，请重试');
+    });
+}
+</script>
+{% endblock %}

@@ -1,0 +1,161 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h3 class="card-title">编辑出库记录</h3>
+                        <div>
+                            <a href="{{ url_for('main.outbound_list') }}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left"></i> 返回列表
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <form action="{{ url_for('main.edit_outbound', id=form.id.data) }}" method="post" novalidate>
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                        {{ form.hidden_tag() }}
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="{{ form.outbound_time.id }}">出库时间 <span class="text-danger">*</span></label>
+                                    {{ form.outbound_time(class="form-control", id="outbound_time") }}
+                                    {% if form.outbound_time.errors %}
+                                        {% for error in form.outbound_time.errors %}
+                                            <small class="text-danger">{{ error }}</small>
+                                        {% endfor %}
+                                    {% endif %}
+                                </div>
+                                <div class="form-group">
+                                    <label for="{{ form.plate_number.id }}">出库车牌 <span class="text-danger">*</span></label>
+                                    {{ form.plate_number(class="form-control") }}
+                                    {% if form.plate_number.errors %}
+                                        {% for error in form.plate_number.errors %}
+                                            <small class="text-danger">{{ error }}</small>
+                                        {% endfor %}
+                                    {% endif %}
+                                </div>
+                                <div class="form-group">
+                                    <label for="{{ form.customer_name.id }}">客户名称 <span class="text-danger">*</span></label>
+                                    {{ form.customer_name(class="form-control") }}
+                                    {% if form.customer_name.errors %}
+                                        {% for error in form.customer_name.errors %}
+                                            <small class="text-danger">{{ error }}</small>
+                                        {% endfor %}
+                                    {% endif %}
+                                </div>
+                                <div class="form-group">
+                                    <label for="{{ form.pallet_count.id }}">板数 <span class="text-danger">*</span></label>
+                                    {{ form.pallet_count(class="form-control") }}
+                                    {% if form.pallet_count.errors %}
+                                        {% for error in form.pallet_count.errors %}
+                                            <small class="text-danger">{{ error }}</small>
+                                        {% endfor %}
+                                    {% endif %}
+                                </div>
+                                <div class="form-group">
+                                    <label for="{{ form.package_count.id }}">件数 <span class="text-danger">*</span></label>
+                                    {{ form.package_count(class="form-control") }}
+                                    {% if form.package_count.errors %}
+                                        {% for error in form.package_count.errors %}
+                                            <small class="text-danger">{{ error }}</small>
+                                        {% endfor %}
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="{{ form.weight.id }}">重量(kg) <span class="text-danger">*</span></label>
+                                    {{ form.weight(class="form-control") }}
+                                    {% if form.weight.errors %}
+                                        {% for error in form.weight.errors %}
+                                            <small class="text-danger">{{ error }}</small>
+                                        {% endfor %}
+                                    {% endif %}
+                                </div>
+                                <div class="form-group">
+                                    <label for="{{ form.volume.id }}">体积(m³) <span class="text-danger">*</span></label>
+                                    {{ form.volume(class="form-control") }}
+                                    {% if form.volume.errors %}
+                                        {% for error in form.volume.errors %}
+                                            <small class="text-danger">{{ error }}</small>
+                                        {% endfor %}
+                                    {% endif %}
+                                </div>
+                                <div class="form-group">
+                                    <label for="{{ form.destination.id }}">目的地</label>
+                                    {{ form.destination(class="form-control") }}
+                                    {% if form.destination.errors %}
+                                        {% for error in form.destination.errors %}
+                                            <small class="text-danger">{{ error }}</small>
+                                        {% endfor %}
+                                    {% endif %}
+                                </div>
+                                <div class="form-group">
+                                    <label for="{{ form.transport_company.id }}">运输公司</label>
+                                    {{ form.transport_company(class="form-control") }}
+                                    {% if form.transport_company.errors %}
+                                        {% for error in form.transport_company.errors %}
+                                            <small class="text-danger">{{ error }}</small>
+                                        {% endfor %}
+                                    {% endif %}
+                                </div>
+                                <div class="form-group">
+                                    <label for="{{ form.service_staff.id }}">跟单客服</label>
+                                    {{ form.service_staff(class="form-control") }}
+                                    {% if form.service_staff.errors %}
+                                        {% for error in form.service_staff.errors %}
+                                            <small class="text-danger">{{ error }}</small>
+                                        {% endfor %}
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-12">
+                                <div class="form-group">
+                                    <label for="{{ form.remarks.id }}">备注</label>
+                                    {{ form.remarks(class="form-control", rows=4) }}
+                                    {% if form.remarks.errors %}
+                                        {% for error in form.remarks.errors %}
+                                            <small class="text-danger">{{ error }}</small>
+                                        {% endfor %}
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row mt-3">
+                            <div class="col-12">
+                                <div class="float-right">
+                                    {{ form.submit(class="btn btn-primary") }}
+                                    <a href="{{ url_for('main.outbound_list') }}" class="btn btn-default ml-2">取消</a>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    $(function() {
+        $('#outbound_time').daterangepicker({
+            singleDatePicker: true,
+            timePicker: true,
+            timePicker24Hour: true,
+            timePickerSeconds: true,
+            locale: {
+                format: 'YYYY-MM-DD HH:mm:ss'
+            }
+        });
+    });
+</script>
+{% endblock %} 

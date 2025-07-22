@@ -1,0 +1,93 @@
+# 仓储管理系统 .gitignore 文件
+# 最小化排除，保留几乎所有文件
+
+# ===== 只排除绝对必要的文件 =====
+
+# Python字节码（可重新生成）
+__pycache__/
+*.pyc
+*.pyo
+
+# 虚拟环境（太大且可重新创建）
+Lib/
+Scripts/python.exe
+Scripts/pythonw.exe
+Scripts/pip*.exe
+Scripts/wheel*.exe
+Scripts/f2py.exe
+Scripts/chardetect.exe
+Scripts/dotenv.exe
+Scripts/flask.exe
+Scripts/alembic.exe
+Scripts/mako-render.exe
+Scripts/normalizer.exe
+Scripts/numpy-config.exe
+Scripts/pywin32_*.exe
+Scripts/pywin32_*.py
+include/
+
+# 保留虚拟环境配置文件
+# pyvenv.cfg  # 注释掉，保留此文件
+
+# 敏感配置文件（包含密码等）
+.env.production
+.env.local
+
+# 保留其他配置文件
+# .env  # 注释掉，保留
+# .env.development  # 注释掉，保留
+# .env.test  # 注释掉，保留
+
+# 保留实例配置和数据库文件
+# instance/  # 注释掉，保留
+# *.db  # 注释掉，保留
+# *.sqlite  # 注释掉，保留
+
+# 保留日志文件（包含重要信息）
+# logs/  # 注释掉，保留
+# *.log  # 注释掉，保留
+
+# 保留临时文件（可能包含重要数据）
+# temp/  # 注释掉，保留
+# var/  # 注释掉，保留
+
+# 只排除系统生成的临时文件
+# Windows系统文件
+Thumbs.db
+[Dd]esktop.ini
+$RECYCLE.BIN/
+
+# 保留IDE配置文件（可能包含项目设置）
+# .vscode/  # 注释掉，保留
+# .idea/  # 注释掉，保留
+
+# 保留编辑器临时文件（可能包含未保存的工作）
+# *.swp  # 注释掉，保留
+# *.swo  # 注释掉，保留
+
+# 保留应用文件
+# flask_session/  # 注释掉，保留
+# uploads/  # 注释掉，保留
+
+# 保留测试和调试文件
+# test_*.py  # 注释掉，保留
+# debug*.py  # 注释掉，保留
+
+# 保留备份文件（重要数据）
+# 所有备份文件都保留
+
+# 保留压缩文件（可能包含重要数据）
+# *.zip  # 注释掉，保留
+
+# 只排除真正敏感的证书文件
+*.pem
+*.key
+*.crt
+*.cert
+
+# 保留环境变量模板文件
+!.env.example
+!.env.template
+
+# 保留所有其他文件
+# 这个配置将保留项目中的几乎所有文件

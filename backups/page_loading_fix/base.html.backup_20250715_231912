@@ -1,0 +1,1184 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <title>{% if title %}{{ title }} - {% endif %}仓储管理系统</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.bootcdn.net/ajax/libs/twitter-bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.bootcdn.net/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- DateRangePicker CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <!-- 表格列宽调整样式 -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/table-column-resizer.css') }}">
+    <style>
+        /* 固定顶部导航栏 */
+        .top-navbar {
+            position: sticky;
+            top: 0;
+            z-index: 1030;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        /* 调整主内容区域的上边距 */
+        .main-content {
+            padding-top: 10px;
+        }
+        
+        /* 固定侧边栏 */
+        #sidebar {
+            position: fixed;
+            height: 100vh;
+            overflow-y: auto;
+        }
+
+        /* 仓库菜单样式 - 简洁亮色系 */
+        .submenu-header {
+            padding: 8px 15px 6px 30px;
+            border-left: 3px solid transparent;
+            margin-bottom: 3px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+            background: #f8f9fa;
+            margin: 2px 8px;
+            border-radius: 4px;
+        }
+
+        .submenu-header:hover {
+            background: #e9ecef;
+        }
+
+        .submenu-header .text-muted {
+            font-weight: 600;
+            font-size: 0.85em;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #495057 !important;
+        }
+
+        .submenu-header .collapse-icon {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            transition: transform 0.2s ease;
+            font-size: 0.8em;
+            color: #6c757d;
+        }
+
+        .submenu-header.collapsed .collapse-icon {
+            transform: translateY(-50%) rotate(-90deg);
+        }
+
+        .submenu-section {
+            transition: all 0.2s ease;
+            overflow: hidden;
+            margin: 0 8px;
+        }
+
+        .submenu-section.collapsed {
+            max-height: 0;
+            opacity: 0;
+            margin: 0 8px;
+            padding: 0;
+        }
+
+        /* 统一色系 - 简洁蓝色 */
+        .submenu-header[data-target*="frontend"],
+        .submenu-header[data-target*="backend"],
+        .submenu-header[data-target*="common"] {
+            border-left-color: #007bff;
+            background: #e3f2fd;
+        }
+
+        .submenu-header[data-target*="frontend"]:hover,
+        .submenu-header[data-target*="backend"]:hover,
+        .submenu-header[data-target*="common"]:hover {
+            background: #bbdefb;
+        }
+
+        /* 菜单项间距调整 */
+        .submenu-header + li {
+            margin-top: 0;
+        }
+
+        /* 二级菜单项样式 - 简洁版 */
+        .submenu-section li {
+            margin: 1px 0;
+        }
+
+        .submenu-section li a {
+            padding: 6px 15px 6px 45px;
+            margin: 1px 8px;
+            transition: background-color 0.2s ease;
+            border-radius: 3px;
+        }
+
+        .submenu-section li a:hover {
+            background: rgba(255,255,255,0.8);
+        }
+
+        .submenu-section li.active a {
+            background: #007bff;
+            color: white;
+        }
+
+        .submenu-section li.active a:hover {
+            background: #0056b3;
+        }
+    </style>
+    {% block styles %}{% endblock %}
+<script>
+
+// 通用加载处理器
+class LoadingHandler {
+    constructor() {
+        this.loadingElements = new Set();
+        this.timeouts = new Map();
+    }
+    
+    show(element, message = '加载中...', timeout = 30000) {
+        if (typeof element === 'string') {
+            element = document.getElementById(element);
+        }
+        
+        if (!element) return;
+        
+        // 显示加载指示器
+        element.innerHTML = `
+            <div class="loading-indicator text-center p-4">
+                <i class="fas fa-spinner fa-spin fa-2x text-primary"></i>
+                <p class="mt-2 text-muted">${message}</p>
+            </div>
+        `;
+        
+        this.loadingElements.add(element);
+        
+        // 设置超时处理
+        let timeoutId = setTimeout(() => {
+            this.showTimeout(element);
+        }, timeout);
+        
+        this.timeouts.set(element, timeoutId);
+    }
+    
+    hide(element) {
+        if (typeof element === 'string') {
+            element = document.getElementById(element);
+        }
+        
+        if (!element) return;
+        
+        this.loadingElements.delete(element);
+        
+        // 清除超时
+        if (this.timeouts.has(element)) {
+            clearTimeout(this.timeouts.get(element));
+            this.timeouts.delete(element);
+        }
+    }
+    
+    showTimeout(element) {
+        if (!element) return;
+        
+        element.innerHTML = `
+            <div class="timeout-indicator text-center p-4">
+                <i class="fas fa-exclamation-triangle fa-2x text-warning"></i>
+                <p class="mt-2 text-warning">加载超时</p>
+                <button class="btn btn-primary btn-sm" onclick="location.reload()">
+                    <i class="fas fa-refresh"></i> 重新加载
+                </button>
+            </div>
+        `;
+    }
+    
+    // 清理所有加载状态
+    cleanup() {
+        this.loadingElements.forEach(element => {
+            this.hide(element);
+        });
+        this.timeouts.forEach(timeoutId => {
+            clearTimeout(timeoutId);
+        });
+        this.loadingElements.clear();
+        this.timeouts.clear();
+    }
+}
+
+// 全局加载处理器实例
+window.loadingHandler = new LoadingHandler();
+
+// 页面卸载时清理
+window.addEventListener('beforeunload', function() {
+    if (window.loadingHandler) {
+        window.loadingHandler.cleanup();
+    }
+});
+
+</script>
+</head>
+<body>
+    <div class="wrapper">
+        <!-- 左侧导航栏 -->
+        <nav id="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-brand-icon">
+                    <i class="fas fa-warehouse"></i>
+                </div>
+                <h3>仓储管理系统</h3>
+            </div>
+
+            <ul class="list-unstyled components">
+                {% if current_user.is_authenticated and current_user.has_role('CUSTOMER') %}
+                    <!-- 客户菜单 -->
+                    <li class="{% if request.endpoint == 'customer.dashboard' %}active{% endif %}">
+                        <a href="{{ url_for('customer.dashboard') }}">
+                            <i class="fas fa-tachometer-alt"></i>
+                            <span class="menu-text">客户中心</span>
+                        </a>
+                    </li>
+                    <li class="{% if request.endpoint == 'customer.inbound' %}active{% endif %}">
+                        <a href="{{ url_for('customer.inbound') }}">
+                            <i class="fas fa-truck-loading"></i>
+                            <span class="menu-text">入库记录</span>
+                        </a>
+                    </li>
+                    <li class="{% if request.endpoint == 'customer.outbound' %}active{% endif %}">
+                        <a href="{{ url_for('customer.outbound') }}">
+                            <i class="fas fa-shipping-fast"></i>
+                            <span class="menu-text">出库记录</span>
+                        </a>
+                    </li>
+                    <li class="{% if request.endpoint == 'customer.inventory' %}active{% endif %}">
+                        <a href="{{ url_for('customer.inventory') }}">
+                            <i class="fas fa-boxes"></i>
+                            <span class="menu-text">当前库存</span>
+                        </a>
+                    </li>
+                    <li class="{% if request.endpoint == 'customer.reports' %}active{% endif %}">
+                        <a href="{{ url_for('customer.reports') }}">
+                            <i class="fas fa-chart-bar"></i>
+                            <span class="menu-text">数据报表</span>
+                        </a>
+                    </li>
+                {% else %}
+                    <!-- 管理员、操作员和未登录用户菜单 -->
+                    <li class="{% if request.endpoint == 'main.index' %}active{% endif %}">
+                        <a href="{{ url_for('main.index') }}">
+                            <i class="fas fa-home"></i>
+                            <span class="menu-text">首页</span>
+                        </a>
+                    </li>
+
+                    {% if current_user.is_authenticated %}
+                <!-- 入库管理 -->
+                <li class="{% if request.endpoint and 'inbound' in request.endpoint %}active{% endif %}">
+                    <a href="#inboundSubmenu" data-bs-toggle="collapse" aria-expanded="{% if request.endpoint and 'inbound' in request.endpoint %}true{% else %}false{% endif %}" class="dropdown-toggle">
+                        <i class="fas fa-truck-loading"></i>
+                        <span class="menu-text">入库管理</span>
+                    </a>
+                    <ul class="collapse list-unstyled" id="inboundSubmenu">
+                        <!-- 前端仓入库 - 根据页面权限显示 -->
+                        {% if has_menu_permission('FRONTEND_INBOUND') %}
+                        <li class="submenu-header" data-target="frontend-inbound-section">
+                            <span class="text-muted small"><i class="fas fa-warehouse"></i> 前端仓入库</span>
+                            <i class="fas fa-chevron-down collapse-icon"></i>
+                        </li>
+                        <div class="submenu-section" id="frontend-inbound-section">
+                            {% if has_page_permission('FRONTEND_INBOUND_OPERATION') %}
+                            <li class="{% if request.endpoint == 'main.frontend_inbound_integrated' %}active{% endif %}">
+                                <a href="{{ url_for('main.frontend_inbound_integrated') }}"><i class="fas fa-angle-right"></i> <span class="menu-text">前端仓入库操作</span></a>
+                            </li>
+                            {% endif %}
+                            {% if has_page_permission('FRONTEND_INBOUND_LIST') %}
+                            <li class="{% if request.endpoint == 'main.frontend_inbound_list' %}active{% endif %}">
+                                <a href="{{ url_for('main.frontend_inbound_list') }}"><i class="fas fa-angle-right"></i> <span class="menu-text">前端仓入库记录</span></a>
+                            </li>
+                            {% endif %}
+                            {% if has_page_permission('FRONTEND_RECEIVE_LIST') %}
+                            <li class="{% if request.endpoint == 'main.frontend_receive_list' %}active{% endif %}">
+                                <a href="{{ url_for('main.frontend_receive_list') }}"><i class="fas fa-angle-right"></i> <span class="menu-text">前端仓接收记录</span></a>
+                            </li>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+
+                        <!-- 后端仓入库 - 根据页面权限显示 -->
+                        {% if has_menu_permission('BACKEND_INBOUND') %}
+                        <li class="submenu-header mt-2" data-target="backend-receive-section">
+                            <span class="text-muted small"><i class="fas fa-warehouse"></i> 后端仓入库</span>
+                            <i class="fas fa-chevron-down collapse-icon"></i>
+                        </li>
+                        <div class="submenu-section" id="backend-receive-section">
+                            {% if has_page_permission('BACKEND_INBOUND_OPERATION') %}
+                            <li class="{% if request.endpoint == 'main.backend_inbound' %}active{% endif %}">
+                                <a href="{{ url_for('main.backend_inbound') }}"><i class="fas fa-angle-right"></i> <span class="menu-text">后端仓入库操作</span></a>
+                            </li>
+                            {% endif %}
+                            {% if has_page_permission('BACKEND_RECEIVE_RECORDS') %}
+                            <li class="{% if request.endpoint == 'main.backend_receive_records' %}active{% endif %}">
+                                <a href="{{ url_for('main.backend_receive_records') }}"><i class="fas fa-angle-right"></i> <span class="menu-text">后端仓接收记录</span></a>
+                            </li>
+                            {% endif %}
+                            {% if has_page_permission('BACKEND_INBOUND_LIST') %}
+                            <li class="{% if request.endpoint == 'main.backend_inbound_list' %}active{% endif %}">
+                                <a href="{{ url_for('main.backend_inbound_list') }}"><i class="fas fa-angle-right"></i> <span class="menu-text">后端仓入库记录</span></a>
+                            </li>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+
+                        <!-- 通用功能 -->
+                        <li class="submenu-header mt-2" data-target="inbound-common-section">
+                            <span class="text-muted small"><i class="fas fa-tools"></i> 通用功能</span>
+                            <i class="fas fa-chevron-down collapse-icon"></i>
+                        </li>
+                        <div class="submenu-section" id="inbound-common-section">
+                            <li class="{% if request.endpoint == 'main.label_print' %}active{% endif %}">
+                                <a href="{{ url_for('main.label_print') }}"><i class="fas fa-angle-right"></i> <span class="menu-text">标签打印</span></a>
+                            </li>
+                        </div>
+                    </ul>
+                </li>
+                <!-- 出库管理 -->
+                <li class="{% if request.endpoint and 'outbound' in request.endpoint %}active{% endif %}">
+                    <a href="#outboundSubmenu" data-bs-toggle="collapse" aria-expanded="{% if request.endpoint and 'outbound' in request.endpoint %}true{% else %}false{% endif %}" class="dropdown-toggle">
+                        <i class="fas fa-truck"></i>
+                        <span class="menu-text">出库管理</span>
+                    </a>
+                    <ul class="collapse list-unstyled" id="outboundSubmenu">
+                        <!-- 前端仓出库 - 根据页面权限显示 -->
+                        {% if has_menu_permission('FRONTEND_OUTBOUND') %}
+                        <li class="submenu-header" data-target="frontend-outbound-section">
+                            <span class="text-muted small"><i class="fas fa-warehouse"></i> 前端仓出库</span>
+                            <i class="fas fa-chevron-down collapse-icon"></i>
+                        </li>
+                        <div class="submenu-section" id="frontend-outbound-section">
+                            {% if has_page_permission('FRONTEND_OUTBOUND_OPERATION') %}
+                            <li class="{% if request.endpoint == 'main.frontend_outbound' or request.endpoint == 'main.frontend_outbound_to_backend' or request.endpoint == 'main.frontend_outbound_to_customer' %}active{% endif %}">
+                                <a href="{{ url_for('main.frontend_outbound') }}"><i class="fas fa-angle-right"></i> <span class="menu-text">前端仓出库操作</span></a>
+                            </li>
+                            {% endif %}
+                            {% if has_page_permission('FRONTEND_OUTBOUND_LIST') %}
+                            <li class="{% if request.endpoint == 'main.frontend_outbound_list' %}active{% endif %}">
+                                <a href="{{ url_for('main.frontend_outbound_list') }}"><i class="fas fa-angle-right"></i> <span class="menu-text">前端仓出库记录</span></a>
+                            </li>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+
+                        <!-- 后端仓出库 - 根据页面权限显示 -->
+                        {% if has_menu_permission('BACKEND_OUTBOUND') %}
+                        <li class="submenu-header mt-2" data-target="backend-outbound-section">
+                            <span class="text-muted small"><i class="fas fa-warehouse"></i> 后端仓出库</span>
+                            <i class="fas fa-chevron-down collapse-icon"></i>
+                        </li>
+                        <div class="submenu-section" id="backend-outbound-section">
+                            {% if has_page_permission('BACKEND_OUTBOUND_OPERATION') %}
+                            <li class="{% if request.endpoint == 'main.backend_outbound' or request.endpoint == 'main.backend_outbound_to_final' or request.endpoint == 'main.backend_outbound_return_frontend' %}active{% endif %}">
+                                <a href="{{ url_for('main.backend_outbound') }}"><i class="fas fa-angle-right"></i> <span class="menu-text">后端仓出库操作</span></a>
+                            </li>
+                            {% endif %}
+                            {% if has_page_permission('BACKEND_OUTBOUND_LIST') %}
+                            <li class="{% if request.endpoint == 'main.backend_outbound_list' %}active{% endif %}">
+                                <a href="{{ url_for('main.backend_outbound_list') }}"><i class="fas fa-angle-right"></i> <span class="menu-text">后端仓出库记录</span></a>
+                            </li>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+
+                        <!-- 通用功能 -->
+                        <li class="submenu-header mt-2" data-target="outbound-common-section">
+                            <span class="text-muted small"><i class="fas fa-tools"></i> 通用功能</span>
+                            <i class="fas fa-chevron-down collapse-icon"></i>
+                        </li>
+                        <div class="submenu-section" id="outbound-common-section">
+                            {% if has_page_permission('RECEIVER_LIST') %}
+                            <li class="{% if request.endpoint == 'main.receiver_list' %}active{% endif %}">
+                                <a href="{{ url_for('main.receiver_list') }}"><i class="fas fa-angle-right"></i> <span class="menu-text">收货人信息</span></a>
+                            </li>
+                            {% endif %}
+                        </div>
+                    </ul>
+                </li>
+                <!-- 单据打印模块 -->
+                <li class="{% if request.endpoint and (request.endpoint == 'main.outbound_print_list' or request.endpoint == 'main.outbound_exit_plan') %}active{% endif %}">
+                    <a href="#printSubmenu" data-bs-toggle="collapse" aria-expanded="{% if request.endpoint and (request.endpoint == 'main.outbound_print_list' or request.endpoint == 'main.outbound_exit_plan') %}true{% else %}false{% endif %}" class="dropdown-toggle">
+                        <i class="fas fa-print"></i>
+                        <span class="menu-text">单据打印</span>
+                    </a>
+                    <ul class="collapse list-unstyled" id="printSubmenu">
+                        <li class="{% if request.endpoint == 'main.outbound_print_list' %}active{% endif %}">
+                            <a href="{{ url_for('main.outbound_print_list') }}">
+                                <i class="fas fa-angle-right"></i>
+                                <span class="menu-text">出库单打印</span>
+                            </a>
+                        </li>
+                        <li class="{% if request.endpoint == 'main.outbound_exit_plan' %}active{% endif %}">
+                            <a href="{{ url_for('main.outbound_exit_plan') }}">
+                                <i class="fas fa-angle-right"></i>
+                                <span class="menu-text">出境计划单</span>
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+                <!-- 库存管理模块 -->
+                <li class="{% if request.endpoint and ('inventory' in request.endpoint or 'transit_cargo' in request.endpoint) %}active{% endif %}">
+                    <a href="#inventorySubmenu" data-bs-toggle="collapse" aria-expanded="false" class="dropdown-toggle">
+                        <i class="fas fa-boxes"></i>
+                        <span class="menu-text">库存管理</span>
+                    </a>
+                    <ul class="collapse list-unstyled" id="inventorySubmenu">
+                        <!-- 前端仓库存 -->
+                        {% if has_page_permission('FRONTEND_INVENTORY_LIST') %}
+                        <li class="{% if request.endpoint == 'main.frontend_inventory_list' %}active{% endif %}">
+                            <a href="{{ url_for('main.frontend_inventory_list') }}">
+                                <i class="fas fa-angle-right"></i>
+                                <span class="menu-text">前端仓库存界面</span>
+                            </a>
+                        </li>
+                        {% endif %}
+                        {% if has_page_permission('BACKEND_INVENTORY_LIST') %}
+                        <li class="{% if request.endpoint == 'main.backend_inventory_list' %}active{% endif %}">
+                            <a href="{{ url_for('main.backend_inventory_list') }}">
+                                <i class="fas fa-angle-right"></i>
+                                <span class="menu-text">后端仓库存界面</span>
+                            </a>
+                        </li>
+                        {% endif %}
+                        {% if has_page_permission('ALL_INVENTORY_LIST') %}
+                        <li class="{% if request.endpoint == 'main.inventory_list' %}active{% endif %}">
+                            <a href="{{ url_for('main.inventory_list') }}">
+                                <i class="fas fa-angle-right"></i>
+                                <span class="menu-text">全仓库存查询</span>
+                            </a>
+                        </li>
+                        {% endif %}
+
+                        <!-- 在途货物库存 -->
+                        {% if has_page_permission('TRANSIT_CARGO_LIST') %}
+                        <li class="{% if request.endpoint == 'main.transit_cargo_list' %}active{% endif %}">
+                            <a href="{{ url_for('main.transit_cargo_list') }}">
+                                <i class="fas fa-truck"></i>
+                                <span class="menu-text">在途货物库存</span>
+                            </a>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </li>
+                <li>
+                    <a href="#">
+                        <i class="fas fa-chart-line"></i>
+                        <span class="menu-text">统计报表</span>
+                    </a>
+                </li>
+                <!-- 用户管理 - 根据权限显示 -->
+                {% if has_menu_permission('ADMIN_MANAGEMENT') %}
+                <li class="{% if request.endpoint and request.endpoint.startswith('admin.') %}active{% endif %}">
+                    <a href="#adminSubmenu" data-bs-toggle="collapse" aria-expanded="{% if request.endpoint and request.endpoint.startswith('admin.') %}true{% else %}false{% endif %}" class="dropdown-toggle">
+                        <i class="fas fa-users-cog"></i>
+                        <span class="menu-text">用户管理</span>
+                    </a>
+                    <ul class="collapse list-unstyled" id="adminSubmenu">
+                        {% if has_page_permission('USER_MANAGEMENT') %}
+                        <li class="{% if request.endpoint == 'admin.users' %}active{% endif %}">
+                            <a href="{{ url_for('admin.users') }}"><i class="fas fa-angle-right"></i> <span class="menu-text">用户管理</span></a>
+                        </li>
+                        {% endif %}
+                        {% if has_page_permission('WAREHOUSE_MANAGEMENT') %}
+                        <li class="{% if request.endpoint == 'admin.warehouses' %}active{% endif %}">
+                            <a href="{{ url_for('admin.warehouses') }}"><i class="fas fa-angle-right"></i> <span class="menu-text">仓库管理</span></a>
+                        </li>
+                        {% endif %}
+                        {% if has_page_permission('AUDIT_LOGS') %}
+                        <li class="{% if request.endpoint == 'admin.audit_logs' %}active{% endif %}">
+                            <a href="{{ url_for('admin.audit_logs') }}"><i class="fas fa-angle-right"></i> <span class="menu-text">审计日志</span></a>
+                        </li>
+                        {% endif %}
+                        {% if has_page_permission('OPTIMIZATION_MONITOR') %}
+                        <li class="{% if request.endpoint == 'admin.optimization_monitor' %}active{% endif %}">
+                            <a href="{{ url_for('admin.optimization_monitor') }}"><i class="fas fa-angle-right"></i> <span class="menu-text">优化监控</span></a>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </li>
+                {% endif %}
+
+                <!-- 系统维护 - 暂时禁用 -->
+                {% if false %}
+                <li class="{% if request.endpoint and request.endpoint.startswith('maintenance.') %}active{% endif %}">
+                    <a href="{{ url_for('main.index') }}">
+                        <i class="fas fa-tools"></i>
+                        <span class="menu-text">系统维护</span>
+                    </a>
+                </li>
+                {% endif %}
+
+                <!-- 系统设置 - 只有管理员可见 -->
+                {% if current_user.username == 'admin' %}
+                <li>
+                    <a href="#">
+                        <i class="fas fa-cog"></i>
+                        <span class="menu-text">系统设置</span>
+                    </a>
+                </li>
+                {% endif %}
+                    {% endif %}
+                {% endif %}
+            </ul>
+
+            <div class="sidebar-footer">
+                <span class="menu-text">收起菜单</span>
+                <a href="#" id="sidebar-toggler" title="收起/展开菜单">
+                    <i class="fas fa-angle-left"></i>
+                </a>
+            </div>
+        </nav>
+
+        <!-- 右侧内容区 -->
+        <div id="content">
+            <!-- 顶部导航 -->
+            <nav class="navbar navbar-expand-lg navbar-light bg-light top-navbar">
+                <div class="container-fluid">
+                    <button type="button" id="sidebarCollapse" class="btn">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    
+                    <div class="d-flex align-items-center">
+                        <div class="input-group search-box">
+                            <input type="text" class="form-control" placeholder="搜索...">
+                            <button class="btn btn-outline-secondary" type="button">
+                                <i class="fas fa-search"></i>
+                            </button>
+                        </div>
+                        <div class="dropdown ms-3">
+                            {% if current_user.is_authenticated %}
+                                <button class="btn dropdown-toggle user-button" type="button" id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <i class="fas fa-user-circle"></i>
+                                    <span>{{ current_user.username }}</span>
+                                </button>
+                                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                                    <li><a class="dropdown-item" href="{{ url_for('auth.profile') }}"><i class="fas fa-user me-2"></i>个人信息</a></li>
+                                    <li><a class="dropdown-item" href="{{ url_for('auth.change_password') }}"><i class="fas fa-cog me-2"></i>修改密码</a></li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li><span class="dropdown-item-text text-muted small">
+                                        <i class="fas fa-clock me-2"></i>会话剩余: <span id="sessionTimer">--:--</span>
+                                    </span></li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li><a class="dropdown-item" href="javascript:void(0)" onclick="forceLogout()"><i class="fas fa-sign-out-alt me-2"></i>退出登录</a></li>
+                                </ul>
+                            {% else %}
+                                <a href="{{ url_for('auth.login') }}" class="btn btn-primary">
+                                    <i class="fas fa-sign-in-alt"></i>
+                                    登录
+                                </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </nav>
+
+            <!-- 主要内容区 -->
+            <div class="main-content">
+                <!-- 页面加载指示器 -->
+                <div id="pageLoader" class="d-none">
+                    <div class="d-flex justify-content-center align-items-center" style="height: 200px;">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">加载中...</span>
+                        </div>
+                        <span class="ms-3">页面加载中...</span>
+                    </div>
+                </div>
+
+                <!-- 动态内容区域 -->
+                <div id="dynamicContent" style="display: block !important;">
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                        {% if messages %}
+                            {% for category, message in messages %}
+                                <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                                    {{ message }}
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                    {% endwith %}
+
+                    {% block content %}{% endblock %}
+                </div>
+            </div>
+
+            <!-- 页脚 -->
+            <footer class="footer">
+                <div class="container-fluid">
+                    <span class="text-muted">© 2025 仓储管理系统</span>
+                </div>
+            </footer>
+        </div>
+    </div>
+
+    <!-- jQuery必须在所有其他脚本之前加载 -->
+    <script src="https://cdn.bootcdn.net/ajax/libs/jquery/3.6.4/jquery.min.js"></script>
+    <!-- CSRF处理脚本 - 必须在jQuery之后加载 -->
+    <script src="{{ url_for('static', filename='js/csrf-handler.js') }}"></script>
+    <!-- Bootstrap Bundle with Popper -->
+    <script src="https://cdn.bootcdn.net/ajax/libs/twitter-bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    <!-- DateRangePicker JS -->
+    <script src="https://cdn.jsdelivr.net/npm/moment/moment.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <!-- 表格列宽调整脚本 -->
+    <script src="{{ url_for('static', filename='js/table-column-resizer.js') }}"></script>
+    <!-- 统一消息提示系统 -->
+    <script src="{{ url_for('static', filename='js/message-system.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/operation-messages.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/operation-enhancer.js') }}"></script>
+    <!-- 简化的性能监控脚本 -->
+    <script src="{{ url_for('static', filename='js/simple-performance-monitor.js') }}"></script>
+    <script>
+        $(document).ready(function () {
+            // 检查是否有保存的侧边栏状态
+            if (localStorage.getItem('sidebarState') === 'collapsed') {
+                $('#sidebar').addClass('active');
+                $('#content').addClass('active');
+                $('#sidebar-toggler i').removeClass('fa-angle-left').addClass('fa-angle-right');
+            }
+            
+            // 顶部菜单按钮切换侧边栏
+            $('#sidebarCollapse').on('click', function () {
+                $('#sidebar').toggleClass('active');
+                $('#content').toggleClass('active');
+                
+                // 同步底部箭头图标
+                if ($('#sidebar').hasClass('active')) {
+                    $('#sidebar-toggler i').removeClass('fa-angle-left').addClass('fa-angle-right');
+                    localStorage.setItem('sidebarState', 'collapsed');
+                } else {
+                    $('#sidebar-toggler i').removeClass('fa-angle-right').addClass('fa-angle-left');
+                    localStorage.setItem('sidebarState', 'expanded');
+                }
+            });
+            
+            // 底部收缩按钮
+            $('#sidebar-toggler').on('click', function (e) {
+                e.preventDefault();
+                $('#sidebar').toggleClass('active');
+                $('#content').toggleClass('active');
+                
+                if ($('#sidebar').hasClass('active')) {
+                    $(this).find('i').removeClass('fa-angle-left').addClass('fa-angle-right');
+                    localStorage.setItem('sidebarState', 'collapsed');
+                } else {
+                    $(this).find('i').removeClass('fa-angle-right').addClass('fa-angle-left');
+                    localStorage.setItem('sidebarState', 'expanded');
+                }
+            });
+            
+            // 使用事件委托确保子菜单的展开收起功能正常工作
+            $(document).off('click.dropdown').on('click.dropdown', '.dropdown-toggle', function() {
+                const submenuId = $(this).attr('href');
+                $(submenuId).collapse('toggle');
+            });
+            
+            // 如果当前页面在子菜单中，确保父菜单展开
+            if ($('#sidebar ul ul li.active').length > 0) {
+                $('#sidebar ul ul li.active').closest('ul').addClass('show');
+                $('#sidebar ul ul li.active').closest('li').find('a.dropdown-toggle').attr('aria-expanded', 'true');
+            }
+
+            // 二级菜单折叠功能
+            initSubmenuCollapse();
+
+            // 启动菜单事件监控
+            setupMenuEventMonitor();
+
+            // 添加键盘快捷键：Ctrl+Shift+M 重新初始化菜单事件
+            $(document).on('keydown', function(e) {
+                if (e.ctrlKey && e.shiftKey && e.key === 'M') {
+                    e.preventDefault();
+                    reinitializeMenuEvents();
+                    // 显示提示信息
+                    if (typeof showSuccess === 'function') {
+                        showSuccess('菜单事件已重新初始化');
+                    } else {
+                        alert('菜单事件已重新初始化');
+                    }
+                }
+            });
+
+            // 完全禁用AJAX导航，使用传统页面跳转
+            // initAjaxNavigation();
+        });
+
+        // AJAX导航功能
+        function initAjaxNavigation() {
+            // 拦截菜单链接点击事件
+            $('#sidebar a[href^="/"]').not('a[href*="logout"]').not('a[href*="login"]').on('click', function(e) {
+                e.preventDefault();
+
+                const url = $(this).attr('href');
+                const linkText = $(this).find('.menu-text').text() || $(this).text().trim();
+
+                // 更新菜单激活状态
+                updateMenuActiveState($(this));
+
+                // 加载页面内容
+                loadPageContent(url, linkText);
+            });
+        }
+
+        // 更新菜单激活状态
+        function updateMenuActiveState($clickedLink) {
+            // 移除所有激活状态
+            $('#sidebar li').removeClass('active');
+
+            // 添加当前链接的激活状态
+            $clickedLink.closest('li').addClass('active');
+
+            // 如果是二级菜单，也激活父级菜单
+            const $parentMenu = $clickedLink.closest('ul.collapse').prev('a');
+            if ($parentMenu.length > 0) {
+                $parentMenu.closest('li').addClass('active');
+            }
+        }
+
+        // 加载页面内容
+        function loadPageContent(url, title) {
+            // 显示加载指示器
+            $('#pageLoader').removeClass('d-none');
+            $('#dynamicContent').addClass('d-none');
+
+            // 更新浏览器历史记录
+            if (window.location.pathname !== url) {
+                history.pushState({url: url, title: title}, title, url);
+            }
+
+            // 发送AJAX请求
+            $.ajax({
+                url: url,
+                type: 'GET',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                success: function(data) {
+                    // 清空并隐藏加载指示器
+                    $('#pageLoader').addClass('d-none');
+
+                    // 清空动态内容区域，防止重复内容
+                    $('#dynamicContent').empty();
+
+                    // 添加新内容
+                    $('#dynamicContent').html(data).removeClass('d-none');
+
+                    // 更新页面标题
+                    if (title) {
+                        document.title = title + ' - 仓储管理系统';
+                    }
+
+                    // 确保布局正确
+                    setTimeout(function() {
+                        preserveSidebarState();
+                    }, 50);
+
+                    // 重新初始化页面脚本
+                    initPageScripts();
+                },
+                error: function(xhr, status, error) {
+                    // 隐藏加载指示器
+                    $('#pageLoader').addClass('d-none');
+                    $('#dynamicContent').removeClass('d-none');
+
+                    // 显示错误信息
+                    let errorMessage = '页面加载失败';
+                    if (xhr.status === 403) {
+                        errorMessage = '您没有权限访问此页面';
+                    } else if (xhr.status === 404) {
+                        errorMessage = '页面不存在';
+                    } else if (xhr.status === 500) {
+                        errorMessage = '服务器内部错误';
+                    }
+
+                    $('#dynamicContent').html(`
+                        <div class="container-fluid">
+                            <div class="alert alert-danger" role="alert">
+                                <i class="fas fa-exclamation-triangle me-2"></i>
+                                <strong>加载失败：</strong>${errorMessage}
+                                <br><small>错误代码：${xhr.status} ${error}</small>
+                                <hr>
+                                <button class="btn btn-outline-danger btn-sm" onclick="location.reload()">
+                                    <i class="fas fa-refresh me-1"></i>刷新页面
+                                </button>
+                            </div>
+                        </div>
+                    `);
+                }
+            });
+        }
+
+        // 重新初始化页面脚本
+        function initPageScripts() {
+            // 暂时禁用侧边栏状态保护
+            // preserveSidebarState();
+
+            // 重新初始化Bootstrap组件
+            if (typeof bootstrap !== 'undefined') {
+                // 重新初始化tooltips
+                $('[data-bs-toggle="tooltip"]').tooltip();
+
+                // 重新初始化popovers
+                $('[data-bs-toggle="popover"]').popover();
+
+                // 重新初始化modals
+                $('.modal').modal('dispose').modal();
+            }
+
+            // 重新初始化DataTables（如果存在）
+            if (typeof $.fn.DataTable !== 'undefined') {
+                $('.table').each(function() {
+                    if ($.fn.DataTable.isDataTable(this)) {
+                        $(this).DataTable().destroy();
+                    }
+                });
+            }
+
+            // 重新初始化二级菜单状态
+            initSubmenuStates();
+
+            // 触发自定义页面初始化事件
+            $(document).trigger('pageContentLoaded');
+        }
+
+        // 保护侧边栏状态
+        function preserveSidebarState() {
+            // 轻量级状态检查，只在必要时调整
+            const savedState = localStorage.getItem('sidebarState');
+            const $sidebar = $('#sidebar');
+            const $content = $('#content');
+
+            // 只在状态不一致时才调整
+            if (savedState === 'collapsed' && !$sidebar.hasClass('active')) {
+                $sidebar.addClass('active');
+                $content.addClass('active');
+                $('#sidebar-toggler i').removeClass('fa-angle-left').addClass('fa-angle-right');
+            } else if (savedState !== 'collapsed' && $sidebar.hasClass('active')) {
+                $sidebar.removeClass('active');
+                $content.removeClass('active');
+                $('#sidebar-toggler i').removeClass('fa-angle-right').addClass('fa-angle-left');
+            }
+        }
+
+        // 处理浏览器前进后退按钮
+        window.addEventListener('popstate', function(event) {
+            if (event.state && event.state.url) {
+                // 更新菜单激活状态
+                const $targetLink = $(`#sidebar a[href="${event.state.url}"]`);
+                if ($targetLink.length > 0) {
+                    updateMenuActiveState($targetLink);
+                }
+
+                // 加载页面内容（不更新历史记录）
+                loadPageContentWithoutHistory(event.state.url, event.state.title);
+            }
+        });
+
+        // 加载页面内容（不更新历史记录）
+        function loadPageContentWithoutHistory(url, title) {
+            $('#pageLoader').removeClass('d-none');
+            $('#dynamicContent').addClass('d-none');
+
+            $.ajax({
+                url: url,
+                type: 'GET',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                success: function(data) {
+                    // 清空并隐藏加载指示器
+                    $('#pageLoader').addClass('d-none');
+
+                    // 清空动态内容区域，防止重复内容
+                    $('#dynamicContent').empty();
+
+                    // 添加新内容
+                    $('#dynamicContent').html(data).removeClass('d-none');
+
+                    if (title) {
+                        document.title = title + ' - 仓储管理系统';
+                    }
+
+                    // 确保布局正确
+                    setTimeout(function() {
+                        preserveSidebarState();
+                    }, 50);
+
+                    initPageScripts();
+                },
+                error: function() {
+                    $('#pageLoader').addClass('d-none');
+                    $('#dynamicContent').removeClass('d-none');
+                    $('#dynamicContent').html('<div class="alert alert-danger">页面加载失败</div>');
+                }
+            });
+        }
+
+        function initSubmenuCollapse() {
+            // 初始化二级菜单状态
+            initSubmenuStates();
+
+            // 使用事件委托绑定点击事件，确保动态内容也能正常工作
+            $(document).off('click.submenu').on('click.submenu', '.submenu-header', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+
+                const targetId = $(this).data('target');
+                const targetSection = $('#' + targetId);
+                const isCollapsed = targetSection.hasClass('collapsed');
+
+                // 切换状态
+                if (isCollapsed) {
+                    targetSection.removeClass('collapsed');
+                    $(this).removeClass('collapsed');
+                } else {
+                    targetSection.addClass('collapsed');
+                    $(this).addClass('collapsed');
+                }
+
+                // 保存状态到localStorage
+                const states = JSON.parse(localStorage.getItem('submenuStates') || '{}');
+                states[targetId] = isCollapsed ? 'expanded' : 'collapsed';
+                localStorage.setItem('submenuStates', JSON.stringify(states));
+            });
+        }
+
+        // 重新初始化菜单事件绑定的函数
+        function reinitializeMenuEvents() {
+            // 重新绑定二级菜单事件
+            initSubmenuCollapse();
+            console.log('菜单事件已重新初始化');
+        }
+
+        // 监听页面变化，自动重新初始化菜单事件
+        function setupMenuEventMonitor() {
+            // 使用MutationObserver监听DOM变化
+            const observer = new MutationObserver(function(mutations) {
+                let shouldReinit = false;
+                mutations.forEach(function(mutation) {
+                    if (mutation.type === 'childList' && mutation.target.id === 'content') {
+                        shouldReinit = true;
+                    }
+                });
+
+                if (shouldReinit) {
+                    setTimeout(reinitializeMenuEvents, 100);
+                }
+            });
+
+            // 开始观察
+            const contentElement = document.getElementById('content');
+            if (contentElement) {
+                observer.observe(contentElement, {
+                    childList: true,
+                    subtree: true
+                });
+            }
+
+            // 定期检查菜单事件是否正常工作
+            setInterval(function() {
+                checkMenuEventHealth();
+            }, 30000); // 每30秒检查一次
+        }
+
+        // 检查菜单事件健康状态
+        function checkMenuEventHealth() {
+            const submenuHeaders = $('.submenu-header');
+            if (submenuHeaders.length > 0) {
+                // 检查是否有事件监听器
+                let hasEventListeners = false;
+                submenuHeaders.each(function() {
+                    const events = $._data(this, 'events') || {};
+                    if (Object.keys(events).length > 0) {
+                        hasEventListeners = true;
+                        return false; // 跳出循环
+                    }
+                });
+
+                // 如果没有事件监听器，重新初始化
+                if (!hasEventListeners) {
+                    console.warn('检测到菜单事件丢失，正在重新初始化...');
+                    reinitializeMenuEvents();
+                }
+            }
+        }
+
+        function initSubmenuStates() {
+            // 从localStorage加载二级菜单状态
+            const savedStates = JSON.parse(localStorage.getItem('submenuStates') || '{}');
+
+            // 应用保存的状态
+            Object.keys(savedStates).forEach(sectionId => {
+                if (savedStates[sectionId] === 'collapsed') {
+                    const section = document.getElementById(sectionId);
+                    const header = document.querySelector(`[data-target="${sectionId}"]`);
+                    if (section && header) {
+                        section.classList.add('collapsed');
+                        header.classList.add('collapsed');
+                    }
+                }
+            });
+
+            // 检查当前页面是否在某个二级菜单中，如果是则展开该菜单
+            $('.submenu-section').each(function() {
+                if ($(this).find('li.active').length > 0) {
+                    const sectionId = $(this).attr('id');
+                    const header = $(`[data-target="${sectionId}"]`);
+                    $(this).removeClass('collapsed');
+                    header.removeClass('collapsed');
+
+                    // 更新localStorage
+                    const states = JSON.parse(localStorage.getItem('submenuStates') || '{}');
+                    states[sectionId] = 'expanded';
+                    localStorage.setItem('submenuStates', JSON.stringify(states));
+                }
+            });
+        }
+
+        // 会话计时器
+        {% if current_user.is_authenticated and session.get('login_time') %}
+        function updateSessionTimer() {
+            const loginTime = new Date('{{ session.get("login_time") }}');
+            const now = new Date();
+            const sessionDuration = now - loginTime;
+            const maxDuration = 6 * 60 * 60 * 1000; // 6小时（毫秒）
+            const remaining = maxDuration - sessionDuration;
+
+            if (remaining <= 0) {
+                // 会话已过期，刷新页面触发重定向
+                location.reload();
+                return;
+            }
+
+            const hours = Math.floor(remaining / (60 * 60 * 1000));
+            const minutes = Math.floor((remaining % (60 * 60 * 1000)) / (60 * 1000));
+
+            const timerElement = document.getElementById('sessionTimer');
+            if (timerElement) {
+                timerElement.textContent = `${hours}:${minutes.toString().padStart(2, '0')}`;
+
+                // 如果剩余时间少于30分钟，显示警告颜色
+                if (remaining < 30 * 60 * 1000) {
+                    timerElement.className = 'text-warning';
+                }
+                // 如果剩余时间少于10分钟，显示危险颜色
+                if (remaining < 10 * 60 * 1000) {
+                    timerElement.className = 'text-danger';
+                }
+            }
+        }
+
+        // 每分钟更新一次计时器
+        updateSessionTimer();
+        setInterval(updateSessionTimer, 60000);
+
+        // 在会话即将过期前5分钟显示提醒
+        function checkSessionWarning() {
+            const loginTime = new Date('{{ session.get("login_time") }}');
+            const now = new Date();
+            const sessionDuration = now - loginTime;
+            const maxDuration = 6 * 60 * 60 * 1000; // 6小时（毫秒）
+            const remaining = maxDuration - sessionDuration;
+
+            // 剩余5分钟时显示警告
+            if (remaining <= 5 * 60 * 1000 && remaining > 4 * 60 * 1000) {
+                if (confirm('您的会话将在5分钟后过期，是否需要延长会话？')) {
+                    refreshSession();
+                }
+            }
+        }
+
+        // 刷新会话
+        function refreshSession() {
+            fetch('{{ url_for("auth.refresh_session") }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token() }}'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // 刷新页面以获取新的会话时间
+                    location.reload();
+                } else {
+                    alert('会话刷新失败: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('刷新会话时出错:', error);
+                alert('会话刷新失败，请重新登录');
+            });
+        }
+
+        // 每分钟检查一次会话警告
+        setInterval(checkSessionWarning, 60000);
+        {% endif %}
+
+        // 强制登出函数
+        function forceLogout() {
+            // 清除所有cookie
+            document.cookie.split(";").forEach(function(c) {
+                document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
+            });
+
+            // 清除localStorage和sessionStorage
+            localStorage.clear();
+            sessionStorage.clear();
+
+            // 发送登出请求
+            fetch('/auth/logout', {
+                method: 'GET',
+                credentials: 'same-origin'
+            }).then(function() {
+                // 强制跳转到登录页面
+                window.location.href = '/auth/login';
+            }).catch(function() {
+                // 即使请求失败也跳转到登录页面
+                window.location.href = '/auth/login';
+            });
+        }
+    </script>
+    {% block scripts %}{% endblock %}
+    {% block extra_js %}{% endblock %}
+
+<script>
+$(document).ready(function() {
+    // 全局AJAX超时设置
+    $.ajaxSetup({
+        timeout: 30000, // 30秒超时
+        error: function(xhr, status, error) {
+            if (status === 'timeout') {
+                console.warn('AJAX请求超时:', xhr.responseURL || 'unknown');
+                // 可以在这里添加用户友好的超时提示
+                if (typeof showMessage === 'function') {
+                    showMessage('请求超时，请重试', 'warning');
+                }
+            }
+        }
+    });
+    
+    // 页面加载监控
+    let loadStartTime = Date.now();
+    $(window).on('load', function() {
+        let loadTime = Date.now() - loadStartTime;
+        if (loadTime > 5000) {
+            console.warn('页面加载时间过长:', loadTime + 'ms');
+        }
+    });
+});
+</script>
+
+</body>
+</html> 

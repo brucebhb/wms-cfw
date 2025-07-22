@@ -1,0 +1,248 @@
+{% extends "base.html" %}
+
+{% block title %}客户中心 - 仓储管理系统{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- 客户欢迎信息 -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <h4 class="card-title">
+                        <i class="fas fa-user-circle me-2"></i>欢迎，{{ current_user.real_name }}
+                    </h4>
+                    <p class="card-text">您可以在这里查看您的货物入库、出库和库存信息</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 数据统计卡片 -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <i class="fas fa-truck-loading fa-2x text-success mb-2"></i>
+                    <h5 class="card-title">入库记录</h5>
+                    <h3 class="text-success" id="inboundCount">-</h3>
+                    <small class="text-muted">总入库次数</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <i class="fas fa-shipping-fast fa-2x text-warning mb-2"></i>
+                    <h5 class="card-title">出库记录</h5>
+                    <h3 class="text-warning" id="outboundCount">-</h3>
+                    <small class="text-muted">总出库次数</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <i class="fas fa-boxes fa-2x text-info mb-2"></i>
+                    <h5 class="card-title">当前库存</h5>
+                    <h3 class="text-info" id="inventoryCount">-</h3>
+                    <small class="text-muted">库存批次数</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <i class="fas fa-weight-hanging fa-2x text-secondary mb-2"></i>
+                    <h5 class="card-title">总重量</h5>
+                    <h3 class="text-secondary" id="totalWeight">-</h3>
+                    <small class="text-muted">公斤</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 功能导航 -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-th-large me-2"></i>功能导航
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3 mb-3">
+                            <a href="/customer/inbound" class="btn btn-outline-success w-100 h-100 d-flex flex-column justify-content-center">
+                                <i class="fas fa-truck-loading fa-2x mb-2"></i>
+                                <span>入库记录</span>
+                                <small class="text-muted">查看货物入库历史</small>
+                            </a>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <a href="/customer/outbound" class="btn btn-outline-warning w-100 h-100 d-flex flex-column justify-content-center">
+                                <i class="fas fa-shipping-fast fa-2x mb-2"></i>
+                                <span>出库记录</span>
+                                <small class="text-muted">查看货物出库历史</small>
+                            </a>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <a href="/customer/inventory" class="btn btn-outline-info w-100 h-100 d-flex flex-column justify-content-center">
+                                <i class="fas fa-boxes fa-2x mb-2"></i>
+                                <span>当前库存</span>
+                                <small class="text-muted">查看当前库存状态</small>
+                            </a>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <a href="/customer/reports" class="btn btn-outline-secondary w-100 h-100 d-flex flex-column justify-content-center">
+                                <i class="fas fa-chart-bar fa-2x mb-2"></i>
+                                <span>数据报表</span>
+                                <small class="text-muted">查看统计报表</small>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 最近活动 -->
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-clock me-2"></i>最近入库
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div id="recentInbound">
+                        <div class="text-center text-muted">
+                            <i class="fas fa-spinner fa-spin"></i> 加载中...
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-clock me-2"></i>最近出库
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div id="recentOutbound">
+                        <div class="text-center text-muted">
+                            <i class="fas fa-spinner fa-spin"></i> 加载中...
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+$(document).ready(function() {
+    // 加载客户数据统计
+    loadCustomerStats();
+    
+    // 加载最近活动
+    loadRecentActivities();
+});
+
+function loadCustomerStats() {
+    $.ajax({
+        url: '/api/customer/stats',
+        method: 'GET',
+        success: function(data) {
+            $('#inboundCount').text(data.inbound_count || 0);
+            $('#outboundCount').text(data.outbound_count || 0);
+            $('#inventoryCount').text(data.inventory_count || 0);
+            $('#totalWeight').text((data.total_weight || 0).toFixed(2));
+        },
+        error: function() {
+            console.error('加载统计数据失败');
+        }
+    });
+}
+
+function loadRecentActivities() {
+    // 加载最近入库记录
+    $.ajax({
+        url: '/api/customer/recent-inbound',
+        method: 'GET',
+        success: function(data) {
+            renderRecentInbound(data.records || []);
+        },
+        error: function() {
+            $('#recentInbound').html('<div class="text-muted">暂无数据</div>');
+        }
+    });
+    
+    // 加载最近出库记录
+    $.ajax({
+        url: '/api/customer/recent-outbound',
+        method: 'GET',
+        success: function(data) {
+            renderRecentOutbound(data.records || []);
+        },
+        error: function() {
+            $('#recentOutbound').html('<div class="text-muted">暂无数据</div>');
+        }
+    });
+}
+
+function renderRecentInbound(records) {
+    if (records.length === 0) {
+        $('#recentInbound').html('<div class="text-muted">暂无入库记录</div>');
+        return;
+    }
+    
+    let html = '';
+    records.slice(0, 5).forEach(function(record) {
+        html += `
+            <div class="d-flex justify-content-between align-items-center border-bottom py-2">
+                <div>
+                    <div class="fw-bold">${record.identification_code || '无编码'}</div>
+                    <small class="text-muted">${record.inbound_time}</small>
+                </div>
+                <div class="text-end">
+                    <div class="text-success">${record.pallet_count}板 ${record.package_count}件</div>
+                    <small class="text-muted">${record.weight}kg</small>
+                </div>
+            </div>
+        `;
+    });
+    $('#recentInbound').html(html);
+}
+
+function renderRecentOutbound(records) {
+    if (records.length === 0) {
+        $('#recentOutbound').html('<div class="text-muted">暂无出库记录</div>');
+        return;
+    }
+    
+    let html = '';
+    records.slice(0, 5).forEach(function(record) {
+        html += `
+            <div class="d-flex justify-content-between align-items-center border-bottom py-2">
+                <div>
+                    <div class="fw-bold">${record.identification_code || '无编码'}</div>
+                    <small class="text-muted">${record.outbound_time}</small>
+                </div>
+                <div class="text-end">
+                    <div class="text-warning">${record.pallet_count}板 ${record.package_count}件</div>
+                    <small class="text-muted">${record.destination || '未知目的地'}</small>
+                </div>
+            </div>
+        `;
+    });
+    $('#recentOutbound').html(html);
+}
+</script>
+{% endblock %}

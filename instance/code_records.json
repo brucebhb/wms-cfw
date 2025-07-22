@@ -1,0 +1,23 @@
+{
+  "0627/思科/粤B123-001": {
+    "plate": "粤B123",
+    "customer": "思科",
+    "board_count": 5,
+    "piece_count": 0,
+    "date": "2025-06-27"
+  },
+  "0627/思科/粤B123-002": {
+    "plate": "粤B123",
+    "customer": "思科",
+    "board_count": 3,
+    "piece_count": 0,
+    "date": "2025-06-27"
+  },
+  "0629/裕同/粤B123-001": {
+    "plate": "粤B123",
+    "customer": "裕同",
+    "board_count": 10,
+    "piece_count": 2,
+    "date": "2025-06-29"
+  }
+}

@@ -1,0 +1,323 @@
+{% extends "base.html" %}
+{% set title = "性能测试页面" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-rocket text-primary me-2"></i>
+                        性能优化测试页面
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <h6><i class="fas fa-info-circle me-2"></i>性能监控说明</h6>
+                        <ul class="mb-0">
+                            <li>按 <kbd>Ctrl+Shift+P</kbd> 打开性能监控面板</li>
+                            <li>点击右上角的 <i class="fas fa-tachometer-alt text-info"></i> 按钮也可以打开面板</li>
+                            <li>系统会自动检测和修复性能问题</li>
+                            <li>页面加载时间超过3秒会自动触发优化</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <div class="card border-success">
+                                <div class="card-header bg-success text-white">
+                                    <h6 class="mb-0">✅ 已启用的优化功能</h6>
+                                </div>
+                                <div class="card-body">
+                                    <ul class="list-unstyled mb-0">
+                                        <li><i class="fas fa-check text-success me-2"></i>自动性能检测</li>
+                                        <li><i class="fas fa-check text-success me-2"></i>预防性优化</li>
+                                        <li><i class="fas fa-check text-success me-2"></i>DOM复杂度监控</li>
+                                        <li><i class="fas fa-check text-success me-2"></i>内存使用监控</li>
+                                        <li><i class="fas fa-check text-success me-2"></i>资源加载优化</li>
+                                        <li><i class="fas fa-check text-success me-2"></i>图片懒加载</li>
+                                        <li><i class="fas fa-check text-success me-2"></i>脚本延迟加载</li>
+                                        <li><i class="fas fa-check text-success me-2"></i>CSS优化</li>
+                                        <li><i class="fas fa-check text-success me-2"></i>字体优化</li>
+                                        <li><i class="fas fa-check text-success me-2"></i>网络状态适配</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="card border-info">
+                                <div class="card-header bg-info text-white">
+                                    <h6 class="mb-0">📊 性能指标</h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row text-center">
+                                        <div class="col-6 mb-3">
+                                            <h4 id="load-time-display" class="text-primary">-</h4>
+                                            <small class="text-muted">页面加载时间</small>
+                                        </div>
+                                        <div class="col-6 mb-3">
+                                            <h4 id="dom-count-display" class="text-info">-</h4>
+                                            <small class="text-muted">DOM元素数量</small>
+                                        </div>
+                                        <div class="col-6">
+                                            <h4 id="memory-usage-display" class="text-warning">-</h4>
+                                            <small class="text-muted">内存使用</small>
+                                        </div>
+                                        <div class="col-6">
+                                            <h4 id="performance-score-display" class="text-success">-</h4>
+                                            <small class="text-muted">性能评分</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <div class="card border-warning">
+                                <div class="card-header bg-warning text-dark">
+                                    <h6 class="mb-0">🔧 手动测试功能</h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="btn-group mb-3" role="group">
+                                        <button type="button" class="btn btn-primary" id="force-check-btn">
+                                            <i class="fas fa-search me-2"></i>强制性能检查
+                                        </button>
+                                        <button type="button" class="btn btn-success" id="trigger-optimization-btn">
+                                            <i class="fas fa-magic me-2"></i>触发优化
+                                        </button>
+                                        <button type="button" class="btn btn-warning" id="simulate-slow-btn">
+                                            <i class="fas fa-hourglass-half me-2"></i>模拟慢速加载
+                                        </button>
+                                        <button type="button" class="btn btn-info" id="memory-test-btn">
+                                            <i class="fas fa-memory me-2"></i>内存压力测试
+                                        </button>
+                                    </div>
+                                    
+                                    <div id="test-results" class="mt-3">
+                                        <!-- 测试结果将显示在这里 -->
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="card border-secondary">
+                                <div class="card-header bg-secondary text-white">
+                                    <h6 class="mb-0">📝 优化日志</h6>
+                                </div>
+                                <div class="card-body">
+                                    <div id="optimization-log" style="height: 200px; overflow-y: auto; background: #f8f9fa; padding: 10px; border-radius: 4px; font-family: monospace; font-size: 12px;">
+                                        <div class="text-muted">等待优化日志...</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+class PerformanceTestPage {
+    constructor() {
+        this.logContainer = document.getElementById('optimization-log');
+        this.init();
+    }
+    
+    init() {
+        this.bindEvents();
+        this.startMonitoring();
+        this.log('性能测试页面已加载');
+    }
+    
+    bindEvents() {
+        // 强制性能检查
+        document.getElementById('force-check-btn').addEventListener('click', () => {
+            this.log('执行强制性能检查...');
+            if (window.autoPerformanceFixer) {
+                window.autoPerformanceFixer.forceCheck();
+                this.log('✅ 性能检查完成');
+            } else {
+                this.log('❌ 性能修复系统未加载');
+            }
+        });
+        
+        // 触发优化
+        document.getElementById('trigger-optimization-btn').addEventListener('click', () => {
+            this.log('触发手动优化...');
+            if (window.PerformanceAutoStart) {
+                window.PerformanceAutoStart.triggerDeepOptimization();
+                this.log('✅ 深度优化完成');
+            } else {
+                this.log('❌ 自动优化系统未加载');
+            }
+        });
+        
+        // 模拟慢速加载
+        document.getElementById('simulate-slow-btn').addEventListener('click', () => {
+            this.simulateSlowLoading();
+        });
+        
+        // 内存压力测试
+        document.getElementById('memory-test-btn').addEventListener('click', () => {
+            this.memoryStressTest();
+        });
+    }
+    
+    startMonitoring() {
+        // 更新性能指标
+        this.updateMetrics();
+        
+        // 定期更新
+        setInterval(() => {
+            this.updateMetrics();
+        }, 5000);
+        
+        // 监听性能修复事件
+        document.addEventListener('performanceConfigChanged', (e) => {
+            this.log('📊 性能配置已更新');
+        });
+    }
+    
+    updateMetrics() {
+        // 页面加载时间
+        const navigation = performance.getEntriesByType('navigation')[0];
+        if (navigation) {
+            const loadTime = navigation.loadEventEnd - navigation.fetchStart;
+            document.getElementById('load-time-display').textContent = `${(loadTime/1000).toFixed(2)}s`;
+        }
+        
+        // DOM元素数量
+        const domCount = document.querySelectorAll('*').length;
+        document.getElementById('dom-count-display').textContent = domCount.toLocaleString();
+        
+        // 内存使用
+        if ('memory' in performance) {
+            const memory = performance.memory;
+            const usedMB = (memory.usedJSHeapSize / 1024 / 1024).toFixed(1);
+            document.getElementById('memory-usage-display').textContent = `${usedMB}MB`;
+        }
+        
+        // 性能评分（简化计算）
+        const score = this.calculatePerformanceScore();
+        document.getElementById('performance-score-display').textContent = score;
+    }
+    
+    calculatePerformanceScore() {
+        let score = 100;
+        
+        // 检查加载时间
+        const navigation = performance.getEntriesByType('navigation')[0];
+        if (navigation) {
+            const loadTime = navigation.loadEventEnd - navigation.fetchStart;
+            if (loadTime > 5000) score -= 30;
+            else if (loadTime > 3000) score -= 20;
+            else if (loadTime > 1000) score -= 10;
+        }
+        
+        // 检查DOM复杂度
+        const domCount = document.querySelectorAll('*').length;
+        if (domCount > 3000) score -= 20;
+        else if (domCount > 2000) score -= 10;
+        
+        // 检查内存使用
+        if ('memory' in performance) {
+            const memory = performance.memory;
+            const usedMB = memory.usedJSHeapSize / 1024 / 1024;
+            if (usedMB > 100) score -= 20;
+            else if (usedMB > 50) score -= 10;
+        }
+        
+        return Math.max(0, score);
+    }
+    
+    simulateSlowLoading() {
+        this.log('🐌 模拟慢速加载...');
+        
+        // 创建大量DOM元素
+        const container = document.createElement('div');
+        container.style.display = 'none';
+        
+        for (let i = 0; i < 1000; i++) {
+            const div = document.createElement('div');
+            div.innerHTML = `<span>测试元素 ${i}</span><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" alt="test">`;
+            container.appendChild(div);
+        }
+        
+        document.body.appendChild(container);
+        
+        this.log('✅ 已添加1000个测试元素');
+        
+        // 5秒后清理
+        setTimeout(() => {
+            container.remove();
+            this.log('🧹 已清理测试元素');
+        }, 5000);
+    }
+    
+    memoryStressTest() {
+        this.log('💾 开始内存压力测试...');
+        
+        // 创建大型数组
+        const largeArray = [];
+        for (let i = 0; i < 100000; i++) {
+            largeArray.push({
+                id: i,
+                data: 'x'.repeat(100),
+                timestamp: Date.now()
+            });
+        }
+        
+        this.log(`📈 已创建包含${largeArray.length}个对象的大型数组`);
+        
+        // 检查内存使用
+        if ('memory' in performance) {
+            const memory = performance.memory;
+            const usedMB = (memory.usedJSHeapSize / 1024 / 1024).toFixed(1);
+            this.log(`💾 当前内存使用: ${usedMB}MB`);
+        }
+        
+        // 5秒后清理
+        setTimeout(() => {
+            largeArray.length = 0;
+            if (window.gc) {
+                window.gc();
+                this.log('🗑️ 已强制垃圾回收');
+            } else {
+                this.log('🗑️ 已清理大型数组');
+            }
+        }, 5000);
+    }
+    
+    log(message) {
+        const timestamp = new Date().toLocaleTimeString();
+        const logEntry = document.createElement('div');
+        logEntry.innerHTML = `<span class="text-muted">[${timestamp}]</span> ${message}`;
+        
+        this.logContainer.appendChild(logEntry);
+        this.logContainer.scrollTop = this.logContainer.scrollHeight;
+        
+        // 限制日志条数
+        const logs = this.logContainer.children;
+        if (logs.length > 100) {
+            this.logContainer.removeChild(logs[0]);
+        }
+    }
+}
+
+// 页面加载完成后初始化
+document.addEventListener('DOMContentLoaded', function() {
+    const testPage = new PerformanceTestPage();
+});
+</script>
+{% endblock %}

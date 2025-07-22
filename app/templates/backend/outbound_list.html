@@ -1,0 +1,1096 @@
+{% extends "base.html" %}
+
+{% block title %}后端仓出库记录{% endblock %}
+
+{% block styles %}
+{{ super() }}
+<!-- 使用jsuites日期选择器 -->
+<link rel="stylesheet" href="{{ url_for('static', filename='vendor/css/jsuites.css') }}">
+<!-- 后端仓出库页面专用样式修复 -->
+<link rel="stylesheet" href="{{ url_for('static', filename='css/backend-outbound-fix.css') }}">
+<style>
+    .search-box {
+        margin-bottom: 20px;
+        background-color: #ffffff;
+        padding: 20px;
+        border-radius: 8px;
+        border: 1px solid #e3e6f0;
+        box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+        width: 100%;
+        overflow: hidden;
+    }
+    .search-form-row {
+        display: flex;
+        align-items: center;
+        margin-bottom: 15px;
+        flex-wrap: wrap;
+        width: 100%;
+    }
+    .search-label {
+        min-width: 80px;
+        margin-right: 10px;
+        color: #333;
+        font-weight: normal;
+        text-align: right;
+        flex-shrink: 0;
+    }
+    .search-control {
+        margin-right: 15px;
+        flex-shrink: 0;
+    }
+    .search-buttons {
+        margin-left: auto;
+        display: flex;
+        flex-shrink: 0;
+    }
+    .search-buttons .btn {
+        margin-left: 10px;
+        min-width: 90px;
+        height: 38px;
+    }
+    /* 商务风格搜索按钮 */
+    .btn-primary {
+        background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%) !important;
+        border-color: #2a5298 !important;
+        color: white !important;
+        font-weight: 600 !important;
+        padding: 10px 20px !important;
+        border-radius: 8px !important;
+        transition: all 0.3s ease !important;
+        box-shadow: 0 2px 6px rgba(30, 60, 114, 0.3) !important;
+        text-transform: uppercase !important;
+        letter-spacing: 0.5px !important;
+    }
+    .btn-primary:hover {
+        background: linear-gradient(135deg, #2a5298 0%, #1e3c72 100%) !important;
+        border-color: #1e3c72 !important;
+        transform: translateY(-2px) !important;
+        box-shadow: 0 4px 12px rgba(30, 60, 114, 0.4) !important;
+    }
+    /* 导出数据按钮样式 */
+    .btn-export {
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%) !important;
+        border-color: #28a745 !important;
+        color: white !important;
+        font-weight: 600 !important;
+        padding: 10px 20px !important;
+        border-radius: 8px !important;
+        transition: all 0.3s ease !important;
+        box-shadow: 0 2px 6px rgba(40, 167, 69, 0.3) !important;
+        text-transform: uppercase !important;
+        letter-spacing: 0.5px !important;
+        min-width: 110px !important;
+        white-space: nowrap !important;
+    }
+    .btn-export:hover {
+        background: linear-gradient(135deg, #20c997 0%, #17a2b8 100%) !important;
+        border-color: #17a2b8 !important;
+        transform: translateY(-2px) !important;
+        box-shadow: 0 4px 12px rgba(40, 167, 69, 0.4) !important;
+    }
+    /* 打印按钮样式 */
+    .btn-success {
+        background: linear-gradient(135deg, #198754 0%, #20c997 100%) !important;
+        border-color: #198754 !important;
+        color: white !important;
+        font-weight: 600 !important;
+        padding: 10px 20px !important;
+        border-radius: 8px !important;
+        transition: all 0.3s ease !important;
+        box-shadow: 0 2px 6px rgba(25, 135, 84, 0.3) !important;
+        text-transform: uppercase !important;
+        letter-spacing: 0.5px !important;
+        min-width: 110px !important;
+        white-space: nowrap !important;
+    }
+    .btn-success:hover {
+        background: linear-gradient(135deg, #20c997 0%, #17a2b8 100%) !important;
+        border-color: #17a2b8 !important;
+        transform: translateY(-2px) !important;
+        box-shadow: 0 4px 12px rgba(25, 135, 84, 0.4) !important;
+    }
+
+    /* 重置按钮样式 */
+    .btn-outline-secondary {
+        background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%) !important;
+        border-color: #6c757d !important;
+        color: white !important;
+        font-weight: 600 !important;
+        padding: 10px 20px !important;
+        border-radius: 8px !important;
+        transition: all 0.3s ease !important;
+        box-shadow: 0 2px 6px rgba(108, 117, 125, 0.3) !important;
+        text-transform: uppercase !important;
+        letter-spacing: 0.5px !important;
+    }
+    .btn-outline-secondary:hover {
+        background: linear-gradient(135deg, #5a6268 0%, #495057 100%) !important;
+        border-color: #495057 !important;
+        color: white !important;
+        transform: translateY(-2px) !important;
+        box-shadow: 0 4px 12px rgba(108, 117, 125, 0.4) !important;
+    }
+
+    /* 确保容器宽度 */
+    .container-fluid {
+        width: 100%;
+        max-width: none;
+        padding-left: 15px;
+        padding-right: 15px;
+    }
+
+    /* 搜索表单响应式处理 */
+    @media (max-width: 1200px) {
+        .search-form-row {
+            flex-wrap: wrap;
+        }
+        .search-buttons {
+            margin-left: 0;
+            margin-top: 10px;
+            width: 100%;
+            justify-content: flex-start;
+        }
+    }
+
+/* 优雅商务风格表格颜色样式 */
+.table thead th {
+    background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%) !important;
+    color: #ffffff !important;
+    font-weight: 600 !important;
+    text-align: center !important;
+    border: none !important;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.2) !important;
+    padding: 15px 10px !important;
+}
+
+.table tbody tr:nth-child(even) {
+    background-color: #fafbfc !important;
+}
+
+.table tbody tr:nth-child(odd) {
+    background-color: #ffffff !important;
+}
+
+.table tbody tr:hover {
+    background-color: #f0f8ff !important;
+    transition: all 0.2s ease !important;
+}
+
+.table td {
+    border: 1px solid #dee2e6 !important;
+    padding: 10px 8px !important;
+    text-align: center !important;
+    font-size: 14px !important;
+}
+
+/* 数量列右对齐 - 优雅蓝色 */
+.table td:nth-child(4),  /* 板数 */
+.table td:nth-child(5),  /* 件数 */
+.table td:nth-child(6),  /* 重量 */
+.table td:nth-child(7) { /* 体积 */
+    text-align: right !important;
+    font-weight: 600 !important;
+    color: #2a5298 !important;
+    background-color: rgba(42, 82, 152, 0.05) !important;
+}
+
+/* 客户名称和备注左对齐 */
+.table td:nth-child(1),  /* 客户名称 */
+.table td:nth-child(11) { /* 备注 */
+    text-align: left !important;
+    color: #495057 !important;
+    font-weight: 500 !important;
+}
+
+/* 商务风格按钮样式 */
+.btn-info {
+    background: linear-gradient(135deg, #3498db 0%, #2980b9 100%) !important;
+    border-color: #2980b9 !important;
+    color: white !important;
+}
+
+.btn-danger {
+    background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%) !important;
+    border-color: #c0392b !important;
+    color: white !important;
+}
+/* 批次分组样式 - 修复版本 */
+.batch-group {
+    border: 1px solid #e3e6f0 !important;
+    border-radius: 10px !important;
+    overflow: hidden !important;
+    box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15) !important;
+    margin-bottom: 25px !important;
+    background-color: #ffffff !important;
+}
+
+.batch-header {
+    background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%) !important;
+    border-bottom: none !important;
+    color: white !important;
+    padding: 18px 25px !important;
+    box-shadow: 0 2px 8px rgba(30, 60, 114, 0.2) !important;
+}
+
+.batch-header h5 {
+    color: #ecf0f1 !important;
+    font-weight: 700 !important;
+    font-size: 1.2rem !important;
+    margin-bottom: 8px !important;
+    line-height: 1.2 !important;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.3) !important;
+}
+
+.batch-header .badge {
+    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%) !important;
+    color: #1e3c72 !important;
+    font-weight: 700 !important;
+    padding: 6px 12px !important;
+    border-radius: 20px !important;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
+    border: 1px solid rgba(255,255,255,0.3) !important;
+}
+
+.batch-summary .summary-item {
+    text-align: center !important;
+    padding: 6px !important;
+}
+
+.batch-summary .summary-value {
+    font-size: 1.4rem !important;
+    font-weight: 700 !important;
+    color: #ffffff !important;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3) !important;
+    display: block !important;
+    line-height: 1.2 !important;
+}
+
+.batch-summary .summary-label {
+    font-size: 0.8rem !important;
+    color: rgba(255, 255, 255, 0.85) !important;
+    margin-top: 4px !important;
+    font-weight: 500 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px !important;
+}
+
+/* 批次信息文本样式 */
+.batch-header .mb-1,
+.batch-header div[style*="color: rgba(255, 255, 255, 0.95)"] {
+    color: rgba(255, 255, 255, 0.95) !important;
+    font-size: 1.0rem !important;
+    line-height: 1.3 !important;
+    font-weight: 500 !important;
+}
+
+.batch-header .fas {
+    margin-right: 8px !important;
+    color: rgba(255, 255, 255, 0.9) !important;
+}
+
+/* 商务风格删除批次按钮样式 */
+.batch-header .btn-danger {
+    background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%) !important;
+    border-color: #c0392b !important;
+    color: white !important;
+    font-size: 0.9rem !important;
+    padding: 8px 16px !important;
+    border-radius: 6px !important;
+    transition: all 0.3s ease !important;
+    font-weight: 600 !important;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2) !important;
+}
+
+.batch-header .btn-danger:hover {
+    background: linear-gradient(135deg, #c0392b 0%, #a93226 100%) !important;
+    border-color: #a93226 !important;
+    transform: translateY(-2px) !important;
+    box-shadow: 0 4px 8px rgba(192, 57, 43, 0.4) !important;
+}
+
+
+
+/* 优雅商务风格卡片样式 */
+.card {
+    border: none !important;
+    border-radius: 10px !important;
+    box-shadow: 0 2px 15px 0 rgba(30, 60, 114, 0.1) !important;
+    background-color: #ffffff !important;
+    overflow: hidden !important;
+}
+
+.card-header {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%) !important;
+    border-bottom: 1px solid #dee2e6 !important;
+    border-radius: 10px 10px 0 0 !important;
+    padding: 18px 25px !important;
+}
+
+.card-title {
+    color: #495057 !important;
+    font-weight: 600 !important;
+    margin-bottom: 0 !important;
+    font-size: 1.2rem !important;
+}
+
+.card-body {
+    padding: 25px !important;
+    background-color: #ffffff !important;
+}
+
+/* 商务风格按钮美化 */
+.btn {
+    border-radius: 8px !important;
+    font-weight: 600 !important;
+    transition: all 0.3s ease !important;
+    border: 1px solid transparent !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px !important;
+}
+
+.btn:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: 0 6px 12px rgba(0,0,0,0.2) !important;
+}
+
+/* 商务风格操作按钮 */
+.btn-info {
+    background: linear-gradient(135deg, #3498db 0%, #2980b9 100%) !important;
+    border-color: #2980b9 !important;
+    color: white !important;
+    box-shadow: 0 2px 4px rgba(52, 152, 219, 0.3) !important;
+}
+
+.btn-info:hover {
+    background: linear-gradient(135deg, #2980b9 0%, #21618c 100%) !important;
+    border-color: #21618c !important;
+    box-shadow: 0 4px 8px rgba(52, 152, 219, 0.4) !important;
+}
+
+.btn-danger {
+    background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%) !important;
+    border-color: #c0392b !important;
+    color: white !important;
+    box-shadow: 0 2px 4px rgba(231, 76, 60, 0.3) !important;
+}
+
+.btn-danger:hover {
+    background: linear-gradient(135deg, #c0392b 0%, #a93226 100%) !important;
+    border-color: #a93226 !important;
+    box-shadow: 0 4px 8px rgba(231, 76, 60, 0.4) !important;
+}
+
+/* 强制重置可能冲突的全局样式 */
+.batch-group .table-responsive,
+.batch-group .table,
+.batch-group .table th,
+.batch-group .table td {
+    box-sizing: border-box !important;
+}
+
+/* 确保表格容器不被其他样式影响 */
+.batch-group {
+    position: relative !important;
+    z-index: 1 !important;
+}
+
+.batch-group .table-responsive {
+    position: relative !important;
+    z-index: 2 !important;
+}
+
+/* 防止表格被全局样式覆盖 */
+.batch-group .table * {
+    box-sizing: border-box !important;
+}
+
+/* 确保表格宽度设置正确 */
+.batch-group .table th[width],
+.batch-group .table td[width] {
+    width: auto !important;
+}
+
+/* 修复可能的Bootstrap冲突 */
+.batch-group .table.table-striped tbody tr:nth-of-type(odd) {
+    background-color: rgba(0,0,0,.05) !important;
+}
+
+.batch-group .table.table-striped tbody tr:nth-of-type(even) {
+    background-color: #ffffff !important;
+}
+
+.batch-group .table.table-hover tbody tr:hover {
+    background-color: #f8f9fc !important;
+}
+
+/* 确保分页样式正常 */
+.pagination {
+    margin-bottom: 0 !important;
+}
+
+.pagination .page-link {
+    color: #4e73df !important;
+    border-color: #e3e6f0 !important;
+}
+
+.pagination .page-item.active .page-link {
+    background-color: #4e73df !important;
+    border-color: #4e73df !important;
+    color: white !important;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="content-wrapper backend-outbound-page">
+    <div class="content-header">
+        <div class="container-fluid">
+            <div class="row mb-2">
+                <div class="col-sm-6">
+                    <h1 class="m-0">后端仓出库记录</h1>
+                </div>
+                <div class="col-sm-6">
+                    <ol class="breadcrumb float-sm-right">
+                        <li class="breadcrumb-item"><a href="{{ url_for('main.index') }}">首页</a></li>
+                        <li class="breadcrumb-item active">后端仓出库记录</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <section class="content">
+        <div class="container-fluid">
+            <!-- 简化的搜索区域 -->
+            <div class="search-box">
+                <form id="searchForm" action="{{ url_for('main.backend_outbound_list') }}" method="get">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+
+                    <!-- 日期范围行 -->
+                    <div class="search-form-row">
+                        <label class="search-label">出库时间:</label>
+                        <div class="date-picker-container search-control" style="width: 160px;">
+                            <input type="date" class="form-control" id="date_start" name="date_start"
+                                   value="{{ search_params.date_start if search_params is defined else '' }}">
+                        </div>
+                        <span class="mx-2" style="flex-shrink: 0;">至</span>
+                        <div class="date-picker-container search-control" style="width: 160px;">
+                            <input type="date" class="form-control" id="date_end" name="date_end"
+                                   value="{{ search_params.date_end if search_params is defined else '' }}">
+                        </div>
+                        <div style="flex: 1;"></div> <!-- 占位符，推送按钮到右侧 -->
+                    </div>
+
+                    <!-- 搜索条件行 -->
+                    <div class="search-form-row">
+                        <label class="search-label">筛选字段:</label>
+                        <select class="form-select search-control" id="search_field" name="search_field" style="width: 160px;">
+                            <option value="customer_name" selected>客户名称</option>
+                            <option value="batch_no">批次号</option>
+                            <option value="plate_number">出库/出境车牌</option>
+                            <option value="identification_code">识别编码</option>
+                            <option value="destination">目的地</option>
+                            <option value="export_mode">出境模式</option>
+                            <option value="customs_broker">报关行</option>
+                            <option value="inbound_plate">入库车牌</option>
+                            <option value="service_staff">跟单客服</option>
+                        </select>
+
+                        <label class="search-label" style="margin-left: 15px;">搜索条件:</label>
+                        <select class="form-select search-control" id="search_condition" name="search_condition" style="width: 160px;">
+                            <option value="contains" selected>包含</option>
+                            <option value="exact">完全匹配</option>
+                            <option value="startswith">开头是</option>
+                            <option value="endswith">结尾是</option>
+                        </select>
+
+                        <input type="text" class="form-control search-control" id="search_value" name="search_value"
+                               placeholder="请输入搜索内容" style="width: 260px; margin-left: 15px;"
+                               value="{{ search_params.search_value if search_params is defined and search_params.search_value else '' }}">
+
+                        <div class="search-buttons">
+                            <button type="submit" id="search_btn" class="btn btn-primary">
+                                <i class="fas fa-search me-1"></i> 搜索
+                            </button>
+                            <button type="button" id="reset_btn" class="btn btn-outline-secondary ms-2">
+                                <i class="fas fa-redo me-1"></i> 刷新
+                            </button>
+                            <a href="{{ url_for('main.export_backend_outbound') }}?{{ request.query_string.decode('utf-8') }}"
+                               class="btn btn-export ms-2">
+                                <i class="fas fa-file-export me-2"></i>导出数据
+                            </a>
+                            <a href="{{ url_for('main.backend_outbound_print_regular') }}?{{ request.query_string.decode('utf-8') }}"
+                               class="btn btn-success ms-2">
+                                <i class="fas fa-print me-2"></i>打印单据
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- 隐藏字段，用于后端处理 -->
+                    <input type="hidden" name="batch_no" id="batch_no_hidden" value="{{ search_params.batch_no if search_params is defined else '' }}">
+                    <input type="hidden" name="plate_number" id="plate_number_hidden" value="{{ search_params.plate_number if search_params is defined else '' }}">
+                    <input type="hidden" name="customer_name" id="customer_name_hidden" value="{{ search_params.customer_name if search_params is defined else '' }}">
+                    <input type="hidden" name="destination" id="destination_hidden" value="{{ search_params.destination if search_params is defined else '' }}">
+                    <input type="hidden" name="identification_code" id="identification_code_hidden" value="{{ search_params.identification_code if search_params is defined else '' }}">
+                    <input type="hidden" name="export_mode" id="export_mode_hidden" value="{{ search_params.export_mode if search_params is defined else '' }}">
+                    <input type="hidden" name="customs_broker" id="customs_broker_hidden" value="{{ search_params.customs_broker if search_params is defined else '' }}">
+                    <input type="hidden" name="inbound_plate" id="inbound_plate_hidden" value="{{ search_params.inbound_plate if search_params is defined else '' }}">
+                    <input type="hidden" name="service_staff" id="service_staff_hidden" value="{{ search_params.service_staff if search_params is defined else '' }}">
+                </form>
+            </div>
+
+            <!-- 数据表格 -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">后端仓出库记录</h3>
+                </div>
+                <div class="card-body">
+                    <div class="batch-list">
+                        {% if batch_groups.items %}
+                            {% for batch in batch_groups.items %}
+                            <div class="batch-group mb-4">
+                                <!-- 批次汇总信息 -->
+                                <div class="batch-header">
+                                    <div class="row">
+                                        <div class="col-md-8">
+                                            <h5 class="mb-2">
+                                                <i class="fas fa-truck mr-2"></i> 批次号: {{ batch.batch_no }}
+                                                <span class="badge badge-light ml-2" style="color: #4e73df; background-color: rgba(255,255,255,0.9);">{{ batch.record_count }}票</span>
+                                            </h5>
+                                            <div class="row">
+                                                <div class="col-md-6">
+                                                    <div class="mb-1" style="color: rgba(255, 255, 255, 0.95); font-size: 1.1rem; line-height: 1.3; font-weight: 500;">
+                                                        <i class="fas fa-calendar mr-2"></i> 出库时间: {{ batch.outbound_time.strftime('%Y-%m-%d') if batch.outbound_time else '-' }}
+                                                    </div>
+                                                    <div style="color: rgba(255, 255, 255, 0.95); font-size: 1.1rem; line-height: 1.3; font-weight: 500;">
+                                                        <i class="fas fa-car mr-2"></i> 出库车牌: {{ batch.plate_number or '-' }}
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <div class="mb-1" style="color: rgba(255, 255, 255, 0.95); font-size: 1.1rem; line-height: 1.3; font-weight: 500;">
+                                                        <i class="fas fa-map-marker-alt mr-2"></i> 目的地: {{ batch.destination or '-' }}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4 text-right">
+                                            <div class="batch-summary">
+                                                <div class="row">
+                                                    <div class="col-6">
+                                                        <div class="summary-item">
+                                                            <div class="summary-value">{{ batch.total_pallet_count }}</div>
+                                                            <div class="summary-label">总板数</div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-6">
+                                                        <div class="summary-item">
+                                                            <div class="summary-value">{{ batch.total_package_count }}</div>
+                                                            <div class="summary-label">总件数</div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="row mt-2">
+                                                    <div class="col-6">
+                                                        <div class="summary-item">
+                                                            <div class="summary-value">{{ "%.1f"|format(batch.total_weight) }}</div>
+                                                            <div class="summary-label">总重量(KG)</div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-6">
+                                                        <div class="summary-item">
+                                                            <div class="summary-value">{{ "%.2f"|format(batch.total_volume) }}</div>
+                                                            <div class="summary-label">总体积(CBM)</div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <!-- 批次操作按钮 -->
+                                                <div class="row mt-3">
+                                                    <div class="col-12 text-right">
+                                                        <button type="button" class="btn btn-danger btn-sm"
+                                                                onclick="deleteBatch('{{ batch.batch_no }}')"
+                                                                title="删除整个批次的所有出库记录并回退库存">
+                                                            <i class="fas fa-trash mr-1"></i>删除整个批次
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- 批次详细记录 -->
+                                <div class="table-responsive" style="overflow-x: auto !important; border: 1px solid #dee2e6 !important; border-radius: 8px !important; background-color: #ffffff !important; box-shadow: 0 2px 8px rgba(30, 60, 114, 0.08) !important;">
+                                    <table class="table table-striped table-hover table-sm border" style="font-size: 14px !important; width: 100% !important; border-collapse: separate !important; margin-bottom: 0 !important; background-color: #ffffff !important; border-spacing: 0 !important;"
+                                        <thead>
+                                            <tr>
+                                                <th width="8%" style="background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%) !important; color: white !important; font-weight: 600 !important; text-align: center !important; padding: 15px 10px !important; border: none !important; font-size: 13px !important; text-shadow: 0 1px 2px rgba(0,0,0,0.2) !important;">客户名称</th>
+                                                <th width="12%" style="background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%) !important; color: white !important; font-weight: 600 !important; text-align: center !important; padding: 15px 10px !important; border: none !important; font-size: 13px !important; text-shadow: 0 1px 2px rgba(0,0,0,0.2) !important;">识别编码</th>
+                                                <th width="6%" style="background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%) !important; color: white !important; font-weight: 600 !important; text-align: center !important; padding: 15px 10px !important; border: none !important; font-size: 13px !important; text-shadow: 0 1px 2px rgba(0,0,0,0.2) !important;">入库车牌</th>
+                                                <th width="3%" style="background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%) !important; color: white !important; font-weight: 600 !important; text-align: center !important; padding: 15px 10px !important; border: none !important; font-size: 13px !important; text-shadow: 0 1px 2px rgba(0,0,0,0.2) !important;">板数</th>
+                                                <th width="3%" style="background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%) !important; color: white !important; font-weight: 600 !important; text-align: center !important; padding: 15px 10px !important; border: none !important; font-size: 13px !important; text-shadow: 0 1px 2px rgba(0,0,0,0.2) !important;">件数</th>
+                                                <th width="4%" style="background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%) !important; color: white !important; font-weight: 600 !important; text-align: center !important; padding: 15px 10px !important; border: none !important; font-size: 13px !important; text-shadow: 0 1px 2px rgba(0,0,0,0.2) !important;">重量(KG)</th>
+                                                <th width="4%" style="background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%) !important; color: white !important; font-weight: 600 !important; text-align: center !important; padding: 15px 10px !important; border: none !important; font-size: 13px !important; text-shadow: 0 1px 2px rgba(0,0,0,0.2) !important;">体积(CBM)</th>
+                                                <th width="7%" style="background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%) !important; color: white !important; font-weight: 600 !important; text-align: center !important; padding: 15px 10px !important; border: none !important; font-size: 13px !important; text-shadow: 0 1px 2px rgba(0,0,0,0.2) !important;">报关行</th>
+                                                <th width="5%" style="background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%) !important; color: white !important; font-weight: 600 !important; text-align: center !important; padding: 15px 10px !important; border: none !important; font-size: 13px !important; text-shadow: 0 1px 2px rgba(0,0,0,0.2) !important;">订单类型</th>
+                                                <th width="5%" style="background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%) !important; color: white !important; font-weight: 600 !important; text-align: center !important; padding: 15px 10px !important; border: none !important; font-size: 13px !important; text-shadow: 0 1px 2px rgba(0,0,0,0.2) !important;">出境模式</th>
+                                                <th width="4%" style="background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%) !important; color: white !important; font-weight: 600 !important; text-align: center !important; padding: 15px 10px !important; border: none !important; font-size: 13px !important; text-shadow: 0 1px 2px rgba(0,0,0,0.2) !important;">跟单客服</th>
+                                                <th width="6%" style="background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%) !important; color: white !important; font-weight: 600 !important; text-align: center !important; padding: 15px 10px !important; border: none !important; font-size: 13px !important; text-shadow: 0 1px 2px rgba(0,0,0,0.2) !important;">备注</th>
+                                                <th width="4%" style="background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%) !important; color: white !important; font-weight: 600 !important; text-align: center !important; padding: 15px 10px !important; border: none !important; font-size: 13px !important; text-shadow: 0 1px 2px rgba(0,0,0,0.2) !important;">入库日期</th>
+                                                <th width="3%" style="background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%) !important; color: white !important; font-weight: 600 !important; text-align: center !important; padding: 15px 10px !important; border: none !important; font-size: 13px !important; text-shadow: 0 1px 2px rgba(0,0,0,0.2) !important;">操作</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for record in batch.records %}
+                                            <tr style="background-color: {% if loop.index % 2 == 0 %}#f8f9fc{% else %}#ffffff{% endif %} !important; transition: all 0.3s ease !important;" onmouseover="this.style.backgroundColor='#e3f2fd !important'" onmouseout="this.style.backgroundColor='{% if loop.index % 2 == 0 %}#f8f9fc{% else %}#ffffff{% endif %} !important'">
+                                                <td style="padding: 10px 8px !important; text-align: left !important; font-size: 14px !important; border-right: 1px solid #e9ecef !important; border-bottom: 1px solid #e9ecef !important; white-space: normal !important; word-break: break-word !important; color: #495057 !important; font-weight: 500 !important;">{{ record.customer_name or '-' }}</td>
+                                                <td style="padding: 10px 8px !important; text-align: center !important; font-size: 14px !important; font-weight: 600 !important; color: #6f42c1 !important; border-right: 1px solid #e9ecef !important; border-bottom: 1px solid #e9ecef !important; white-space: normal !important; word-break: break-word !important; background-color: rgba(111, 66, 193, 0.05) !important;">{{ record.identification_code or '-' }}</td>
+                                                <td style="padding: 10px 8px !important; text-align: center !important; font-size: 13px !important; border-right: 1px solid #e9ecef !important; border-bottom: 1px solid #e9ecef !important; color: #6c757d !important;">{{ record.inbound_plate or '-' }}</td>
+                                                <td style="padding: 10px 8px !important; text-align: right !important; font-size: 14px !important; font-weight: 700 !important; color: #28a745 !important; border-right: 1px solid #e9ecef !important; border-bottom: 1px solid #e9ecef !important; background-color: rgba(40, 167, 69, 0.05) !important;">{{ record.pallet_count or '-' }}</td>
+                                                <td style="padding: 10px 8px !important; text-align: right !important; font-size: 14px !important; font-weight: 700 !important; color: #28a745 !important; border-right: 1px solid #e9ecef !important; border-bottom: 1px solid #e9ecef !important; background-color: rgba(40, 167, 69, 0.05) !important;">{{ record.package_count or '-' }}</td>
+                                                <td style="padding: 10px 8px !important; text-align: right !important; font-size: 14px !important; font-weight: 700 !important; color: #007bff !important; border-right: 1px solid #e9ecef !important; border-bottom: 1px solid #e9ecef !important; background-color: rgba(0, 123, 255, 0.05) !important;">{{ "%.1f"|format(record.weight) if record.weight else '-' }}</td>
+                                                <td style="padding: 10px 8px !important; text-align: right !important; font-size: 14px !important; font-weight: 700 !important; color: #007bff !important; border-right: 1px solid #e9ecef !important; border-bottom: 1px solid #e9ecef !important; background-color: rgba(0, 123, 255, 0.05) !important;">{{ "%.2f"|format(record.volume) if record.volume else '-' }}</td>
+                                                <td style="padding: 10px 8px !important; text-align: center !important; font-size: 13px !important; border-right: 1px solid #e9ecef !important; border-bottom: 1px solid #e9ecef !important; color: #6c757d !important;">{{ record.customs_broker or '-' }}</td>
+                                                <td style="padding: 10px 8px !important; text-align: center !important; font-size: 13px !important; border-right: 1px solid #e9ecef !important; border-bottom: 1px solid #e9ecef !important; color: #fd7e14 !important; font-weight: 500 !important;">{{ record.order_type or '-' }}</td>
+                                                <td style="padding: 10px 8px !important; text-align: center !important; font-size: 13px !important; border-right: 1px solid #e9ecef !important; border-bottom: 1px solid #e9ecef !important; color: #20c997 !important; font-weight: 500 !important;">{{ record.export_mode or '-' }}</td>
+                                                <td style="padding: 10px 8px !important; text-align: center !important; font-size: 13px !important; border-right: 1px solid #e9ecef !important; border-bottom: 1px solid #e9ecef !important; color: #6c757d !important;">{{ record.service_staff or '-' }}</td>
+                                                <td style="padding: 10px 8px !important; text-align: left !important; font-size: 13px !important; border-right: 1px solid #e9ecef !important; border-bottom: 1px solid #e9ecef !important; white-space: normal !important; word-break: break-word !important; color: #495057 !important; font-style: italic !important;">{{ record.remarks or '-' }}</td>
+                                                <td style="padding: 10px 8px !important; text-align: center !important; font-size: 13px !important; border-right: 1px solid #e9ecef !important; border-bottom: 1px solid #e9ecef !important; color: #6c757d !important; font-family: monospace !important;">{{ record.inbound_date.strftime('%Y-%m-%d') if record.inbound_date else '-' }}</td>
+                                                <td style="padding: 8px 6px !important; text-align: center !important; font-size: 13px !important; border-bottom: 1px solid #e3e6f0 !important;">
+                                                    <button type="button" class="btn btn-info btn-sm mr-1" style="font-size: 11px !important; padding: 3px 6px !important; background-color: #17a2b8 !important; border-color: #17a2b8 !important;" onclick="viewRecord({{ record.id }})">
+                                                        <i class="fas fa-eye"></i>
+                                                    </button>
+                                                    <button type="button" class="btn btn-danger btn-sm" style="font-size: 11px !important; padding: 3px 6px !important; background-color: #dc3545 !important; border-color: #dc3545 !important;" onclick="deleteRecord({{ record.id }}, '{{ record.customer_name }}', '{{ record.identification_code }}')">
+                                                        <i class="fas fa-trash"></i>
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        {% else %}
+                            <div class="text-center p-4">
+                                <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                                <h5 class="text-muted">暂无出库记录</h5>
+                                <p class="text-muted">请调整搜索条件或日期范围</p>
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- 分页 -->
+                    {% if batch_groups.pages > 1 %}
+                    <div class="row mt-3">
+                        <div class="col-sm-12 col-md-5">
+                            <div class="dataTables_info">
+                                显示第 {{ (batch_groups.page - 1) * batch_groups.per_page + 1 }} 到 {{ batch_groups.page * batch_groups.per_page if batch_groups.page * batch_groups.per_page < batch_groups.total else batch_groups.total }} 批，共 {{ batch_groups.total }} 批次
+                            </div>
+                        </div>
+                        <div class="col-sm-12 col-md-7">
+                            <div class="dataTables_paginate paging_simple_numbers">
+                                <ul class="pagination">
+                                    {% if batch_groups.has_prev %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="{{ url_for('main.backend_outbound_list', page=batch_groups.prev_num, **search_params) }}">上一页</a>
+                                    </li>
+                                    {% endif %}
+
+                                    {% for page_num in range(1, batch_groups.pages + 1) %}
+                                        {% if page_num != batch_groups.page %}
+                                        <li class="page-item">
+                                            <a class="page-link" href="{{ url_for('main.backend_outbound_list', page=page_num, **search_params) }}">{{ page_num }}</a>
+                                        </li>
+                                        {% else %}
+                                        <li class="page-item active">
+                                            <span class="page-link">{{ page_num }}</span>
+                                        </li>
+                                        {% endif %}
+                                    {% endfor %}
+
+                                    {% if batch_groups.has_next %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="{{ url_for('main.backend_outbound_list', page=batch_groups.next_num, **search_params) }}">下一页</a>
+                                    </li>
+                                    {% endif %}
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
+
+<!-- 查看记录详情模态框 -->
+<div class="modal fade" id="viewRecordModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title">记录详情</h4>
+                <button type="button" class="close" data-dismiss="modal">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <div class="modal-body" id="recordDetailContent">
+                <!-- 详情内容将通过AJAX加载 -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">关闭</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+<!-- 强制样式覆盖 -->
+<style>
+/* 使用最高优先级强制覆盖所有样式 */
+.table thead th {
+    background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%) !important;
+    color: white !important;
+    font-weight: 600 !important;
+    text-align: center !important;
+    border: none !important;
+    font-size: 13px !important;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.2) !important;
+    padding: 15px 10px !important;
+}
+
+.table tbody tr:nth-child(even) {
+    background-color: #fafbfc !important;
+}
+
+.table tbody tr:nth-child(odd) {
+    background-color: #ffffff !important;
+}
+
+.table tbody tr:hover {
+    background-color: #f0f8ff !important;
+    transition: all 0.2s ease !important;
+}
+
+.table tbody td {
+    padding: 10px 8px !important;
+    border-right: 1px solid #e9ecef !important;
+    border-bottom: 1px solid #e9ecef !important;
+    font-size: 14px !important;
+}
+
+/* 客户名称列 */
+.table tbody td:nth-child(1) {
+    text-align: left !important;
+    color: #495057 !important;
+    font-weight: 500 !important;
+}
+
+/* 识别编码列 */
+.table tbody td:nth-child(2) {
+    text-align: center !important;
+    font-weight: 600 !important;
+    color: #6f42c1 !important;
+    background-color: rgba(111, 66, 193, 0.05) !important;
+}
+
+/* 数量列 - 板数、件数 */
+.table tbody td:nth-child(4),
+.table tbody td:nth-child(5) {
+    text-align: right !important;
+    font-weight: 600 !important;
+    color: #2a5298 !important;
+    background-color: rgba(42, 82, 152, 0.05) !important;
+}
+
+/* 重量、体积列 */
+.table tbody td:nth-child(6),
+.table tbody td:nth-child(7) {
+    text-align: right !important;
+    font-weight: 600 !important;
+    color: #2a5298 !important;
+    background-color: rgba(42, 82, 152, 0.05) !important;
+}
+
+/* 订单类型列 */
+.table tbody td:nth-child(9) {
+    color: #fd7e14 !important;
+    font-weight: 500 !important;
+}
+
+/* 出境模式列 */
+.table tbody td:nth-child(10) {
+    color: #20c997 !important;
+    font-weight: 500 !important;
+}
+
+/* 备注列 */
+.table tbody td:nth-child(12) {
+    text-align: left !important;
+    font-style: italic !important;
+    color: #495057 !important;
+}
+
+/* 日期列 */
+.table tbody td:nth-child(13) {
+    font-family: monospace !important;
+    color: #6c757d !important;
+}
+
+/* 操作按钮 */
+.table tbody td .btn {
+    font-size: 11px !important;
+    padding: 4px 8px !important;
+    margin: 1px !important;
+    border-radius: 4px !important;
+}
+
+.table tbody td .btn-info {
+    background-color: #17a2b8 !important;
+    border-color: #17a2b8 !important;
+    color: white !important;
+}
+
+.table tbody td .btn-danger {
+    background-color: #dc3545 !important;
+    border-color: #dc3545 !important;
+    color: white !important;
+}
+
+/* 表格容器美化 */
+.table-responsive {
+    border: 2px solid #667eea !important;
+    border-radius: 8px !important;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1) !important;
+    background-color: #ffffff !important;
+}
+
+/* 批次头部美化 */
+.batch-header {
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%) !important;
+    color: white !important;
+    padding: 15px 20px !important;
+    border-radius: 8px 8px 0 0 !important;
+}
+
+.batch-header h5 {
+    color: white !important;
+    font-weight: 600 !important;
+    margin-bottom: 8px !important;
+}
+</style>
+
+{% block scripts %}
+{{ super() }}
+<!-- 使用jsuites日期选择器 -->
+<script src="{{ url_for('static', filename='vendor/js/jsuites.js') }}"></script>
+<script>
+$(document).ready(function() {
+    console.log('后端仓出库记录页面加载完成');
+
+    // 样式已通过CSS自动应用，无需JavaScript强制设置
+
+    // 设置日期输入框的默认值
+    const urlParams = new URLSearchParams(window.location.search);
+    const dateStart = urlParams.get('date_start') || '{{ search_params.date_start if search_params is defined else "" }}';
+    const dateEnd = urlParams.get('date_end') || '{{ search_params.date_end if search_params is defined else "" }}';
+
+    if (dateStart) {
+        document.getElementById('date_start').value = dateStart;
+    }
+    if (dateEnd) {
+        document.getElementById('date_end').value = dateEnd;
+    }
+
+    // 设置搜索字段和值
+    const searchField = urlParams.get('search_field') || 'customer_name';
+    const searchValue = urlParams.get('search_value') || '';
+
+    document.getElementById('search_field').value = searchField;
+    document.getElementById('search_value').value = searchValue;
+
+    // 根据搜索字段设置隐藏字段的值
+    updateHiddenFields();
+});
+
+// 搜索字段变化时更新隐藏字段
+document.getElementById('search_field').addEventListener('change', function() {
+    updateHiddenFields();
+});
+
+// 搜索值变化时更新隐藏字段
+document.getElementById('search_value').addEventListener('input', function() {
+    updateHiddenFields();
+});
+
+// 更新隐藏字段
+function updateHiddenFields() {
+    const searchField = document.getElementById('search_field').value;
+    const searchValue = document.getElementById('search_value').value;
+
+    // 清空所有隐藏字段
+    document.getElementById('batch_no_hidden').value = '';
+    document.getElementById('plate_number_hidden').value = '';
+    document.getElementById('customer_name_hidden').value = '';
+    document.getElementById('destination_hidden').value = '';
+    document.getElementById('identification_code_hidden').value = '';
+    document.getElementById('export_mode_hidden').value = '';
+    document.getElementById('customs_broker_hidden').value = '';
+    document.getElementById('inbound_plate_hidden').value = '';
+    document.getElementById('service_staff_hidden').value = '';
+
+    // 根据选择的字段设置对应的隐藏字段值
+    if (searchValue) {
+        const hiddenField = document.getElementById(searchField + '_hidden');
+        if (hiddenField) {
+            hiddenField.value = searchValue;
+        }
+    }
+}
+
+// 重置按钮事件
+document.getElementById('reset_btn').addEventListener('click', function() {
+    location.href = '{{ url_for("main.backend_outbound_list") }}';
+});
+
+// 重置搜索
+function resetSearch() {
+    $('#searchForm')[0].reset();
+    window.location.href = "{{ url_for('main.backend_outbound_list') }}";
+}
+
+// 查看记录详情
+function viewRecord(recordId) {
+    $('#recordDetailContent').html('<div class="text-center"><i class="fas fa-spinner fa-spin"></i> 加载中...</div>');
+    $('#viewRecordModal').modal('show');
+
+    // 这里可以添加AJAX请求获取详情
+    setTimeout(function() {
+        $('#recordDetailContent').html('<p>记录ID: ' + recordId + '</p><p>详情功能待完善...</p>');
+    }, 500);
+}
+
+// 删除出库记录
+function deleteRecord(recordId, customerName, identificationCode) {
+    // 确认删除
+    if (!confirm(`确定要删除这条出库记录吗？\n\n客户名称：${customerName}\n识别编码：${identificationCode}\n\n删除后将自动回退库存！`)) {
+        return;
+    }
+
+    // 显示加载状态
+    const deleteBtn = event.target.closest('button');
+    const originalHtml = deleteBtn.innerHTML;
+    deleteBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+    deleteBtn.disabled = true;
+
+    // 发送删除请求
+    fetch(`/api/backend/outbound/delete/${recordId}`, {
+        method: 'DELETE',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': $('meta[name=csrf-token]').attr('content')
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // 显示成功消息
+            showNotification('success', data.message || '删除成功');
+
+            // 延迟刷新页面
+            setTimeout(() => {
+                window.location.reload();
+            }, 1500);
+        } else {
+            // 显示错误消息
+            showNotification('error', data.message || '删除失败');
+
+            // 恢复按钮状态
+            deleteBtn.innerHTML = originalHtml;
+            deleteBtn.disabled = false;
+        }
+    })
+    .catch(error => {
+        console.error('删除请求失败:', error);
+        showNotification('error', '删除请求失败，请稍后重试');
+
+        // 恢复按钮状态
+        deleteBtn.innerHTML = originalHtml;
+        deleteBtn.disabled = false;
+    });
+}
+
+// 删除整个批次
+function deleteBatch(batchNo) {
+    // 确认删除
+    if (!confirm(`确定要删除整个批次 ${batchNo} 的所有出库记录吗？\n\n删除后将自动回退库存！`)) {
+        return;
+    }
+
+    // 显示加载状态
+    const deleteBtn = event.target.closest('button');
+    const originalHtml = deleteBtn.innerHTML;
+    deleteBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i>删除中...';
+    deleteBtn.disabled = true;
+
+    // 发送批次删除请求
+    fetch(`/api/backend/outbound/delete_batch/${batchNo}`, {
+        method: 'DELETE',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': $('meta[name=csrf-token]').attr('content')
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // 显示成功消息
+            showNotification('success', data.message || '批次删除成功');
+
+            // 延迟刷新页面
+            setTimeout(() => {
+                window.location.reload();
+            }, 1500);
+        } else {
+            // 显示错误消息
+            showNotification('error', data.message || '批次删除失败');
+
+            // 恢复按钮状态
+            deleteBtn.innerHTML = originalHtml;
+            deleteBtn.disabled = false;
+        }
+    })
+    .catch(error => {
+        console.error('批次删除请求失败:', error);
+        showNotification('error', '批次删除请求失败，请稍后重试');
+
+        // 恢复按钮状态
+        deleteBtn.innerHTML = originalHtml;
+        deleteBtn.disabled = false;
+    });
+}
+
+// 显示通知消息
+function showNotification(type, message) {
+    // 创建通知元素
+    const notification = $(`
+        <div class="alert alert-${type === 'success' ? 'success' : 'danger'} alert-dismissible fade show position-fixed"
+             style="top: 20px; right: 20px; z-index: 9999; min-width: 300px;">
+            <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'} mr-2"></i>
+            ${message}
+            <button type="button" class="close" data-dismiss="alert">
+                <span>&times;</span>
+            </button>
+        </div>
+    `);
+
+    // 添加到页面
+    $('body').append(notification);
+
+    // 3秒后自动消失
+    setTimeout(() => {
+        notification.alert('close');
+    }, 3000);
+}
+</script>
+{% endblock %}

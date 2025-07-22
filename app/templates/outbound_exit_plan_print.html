@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>凭祥仓-凭祥保税仓/春疆货场货物交接清单</title>
+    <style>
+        @page {
+            size: A4 landscape;
+            margin: 10mm;
+        }
+        
+        body {
+            font-family: "Microsoft YaHei", Arial, sans-serif;
+            font-size: 11px;
+            line-height: 1.2;
+            margin: 0;
+            padding: 0;
+            color: #000;
+        }
+        
+        .print-container {
+            width: 100%;
+            max-width: 297mm;
+            margin: 0 auto;
+        }
+        
+        .page-break {
+            page-break-before: always;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #000;
+            padding-bottom: 10px;
+        }
+        
+        .header h1 {
+            font-size: 18px;
+            font-weight: bold;
+            margin: 0;
+            padding: 5px 0;
+        }
+        
+        .logo {
+            float: left;
+            font-size: 18px;
+            font-weight: bold;
+            position: relative;
+            font-family: "Microsoft YaHei", Arial, sans-serif;
+        }
+
+        .cfw-red {
+            color: #dc3545;
+            font-style: italic;
+            font-weight: bold;
+        }
+
+        .cfw-black {
+            color: #000;
+            font-weight: normal;
+        }
+
+        .logo::after {
+            content: "";
+            position: absolute;
+            bottom: -3px;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: linear-gradient(to right, #28a745, #20c997);
+            border-radius: 2px;
+        }
+        
+        .info-section {
+            margin-bottom: 15px;
+        }
+        
+        .info-table {
+            width: 100%;
+            border-collapse: collapse;
+            border: 2px solid #000;
+            margin-bottom: 10px;
+        }
+        
+        .info-table td {
+            border: 1px solid #000;
+            padding: 6px;
+            text-align: center;
+            vertical-align: middle;
+            height: 30px;
+        }
+        
+        .info-table .label {
+            background-color: #f8f9fa;
+            font-weight: bold;
+            width: 12.5%;
+        }
+
+        .info-table .value {
+            width: 12.5%;
+        }
+        
+        .highlight {
+            background-color: #ffff00;
+            font-weight: bold;
+        }
+        
+        .cargo-table {
+            width: 100%;
+            border-collapse: collapse;
+            border: 2px solid #000;
+            margin-bottom: 15px;
+        }
+        
+        .cargo-table th,
+        .cargo-table td {
+            border: 1px solid #000;
+            padding: 4px;
+            text-align: center;
+            vertical-align: middle;
+            font-size: 10px;
+        }
+        
+        .cargo-table th {
+            background-color: #f8f9fa;
+            font-weight: bold;
+            height: 30px;
+        }
+        
+        .cargo-table td {
+            height: 25px;
+        }
+        
+        .signature-section {
+            margin-top: 20px;
+        }
+        
+        .signature-table {
+            width: 100%;
+            border-collapse: collapse;
+            border: 2px solid #000;
+        }
+        
+        .signature-table td {
+            border: 1px solid #000;
+            padding: 10px;
+            height: 40px;
+            vertical-align: top;
+        }
+        
+        .signature-table .label {
+            background-color: #f8f9fa;
+            font-weight: bold;
+            width: 15%;
+        }
+        
+        .no-print {
+            display: block;
+        }
+        
+        @media print {
+            .no-print {
+                display: none !important;
+            }
+
+            body {
+                font-size: 11px;
+                zoom: 110%;
+                transform: scale(1.1);
+                transform-origin: top left;
+            }
+            
+            .cargo-table th,
+            .cargo-table td {
+                font-size: 10px;
+                padding: 4px;
+            }
+        }
+        
+        .text-left {
+            text-align: left !important;
+        }
+        
+        .batch-info {
+            font-size: 10px;
+            color: #666;
+            margin-bottom: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="no-print" style="text-align: center; margin-bottom: 20px;">
+        <button onclick="window.print()" class="btn btn-primary" style="padding: 10px 20px; font-size: 14px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer;">
+            <i class="fas fa-print"></i> 打印
+        </button>
+        <button onclick="closeWindow()" class="btn btn-secondary" style="padding: 10px 20px; font-size: 14px; background: #6c757d; color: white; border: none; border-radius: 4px; cursor: pointer; margin-left: 10px;">
+            <i class="fas fa-times"></i> 关闭
+        </button>
+    </div>
+
+    <div class="print-container">
+        {% for batch_no, batch_records in batch_groups.items() %}
+            {% if not loop.first %}
+                <div class="page-break"></div>
+            {% endif %}
+            
+            <!-- 页面头部 -->
+            <div class="header">
+                <div class="logo">
+                    <img src="{{ url_for('static', filename='img/cfw_logo.png') }}" alt="CFW车夫网" style="height: 40px; width: auto;">
+                </div>
+                <h1>凭祥仓-凭祥保税仓/春疆货场货物交接清单</h1>
+                <div style="clear: both;"></div>
+            </div>
+            
+            <!-- 基本信息表格 -->
+            <div class="info-section">
+                <table class="info-table">
+                    <!-- 第一行：发车日期/整车货物重量/板数/件数 -->
+                    <tr>
+                        <td class="label">发车日期</td>
+                        <td class="value highlight">{{ batch_records[0].outbound_time.strftime('%m月%d日') if batch_records[0].outbound_time else '' }}</td>
+                        <td class="label">整车货物重量</td>
+                        <td class="value highlight">{{ "%.0f"|format(batch_records|sum(attribute='weight') or 0) }}KG</td>
+                        <td class="label">板数</td>
+                        <td class="value">{{ batch_records|sum(attribute='pallet_count') or 0 }}</td>
+                        <td class="label">件数</td>
+                        <td class="value">{{ batch_records|sum(attribute='package_count') or 0 }}</td>
+                    </tr>
+                    <!-- 第二行：出库/出境车牌/车型/车挂/柜号 -->
+                    <tr>
+                        <td class="label">出库/出境车牌</td>
+                        <td class="value">{{ batch_records[0].plate_number or '' }}</td>
+                        <td class="label">车型</td>
+                        <td class="value">{{ batch_records[0].vehicle_type or '13.5M挂' }}</td>
+                        <td class="label">车挂</td>
+                        <td class="value">{{ batch_records[0].trailer or '' }}</td>
+                        <td class="label">柜号</td>
+                        <td class="value">{{ batch_records[0].container_number or '' }}</td>
+                    </tr>
+                    <!-- 第三行：归属车队/联系方式/始发地/目的地 -->
+                    <tr>
+                        <td class="label">归属车队</td>
+                        <td class="value">{{ batch_records[0].transport_company or '' }}</td>
+                        <td class="label">联系方式</td>
+                        <td class="value">{{ batch_records[0].driver_phone or '' }}</td>
+                        <td class="label">始发地</td>
+                        <td class="value">{{ source_warehouse.warehouse_name if source_warehouse else '凭祥仓' }}</td>
+                        <td class="label">目的地</td>
+                        {% set destination = batch_records[0].destination %}
+                        <td class="value">{{ destination or '春疆货场' }}</td>
+                    </tr>
+                    <!-- 第四行：批次号和联络窗口 -->
+                    <tr>
+                        <td class="label">批次号</td>
+                        <td class="value">{{ batch_no }}</td>
+                        <td class="label">联络窗口</td>
+                        {% if receivers and destination in receivers %}
+                            <td class="value" colspan="5">{{ receivers[destination].contact }}</td>
+                        {% else %}
+                            <td class="value" colspan="2">金英/84-971886919</td>
+                            <td class="value" colspan="3">石辉远/18685570447</td>
+                        {% endif %}
+                    </tr>
+                </table>
+            </div>
+            
+            <!-- 货物明细表格 -->
+            <table class="cargo-table">
+                <thead>
+                    <tr>
+                        <th width="3%">序号</th>
+                        <th width="6%">出库日期</th>
+                        <th width="8%">客户名称</th>
+                        <th width="10%">识别编码</th>
+                        <th width="7%">入库车牌</th>
+                        <th width="7%">送货干线车</th>
+                        <th width="4%">板数</th>
+                        <th width="4%">件数</th>
+                        <th width="5%">重量(KG)</th>
+                        <th width="5%">体积(CBM)</th>
+                        <th width="6%">出境模式</th>
+                        <th width="7%">报关行</th>
+                        <th width="5%">订单类型</th>
+                        <th width="5%">跟单客服</th>
+                        <th width="18%">备注</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for record in batch_records %}
+                    <tr>
+                        <td>{{ loop.index }}</td>
+                        <td>{{ record.outbound_time.strftime('%m-%d') if record.outbound_time else '' }}</td>
+                        <td class="text-left">{{ record.customer_name or '' }}</td>
+                        <td class="text-left">{{ record.identification_code or '' }}</td>
+                        <td>{{ record.inbound_plate or '' }}</td>
+                        <td>{{ record.delivery_plate_number or '' }}</td>
+                        <td>{{ "%.0f"|format(record.pallet_count or 0) }}</td>
+                        <td>{{ "%.0f"|format(record.package_count or 0) }}</td>
+                        <td>{{ "%.1f"|format(record.weight or 0) }}</td>
+                        <td>{{ "%.2f"|format(record.volume or 0) }}</td>
+                        <td>{{ record.export_mode or '' }}</td>
+                        <td>{{ record.customs_broker or '' }}</td>
+                        <td>{{ record.order_type or '' }}</td>
+                        <td>{{ record.service_staff or '' }}</td>
+                        <td class="text-left">
+                            <!-- 备注栏不再自动生成内容 -->
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    
+                    <!-- 填充空行到至少8行 -->
+                    {% for i in range(8 - batch_records|length) %}
+                        {% if i >= 0 %}
+                        <tr>
+                            <td>{{ batch_records|length + i + 1 }}</td>
+                            <td>&nbsp;</td>
+                            <td>&nbsp;</td>
+                            <td>&nbsp;</td>
+                            <td>&nbsp;</td>
+                            <td>&nbsp;</td>
+                            <td>&nbsp;</td>
+                            <td>&nbsp;</td>
+                            <td>&nbsp;</td>
+                            <td>&nbsp;</td>
+                            <td>&nbsp;</td>
+                            <td>&nbsp;</td>
+                            <td>&nbsp;</td>
+                            <td>&nbsp;</td>
+                            <td>&nbsp;</td>
+                        </tr>
+                        {% endif %}
+                    {% endfor %}
+                </tbody>
+            </table>
+            
+            <!-- 签名区域 -->
+            <div class="signature-section">
+                <table class="signature-table">
+                    <tr>
+                        <td class="label">司机签字:</td>
+                        <td style="width: 15%;"></td>
+                        <td class="label">发货人签字:</td>
+                        <td style="width: 15%;"></td>
+                        <td class="label">收货人签字:</td>
+                        <td style="width: 40%;"></td>
+                    </tr>
+                    <tr>
+                        <td class="label">靠台时间:</td>
+                        <td style="width: 15%;"></td>
+                        <td class="label">放行时间:</td>
+                        <td style="width: 15%;"></td>
+                        <td class="label">装车人数:</td>
+                        <td style="width: 40%;"></td>
+                    </tr>
+                </table>
+            </div>
+            
+            <div class="batch-info">
+                批次号: {{ batch_no }} | 打印时间: {{ now.strftime('%Y-%m-%d %H:%M:%S') }}
+            </div>
+        {% endfor %}
+    </div>
+
+    <script>
+        function closeWindow() {
+            // 尝试多种关闭方式
+            try {
+                // 方法1: 尝试关闭窗口
+                window.close();
+
+                // 如果window.close()不起作用，延迟后再试
+                setTimeout(function() {
+                    // 方法2: 尝试返回上一页
+                    if (window.history.length > 1) {
+                        window.history.back();
+                    } else {
+                        // 方法3: 跳转到出境计划单页面
+                        window.location.href = '/outbound/exit_plan';
+                    }
+                }, 100);
+
+            } catch (e) {
+                // 如果所有方法都失败，跳转到出境计划单页面
+                window.location.href = '/outbound/exit_plan';
+            }
+        }
+
+        // 添加键盘快捷键支持
+        document.addEventListener('keydown', function(e) {
+            // ESC键关闭
+            if (e.key === 'Escape') {
+                closeWindow();
+            }
+            // Ctrl+P 打印
+            if (e.ctrlKey && e.key === 'p') {
+                e.preventDefault();
+                window.print();
+            }
+        });
+
+        // 页面加载完成后的处理
+        window.addEventListener('load', function() {
+            // 如果是在新窗口中打开的，添加特殊处理
+            if (window.opener) {
+                console.log('在新窗口中打开，关闭按钮将关闭窗口');
+            } else {
+                console.log('在当前窗口中打开，关闭按钮将返回上一页');
+            }
+        });
+    </script>
+</body>
+</html>

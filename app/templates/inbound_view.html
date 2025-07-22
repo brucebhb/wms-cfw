@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+
+{% block styles %}
+{{ super() }}
+<style>
+    .record-card {
+        margin-bottom: 20px;
+    }
+    .record-details {
+        padding: 20px;
+    }
+    .detail-item {
+        margin-bottom: 15px;
+    }
+    .detail-label {
+        font-weight: 500;
+        color: #495057;
+    }
+    .detail-value {
+        font-size: 1rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <div>
+            <h4 class="card-title"><i class="fas fa-clipboard-check me-2"></i>入库记录详情</h4>
+            <small class="text-muted"><i class="fas fa-calendar me-1"></i>创建时间: {{ record.inbound_time.strftime('%Y-%m-%d %H:%M:%S') if record.inbound_time else '未知' }}</small>
+        </div>
+        <div>
+            <a href="{{ url_for('main.inbound_list') }}" class="btn btn-secondary btn-sm me-2">
+                <i class="fas fa-arrow-left"></i> 返回列表
+            </a>
+            <a href="{{ url_for('main.edit_inbound', id=record.id) }}" class="btn btn-warning btn-sm">
+                <i class="fas fa-edit"></i> 编辑
+            </a>
+        </div>
+    </div>
+    
+    <div class="card-body record-details">
+        <div class="row">
+            <!-- 左侧列 -->
+            <div class="col-md-6">
+                <div class="detail-item">
+                    <div class="detail-label">ID</div>
+                    <div class="detail-value">{{ record.id }}</div>
+                </div>
+                
+                <div class="detail-item">
+                    <div class="detail-label">入库时间</div>
+                    <div class="detail-value">{{ record.inbound_time.strftime('%Y-%m-%d %H:%M:%S') if record.inbound_time else '未知' }}</div>
+                </div>
+                
+                <div class="detail-item">
+                    <div class="detail-label">入库车牌</div>
+                    <div class="detail-value">{{ record.plate_number }}</div>
+                </div>
+                
+                <div class="detail-item">
+                    <div class="detail-label">客户名称</div>
+                    <div class="detail-value">{{ record.customer_name }}</div>
+                </div>
+                
+                <div class="detail-item">
+                    <div class="detail-label">板数</div>
+                    <div class="detail-value">{{ record.pallet_count }}</div>
+                </div>
+            </div>
+            
+            <!-- 右侧列 -->
+            <div class="col-md-6">
+                <div class="detail-item">
+                    <div class="detail-label">件数</div>
+                    <div class="detail-value">{{ record.package_count }}</div>
+                </div>
+                
+                <div class="detail-item">
+                    <div class="detail-label">重量(kg)</div>
+                    <div class="detail-value">{{ record.weight }}</div>
+                </div>
+                
+                <div class="detail-item">
+                    <div class="detail-label">体积(m³)</div>
+                    <div class="detail-value">{{ record.volume }}</div>
+                </div>
+                
+                <div class="detail-item">
+                    <div class="detail-label">出境模式</div>
+                    <div class="detail-value">{{ record.export_mode }}</div>
+                </div>
+                
+                <div class="detail-item">
+                    <div class="detail-label">报关行</div>
+                    <div class="detail-value">{{ record.customs_broker }}</div>
+                </div>
+                
+                <div class="detail-item">
+                    <div class="detail-label">库位</div>
+                    <div class="detail-value">{{ record.location or '' }}</div>
+                </div>
+                
+                <div class="detail-item">
+                    <div class="detail-label">单据</div>
+                    <div class="detail-value">{{ record.documents }}</div>
+                </div>
+            </div>
+        </div>
+        
+        <hr class="my-4">
+        
+        <div class="d-flex justify-content-center">
+            <a href="{{ url_for('main.inbound_list') }}" class="btn btn-secondary me-2">
+                <i class="fas fa-arrow-left"></i> 返回列表
+            </a>
+            <a href="{{ url_for('main.edit_inbound', id=record.id) }}" class="btn btn-warning">
+                <i class="fas fa-edit"></i> 编辑
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %} 

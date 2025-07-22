@@ -1,0 +1,2009 @@
+{% extends "base.html" %}
+
+{% block title %}前端仓直接配送客户{% endblock %}
+
+{% block styles %}
+<!-- 优化缓存策略 - 允许合理缓存以提升性能 -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/handsontable@12.4.0/dist/handsontable.full.min.css">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/simple-table.css') }}" type="text/css" />
+<style>
+    .batch-options {
+        margin-bottom: 1rem;
+    }
+    #hot-container {
+        height: 500px;
+        overflow: visible;
+        margin-bottom: 20px;
+        margin-left: auto;
+        margin-right: auto;
+        position: relative;
+        width: 100%;
+        border: 1px solid #dee2e6;
+        border-radius: 0.375rem;
+        background-color: #fff;
+    }
+
+    /* 确保Handsontable正确显示 */
+    .handsontable .wtHolder {
+        overflow: visible !important;
+    }
+
+    .handsontable .wtHider {
+        width: 100% !important;
+    }
+
+    .handsontable .wtTable {
+        table-layout: fixed !important;
+        width: 100% !important;
+    }
+
+    .handsontable .wtTable td,
+    .handsontable .wtTable th {
+        border: 1px solid #ddd !important;
+        box-sizing: border-box !important;
+    }
+    .handsontable {
+        font-family: "Microsoft YaHei", Arial, sans-serif;
+    }
+    .handsontable td {
+        height: 32px;
+        padding: 4px 6px;
+        font-size: 14px;
+        text-align: center;
+    }
+    .handsontable th {
+        height: 36px;
+        padding: 6px;
+        font-size: 14px;
+        font-weight: bold;
+        text-align: center;
+        background-color: #f8f9fa;
+    }
+    .handsontable .required {
+        color: #ff0000;
+    }
+    .required {
+        color: #dc3545 !important;
+        font-weight: bold;
+    }
+    .btn-action {
+        margin-right: 8px;
+    }
+    .card-body {
+        text-align: left;
+    }
+    .destination-info {
+        background-color: #d1ecf1;
+        border: 1px solid #bee5eb;
+        border-radius: 5px;
+        padding: 15px;
+        margin-bottom: 20px;
+    }
+    .common-fields {
+        background-color: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+    .form-row {
+        margin-bottom: 15px;
+    }
+    .form-label {
+        font-weight: 600;
+        color: #495057;
+        margin-bottom: 5px;
+    }
+    .form-control {
+        border-radius: 4px;
+        border: 1px solid #ced4da;
+    }
+    .form-control:focus {
+        border-color: #28a745;
+        box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.25);
+    }
+    /* 使用最强的选择器优先级和内联样式级别的强制设置 */
+    #inventoryModal.modal.fade .modal-dialog,
+    #inventoryModal.modal.show .modal-dialog,
+    #inventoryModal .modal-dialog {
+        max-width: 95vw !important;
+        width: 95vw !important;
+        height: 90vh !important;
+        max-height: 90vh !important;
+        margin: 1rem auto !important;
+        transform: none !important;
+        left: 0 !important;
+        right: 0 !important;
+        position: relative !important;
+    }
+
+    #inventoryModal.modal.fade .modal-content,
+    #inventoryModal.modal.show .modal-content,
+    #inventoryModal .modal-content {
+        height: 100% !important;
+        display: flex !important;
+        flex-direction: column !important;
+        border: none !important;
+        border-radius: 0.5rem !important;
+        width: 100% !important;
+        max-width: none !important;
+    }
+
+    #inventoryModal.modal.fade .modal-body,
+    #inventoryModal.modal.show .modal-body,
+    #inventoryModal .modal-body {
+        flex: 1 !important;
+        overflow: hidden !important;
+        display: flex !important;
+        flex-direction: column !important;
+        padding: 1rem !important;
+        min-height: 0 !important;
+        width: 100% !important;
+    }
+
+    #inventoryModal.modal.fade .table-responsive,
+    #inventoryModal.modal.show .table-responsive,
+    #inventoryModal .table-responsive {
+        flex: 1 !important;
+        overflow-y: auto !important;
+        max-height: calc(90vh - 200px) !important;
+        border: 1px solid #dee2e6 !important;
+        border-radius: 0.375rem !important;
+        min-height: 400px !important;
+        width: 100% !important;
+    }
+
+    /* 强制覆盖Bootstrap的所有可能限制 */
+    .modal-dialog {
+        max-width: none !important;
+    }
+
+    /* 确保模态框完全填充 */
+    #inventoryModal {
+        padding: 0 !important;
+    }
+    .inventory-table {
+        font-size: 14px;
+        table-layout: fixed;  /* 固定表格布局 */
+        width: 100%;
+    }
+    .inventory-table th {
+        background: #f8f9fa;
+        font-weight: bold;
+        text-align: center;
+        vertical-align: middle;
+        position: sticky;
+        top: 0;
+        z-index: 10;
+    }
+
+    /* 库存表格单元格样式 */
+    .inventory-table td {
+        text-align: center;
+        vertical-align: middle;
+        padding: 8px 4px;
+        word-wrap: break-word;
+        word-break: break-all;
+    }
+
+    /* 设置各列的宽度 */
+    .inventory-table th:nth-child(1), .inventory-table td:nth-child(1) { width: 8%; }  /* 操作 */
+    .inventory-table th:nth-child(2), .inventory-table td:nth-child(2) { width: 12%; } /* 客户名称 */
+    .inventory-table th:nth-child(3), .inventory-table td:nth-child(3) {
+        width: 20%; /* 识别编码 - 更宽 */
+        word-wrap: break-word !important;
+        word-break: break-all !important;
+        white-space: normal !important;
+        font-size: 12px;
+        line-height: 1.3;
+        text-align: left !important; /* 识别编码左对齐 */
+        padding: 6px 8px !important;
+    }
+    .inventory-table th:nth-child(4), .inventory-table td:nth-child(4) { width: 6%; }  /* 板数 */
+    .inventory-table th:nth-child(5), .inventory-table td:nth-child(5) { width: 6%; }  /* 件数 */
+    .inventory-table th:nth-child(6), .inventory-table td:nth-child(6) { width: 6%; }  /* 全出 */
+    .inventory-table th:nth-child(7), .inventory-table td:nth-child(7) { width: 8%; }  /* 出库板数 */
+    .inventory-table th:nth-child(8), .inventory-table td:nth-child(8) { width: 8%; }  /* 出库件数 */
+    .inventory-table th:nth-child(9), .inventory-table td:nth-child(9) { width: 6%; }  /* 重量 */
+    .inventory-table th:nth-child(10), .inventory-table td:nth-child(10) { width: 6%; } /* 体积 */
+    .inventory-table th:nth-child(11), .inventory-table td:nth-child(11) { width: 8%; } /* 库位 */
+    .inventory-table th:nth-child(12), .inventory-table td:nth-child(12) { width: 6%; } /* 出境模式 */
+    .inventory-table th:nth-child(13), .inventory-table td:nth-child(13) { width: 6%; } /* 订单类型 */
+    .inventory-table th:nth-child(14), .inventory-table td:nth-child(14) { width: 8%; } /* 报关行 */
+    .inventory-table th:nth-child(15), .inventory-table td:nth-child(15) { width: 8%; } /* 入库时间 */
+
+    /* 库存表格中的输入框样式 */
+    .outbound-pallet-input,
+    .outbound-package-input {
+        width: 80px !important;
+        text-align: center !important;
+        font-size: 12px !important;
+        padding: 2px 4px !important;
+    }
+
+    /* 全出按钮样式 */
+    .btn-full-out {
+        font-size: 11px !important;
+        padding: 2px 6px !important;
+        white-space: nowrap !important;
+    }
+
+    /* 库存表格行高亮效果 */
+    .inventory-table tr.table-success {
+        background-color: #d1edff !important;
+        transition: background-color 0.3s ease !important;
+    }
+
+    /* 已选择项目的样式 */
+    .inventory-table tr.table-secondary {
+        background-color: #f8f9fa !important;
+        opacity: 0.7 !important;
+    }
+
+    .inventory-table tr.table-secondary td {
+        color: #6c757d !important;
+    }
+
+    /* 禁用状态的按钮和输入框 */
+    .btn.disabled,
+    .btn:disabled {
+        opacity: 0.6 !important;
+        cursor: not-allowed !important;
+    }
+
+    .form-control.disabled,
+    .form-control:disabled {
+        background-color: #e9ecef !important;
+        opacity: 0.6 !important;
+        cursor: not-allowed !important;
+    }
+
+    /* 已选择的复选框样式 */
+    .inventory-checkbox:disabled {
+        opacity: 0.6 !important;
+        cursor: not-allowed !important;
+    }
+
+    /* 库存表格列宽优化 */
+    .inventory-table th:nth-child(1),
+    .inventory-table td:nth-child(1) { width: 120px; } /* 操作 - 增加宽度以容纳单选框和按钮 */
+    .inventory-table th:nth-child(4),
+    .inventory-table td:nth-child(4) { width: 60px; } /* 板数 */
+    .inventory-table th:nth-child(5),
+    .inventory-table td:nth-child(5) { width: 60px; } /* 件数 */
+    .inventory-table th:nth-child(6),
+    .inventory-table td:nth-child(6) { width: 70px; } /* 全出 */
+    .inventory-table th:nth-child(7),
+    .inventory-table td:nth-child(7) { width: 90px; } /* 出库板数 */
+    .inventory-table th:nth-child(8),
+    .inventory-table td:nth-child(8) { width: 90px; } /* 出库件数 */
+    .inventory-table td {
+        text-align: center;
+        vertical-align: middle;
+    }
+    .btn-select-inventory {
+        padding: 2px 8px;
+        font-size: 12px;
+    }
+
+    /* 复选框样式 */
+    .inventory-checkbox {
+        margin-right: 8px;
+        transform: scale(1.2);
+    }
+
+    /* 操作列的flex布局 */
+    .inventory-table td:nth-child(1) .d-flex {
+        justify-content: flex-start;
+        align-items: center;
+    }
+
+    /* 模态框footer样式 */
+    .modal-footer {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    /* 确认选择按钮样式 */
+    #confirmSelectionBtn:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- 页面标题 -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-success">
+                <div class="card-header bg-success text-white">
+                    <h3 class="card-title mb-0">
+                        <i class="fas fa-truck me-2"></i>前端仓直接配送客户
+                        <span class="badge bg-success text-white ms-2">Direct to Customer</span>
+                    </h3>
+                    <div class="mt-2">
+                        <a href="{{ url_for('main.frontend_outbound') }}" class="btn btn-sm btn-outline-light">
+                            <i class="fas fa-arrow-left me-1"></i>返回选择页面
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="destination-info">
+                        <h5 class="text-success mb-2">
+                            <i class="fas fa-map-marker-alt me-1"></i>配送类型：直接配送客户工厂
+                        </h5>
+                        <p class="mb-0">
+                            <i class="fas fa-info-circle me-1"></i>
+                            货物将直接从前端仓配送到客户指定地址，适用于急件或就近配送
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 公共区域字段 -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-clipboard-list me-2"></i>公共信息
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="common-fields">
+                        <div class="row">
+                            <!-- 第一行 -->
+                            <div class="col-md-3">
+                                <div class="form-row">
+                                    <label class="form-label required">出库车牌 *</label>
+                                    <input type="text" class="form-control" id="commonPlateNumber" placeholder="请输入出库车牌">
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="form-row">
+                                    <label class="form-label required">司机姓名 *</label>
+                                    <input type="text" class="form-control" id="commonDriverName" placeholder="请输入司机姓名">
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="form-row">
+                                    <label class="form-label required">联系方式 *</label>
+                                    <input type="text" class="form-control" id="commonDriverPhone" placeholder="请输入联系方式">
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="form-row">
+                                    <label class="form-label required">出库日期 *</label>
+                                    <input type="date" class="form-control" id="commonOutboundDate" value="{{ moment().format('YYYY-MM-DD') }}">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <!-- 第二行 -->
+                            <div class="col-md-2">
+                                <div class="form-row">
+                                    <label class="form-label">始发仓</label>
+                                    {% if current_user.is_super_admin() %}
+                                    <!-- 管理员用户显示下拉框 -->
+                                    <select class="form-control" id="commonSourceWarehouse">
+                                        <option value="">请选择始发仓</option>
+                                        {% for warehouse in warehouses %}
+                                        <option value="{{ warehouse.warehouse_name }}"
+                                                data-address="{{ warehouse.address or '地址待完善' }}"
+                                                data-contact="{{ warehouse.contact_person or '联系人待完善' }}">
+                                            {{ warehouse.warehouse_name }}
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                    {% else %}
+                                    <!-- 普通用户显示只读输入框 -->
+                                    <input type="text" class="form-control" id="commonSourceWarehouse" readonly
+                                           value="{{ current_user.warehouse.warehouse_name if current_user.warehouse else '未分配仓库' }}">
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="form-row">
+                                    <label class="form-label">始发仓地址</label>
+                                    <input type="text" class="form-control" id="commonSourceAddress" readonly
+                                           value="{% if current_user.is_super_admin() %}请先选择始发仓{% elif current_user.warehouse %}{{ current_user.warehouse.address or '地址待完善' }}{% else %}未分配仓库{% endif %}">
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="form-row">
+                                    <label class="form-label">始发仓联系人</label>
+                                    <input type="text" class="form-control" id="commonSourceContact" readonly
+                                           value="{% if current_user.is_super_admin() %}请先选择始发仓{% elif current_user.warehouse %}{{ current_user.warehouse.contact_person or '联系人待完善' }}{% else %}未分配仓库{% endif %}">
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="form-row">
+                                    <label class="form-label required">目的地 *</label>
+                                    <input type="text" class="form-control" id="commonDestination" placeholder="请输入目的地">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <!-- 第三行 -->
+                            <div class="col-md-6">
+                                <div class="form-row">
+                                    <label class="form-label required">目的地地址 *</label>
+                                    <input type="text" class="form-control" id="commonDestinationAddress" placeholder="请输入详细的目的地地址">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-row">
+                                    <label class="form-label required">目的地联系人 *</label>
+                                    <input type="text" class="form-control" id="commonDestinationContact" placeholder="请输入目的地联系人信息">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 批量操作工具栏 -->
+    <div class="row mb-3">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <div class="batch-options d-flex flex-wrap align-items-center justify-content-between">
+                        <div class="d-flex flex-wrap align-items-center">
+                            <button type="button" class="btn btn-success btn-action" id="addRowBtn">
+                                <i class="fas fa-plus"></i> 添加行
+                            </button>
+                            <button type="button" class="btn btn-danger btn-action" id="deleteRowBtn">
+                                <i class="fas fa-trash"></i> 删除行
+                            </button>
+                            <button type="button" class="btn btn-info btn-action" id="selectInventoryBtn">
+                                <i class="fas fa-boxes"></i> 库存选择
+                            </button>
+
+                        </div>
+                        <div class="d-flex flex-wrap align-items-center">
+                            <button type="button" class="btn btn-primary btn-action" id="saveAllBtn">
+                                <i class="fas fa-save"></i> 保存全部
+                            </button>
+                            <button type="button" class="btn btn-secondary btn-action" id="clearAllBtn">
+                                <i class="fas fa-eraser"></i> 清空
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 数据表格 -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title">
+                        <i class="fas fa-table me-2"></i>直接配送数据录入
+                        <small class="text-muted">（标有 <span class="required">*</span> 的字段为必填项）</small>
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div id="hot-container"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 库存选择模态框 -->
+    <div class="modal fade inventory-modal" id="inventoryModal" tabindex="-1" aria-labelledby="inventoryModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-info text-white">
+                    <h5 class="modal-title" id="inventoryModalLabel">
+                        <i class="fas fa-boxes me-2"></i>库存选择
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <label class="form-label">客户名称</label>
+                            <input type="text" class="form-control" id="inventorySearchCustomer" placeholder="输入客户名称搜索">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">识别编码</label>
+                            <input type="text" class="form-control" id="inventorySearchCode" placeholder="输入识别编码搜索">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">&nbsp;</label>
+                            <div>
+                                <button type="button" class="btn btn-primary" id="searchInventoryBtn">
+                                    <i class="fas fa-search"></i> 搜索
+                                </button>
+                                <button type="button" class="btn btn-secondary" id="resetInventorySearchBtn">
+                                    <i class="fas fa-undo"></i> 重置
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover inventory-table" id="inventoryTable">
+                            <thead>
+                                <tr>
+                                    <th>操作</th>
+                                    <th>客户名称</th>
+                                    <th>识别编码</th>
+                                    <th>板数</th>
+                                    <th>件数</th>
+                                    <th>全出</th>
+                                    <th>出库板数</th>
+                                    <th>出库件数</th>
+                                    <th>重量(kg)</th>
+                                    <th>体积(m³)</th>
+                                    <th>库位</th>
+                                    <th>出境模式</th>
+                                    <th>订单类型</th>
+                                    <th>报关行</th>
+                                    <th>入库时间</th>
+                                </tr>
+                            </thead>
+                            <tbody id="inventoryTableBody">
+                                <tr>
+                                    <td colspan="15" class="text-center text-muted">
+                                        <i class="fas fa-spinner fa-spin me-2"></i>正在加载库存数据...
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <div class="me-auto">
+                        <span class="text-muted small">已选择 <span id="selectedCount">0</span> 项</span>
+                    </div>
+                    <button type="button" class="btn btn-success me-2" id="confirmSelectionBtn">
+                        <i class="fas fa-check"></i> 确认选择
+                    </button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times"></i> 关闭
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 操作说明 -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card border-info">
+                <div class="card-header bg-info text-white">
+                    <h6 class="card-title mb-0">
+                        <i class="fas fa-question-circle me-1"></i>操作说明
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6 class="text-primary">必填字段</h6>
+                            <ul class="small">
+                                <li><span class="required" style="font-size: 16px; font-weight: bold;">出库时间*</span>：货物出库的时间</li>
+                                <li><span class="required">配送车牌*</span>：配送车辆车牌号</li>
+                                <li><span class="required">客户名称*</span>：货物所属客户</li>
+                                <li><span class="required">配送地址*</span>：客户工厂详细地址</li>
+                                <li><span class="required">联系人*</span>：客户联系人信息</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="text-success">配送提示</h6>
+                            <ul class="small">
+                                <li>请确保配送地址准确无误</li>
+                                <li>联系人电话必须填写，便于配送确认</li>
+                                <li>系统会自动生成配送单据</li>
+                                <li>配送完成后请及时更新配送状态</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/handsontable@12.4.0/dist/handsontable.full.min.js"></script>
+<script>
+// 优化的资源加载检查
+let initializationAttempts = 0;
+const MAX_ATTEMPTS = 20; // 减少到2秒
+let initStartTime; // 全局变量用于性能监控
+
+// 更新选择计数（全局函数）
+function updateSelectedCount() {
+    const selectedCheckboxes = document.querySelectorAll('.inventory-checkbox:checked');
+    const count = selectedCheckboxes.length;
+    const selectedCountElement = document.getElementById('selectedCount');
+
+    console.log('🔍 updateSelectedCount 被调用，选中数量:', count);
+    console.log('🔍 找到的复选框:', selectedCheckboxes);
+
+    if (selectedCountElement) {
+        selectedCountElement.textContent = count;
+    }
+
+    // 更新确认按钮状态
+    const confirmBtn = document.getElementById('confirmSelectionBtn');
+    if (confirmBtn) {
+        confirmBtn.disabled = count === 0;
+        if (count === 0) {
+            confirmBtn.innerHTML = '<i class="fas fa-check"></i> 确认选择';
+            console.log('🔍 按钮被禁用，因为没有选中项目');
+        } else {
+            confirmBtn.innerHTML = `<i class="fas fa-check"></i> 确认选择 (${count}项)`;
+            console.log('🔍 按钮已启用，选中', count, '项');
+        }
+    }
+}
+
+// 全局变量用于存储 Handsontable 实例
+let hot;
+
+// 选择库存项目（全局函数）
+function selectInventoryItem(inventoryItem) {
+    console.log('🔍 selectInventoryItem 被调用');
+    console.log('🔍 hot 变量状态:', hot);
+    console.log('🔍 hot 类型:', typeof hot);
+
+    if (!hot) {
+        console.log('❌ hot 变量不存在');
+        showMessage('error', '表格未初始化，请稍后再试');
+        return;
+    }
+
+    // 检查 Handsontable 方法是否可用
+    if (typeof hot.populateFromArray !== 'function') {
+        console.log('❌ populateFromArray 方法不存在，检查可用方法...');
+        console.log('🔍 hot 对象的方法:', Object.getOwnPropertyNames(hot));
+        console.log('🔍 hot 原型的方法:', Object.getOwnPropertyNames(Object.getPrototypeOf(hot)));
+        showMessage('error', 'Handsontable 方法不可用');
+        return;
+    }
+
+    console.log('✅ Handsontable 方法检查通过');
+
+    // 检查是否已经存在相同的识别编码
+    const currentSourceData = hot.getSourceData() || [];
+    const existingItem = currentSourceData.find(item =>
+        item.identification_code === inventoryItem.identification_code
+    );
+
+    if (existingItem) {
+        console.log('⚠️ 识别编码已存在:', inventoryItem.identification_code);
+        showMessage('warning', `识别编码 "${inventoryItem.identification_code}" 已经在表格中，不能重复添加`);
+        return;
+    }
+
+    // 添加到表格
+    const currentData = hot.getData();
+    console.log('🔍 当前表格数据行数:', currentData.length);
+    console.log('🔍 当前表格数据:', currentData);
+
+    const newRow = {
+        customer_name: inventoryItem.customer_name,
+        identification_code: inventoryItem.identification_code,
+        pallet_count: inventoryItem.pallet_count,
+        package_count: inventoryItem.package_count,
+        weight: inventoryItem.weight,
+        volume: inventoryItem.volume,
+        export_mode: inventoryItem.export_mode,
+        order_type: inventoryItem.order_type,
+        customs_broker: inventoryItem.customs_broker,
+        location: inventoryItem.location,
+        documents: inventoryItem.documents,
+        remarks: ''
+    };
+
+    console.log('🔍 准备添加的新行数据:', newRow);
+    console.log('🔍 新行数据值数组:', Object.values(newRow));
+
+    // 检查第一行是否为空（只在表格只有一行且为空时使用）
+    let useFirstRow = false;
+    if (currentData.length === 1) {
+        const firstRow = currentData[0];
+        const isEmpty = !firstRow[0] && !firstRow[1]; // 客户名称和识别编码都为空
+        if (isEmpty) {
+            useFirstRow = true;
+            console.log('🔍 使用第一行空行，行索引: 0');
+        }
+    }
+
+    console.log('🔍 当前源数据:', currentSourceData);
+
+    if (useFirstRow && currentSourceData.length === 1 && (!currentSourceData[0].customer_name && !currentSourceData[0].identification_code)) {
+        // 替换第一行空数据
+        currentSourceData[0] = newRow;
+        console.log('🔍 替换第一行空数据');
+    } else {
+        // 添加新行
+        currentSourceData.push(newRow);
+        console.log('🔍 添加新行到源数据');
+    }
+
+    // 重新加载所有数据
+    hot.loadData(currentSourceData);
+    console.log('🔍 重新加载表格数据完成，新的行数:', hot.countRows());
+
+    console.log('🔍 添加后表格行数:', hot.countRows());
+    console.log('🔍 添加后表格数据:', hot.getData());
+
+    // 显示成功消息
+    showMessage('success', `库存项目 "${inventoryItem.identification_code}" 已添加到表格`);
+
+    // 如果库存选择模态框是打开的，刷新其状态
+    if ($('#inventoryModal').hasClass('show')) {
+        refreshInventoryModalState();
+    }
+}
+
+// 工具函数：显示消息（全局函数）
+function showMessage(type, message) {
+    // 移除现有的消息
+    const existingAlerts = document.querySelectorAll('.alert');
+    existingAlerts.forEach(alert => alert.remove());
+
+    // 创建消息元素
+    const alertClass = type === 'success' ? 'alert-success' :
+                      type === 'error' ? 'alert-danger' :
+                      type === 'warning' ? 'alert-warning' : 'alert-info';
+
+    const iconClass = type === 'success' ? 'check-circle' :
+                     type === 'error' ? 'exclamation-circle' : 'info-circle';
+
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert ${alertClass} alert-dismissible fade show`;
+    alertDiv.setAttribute('role', 'alert');
+    alertDiv.innerHTML = `
+        <i class="fas fa-${iconClass}"></i>
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    `;
+
+    // 添加新消息到页面顶部
+    document.body.insertBefore(alertDiv, document.body.firstChild);
+
+    // 3秒后自动消失
+    setTimeout(() => {
+        if (alertDiv.parentNode) {
+            alertDiv.style.opacity = '0';
+            setTimeout(() => {
+                if (alertDiv.parentNode) {
+                    alertDiv.remove();
+                }
+            }, 300);
+        }
+    }, 3000);
+}
+
+// 调试函数：检查页面元素和事件绑定
+function debugPageElements() {
+    console.log('🔍 调试页面元素状态:');
+    console.log('  - 保存按钮:', document.getElementById('saveAllBtn'));
+    console.log('  - 车牌输入框:', document.getElementById('commonPlateNumber'));
+    console.log('  - 司机姓名输入框:', document.getElementById('commonDriverName'));
+    console.log('  - 司机电话输入框:', document.getElementById('commonDriverPhone'));
+    console.log('  - 出库日期输入框:', document.getElementById('commonOutboundDate'));
+    console.log('  - 目的地输入框:', document.getElementById('commonDestination'));
+    console.log('  - 目的地址输入框:', document.getElementById('commonDestinationAddress'));
+    console.log('  - 目的联系人输入框:', document.getElementById('commonDestinationContact'));
+    console.log('  - hot表格实例:', hot);
+
+    // 检查表格数据
+    if (hot) {
+        console.log('  - 表格数据:', hot.getData());
+        console.log('  - 表格源数据:', hot.getSourceData());
+    }
+}
+
+// 添加到全局作用域以便在控制台调用
+window.debugPageElements = debugPageElements;
+
+// 刷新库存选择模态框的状态（全局函数）
+function refreshInventoryModalState() {
+    // 重新获取当前显示的库存数据并刷新显示
+    const tbody = document.getElementById('inventoryTableBody');
+    const rows = tbody.querySelectorAll('tr');
+
+    if (rows.length > 0) {
+        // 获取当前表格中已选择的识别编码
+        const selectedCodes = new Set();
+        if (hot) {
+            const currentSourceData = hot.getSourceData() || [];
+            currentSourceData.forEach(item => {
+                if (item.identification_code) {
+                    selectedCodes.add(item.identification_code);
+                }
+            });
+        }
+
+        // 更新每一行的状态
+        rows.forEach(row => {
+            const checkbox = row.querySelector('.inventory-checkbox');
+            const selectBtn = row.querySelector('.btn-select-inventory');
+            const fullOutBtn = row.querySelector('.btn-full-out');
+            const palletInput = row.querySelector('.outbound-pallet-input');
+            const packageInput = row.querySelector('.outbound-package-input');
+
+            if (checkbox && selectBtn) {
+                const identificationCode = checkbox.dataset.code;
+                const isSelected = selectedCodes.has(identificationCode);
+
+                // 更新行样式
+                if (isSelected) {
+                    row.classList.add('table-secondary');
+                } else {
+                    row.classList.remove('table-secondary');
+                }
+
+                // 更新控件状态
+                checkbox.disabled = isSelected;
+                selectBtn.disabled = isSelected;
+                if (fullOutBtn) fullOutBtn.disabled = isSelected;
+                if (palletInput) palletInput.disabled = isSelected;
+                if (packageInput) packageInput.disabled = isSelected;
+
+                // 更新按钮文本和样式
+                if (isSelected) {
+                    selectBtn.innerHTML = '<i class="fas fa-check-circle"></i> 已选择';
+                    selectBtn.className = 'btn btn-sm btn-secondary btn-select-inventory disabled';
+                } else {
+                    selectBtn.innerHTML = '<i class="fas fa-check"></i> 选择';
+                    selectBtn.className = 'btn btn-sm btn-primary btn-select-inventory';
+                }
+            }
+        });
+    }
+}
+
+// 确认选择按钮事件（使用事件委托，确保在按钮创建后也能工作）
+$(document).on('click', '#confirmSelectionBtn', function(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    console.log('🔍 确认选择按钮被点击');
+    console.log('🔍 按钮元素:', this);
+    console.log('🔍 事件对象:', e);
+
+    const selectedCheckboxes = document.querySelectorAll('.inventory-checkbox:checked');
+
+    if (selectedCheckboxes.length === 0) {
+        showMessage('warning', '请先选择要出库的库存项目');
+        return;
+    }
+
+    // 批量添加选中的库存项目到表格
+    selectedCheckboxes.forEach(checkbox => {
+        const row = checkbox.closest('tr');
+        const palletInput = row.querySelector('.outbound-pallet-input');
+        const packageInput = row.querySelector('.outbound-package-input');
+
+        const inventoryItem = {
+            customer_name: checkbox.dataset.customer,
+            identification_code: checkbox.dataset.code,
+            pallet_count: parseInt(palletInput.value) || 0,
+            package_count: parseInt(packageInput.value) || 0,
+            weight: parseFloat(checkbox.dataset.weight) || 0,
+            volume: parseFloat(checkbox.dataset.volume) || 0,
+            export_mode: checkbox.dataset.exportMode || '',
+            order_type: checkbox.dataset.orderType || '',
+            customs_broker: checkbox.dataset.customsBroker || '',
+            location: checkbox.dataset.location || '',
+            documents: checkbox.dataset.documents || ''
+        };
+
+        // 验证出库数量
+        if (inventoryItem.pallet_count === 0 && inventoryItem.package_count === 0) {
+            showMessage('warning', `${inventoryItem.identification_code} 请先设置出库板数或件数`);
+            return;
+        }
+
+        selectInventoryItem(inventoryItem);
+    });
+
+    showMessage('success', `已添加 ${selectedCheckboxes.length} 个库存项目到表格`);
+    $('#inventoryModal').modal('hide');
+});
+
+// 备用的确认选择处理函数（直接绑定到onclick）
+function handleConfirmSelection() {
+    console.log('🔍 handleConfirmSelection 函数被调用');
+
+    const selectedCheckboxes = document.querySelectorAll('.inventory-checkbox:checked');
+    console.log('🔍 找到的选中复选框数量:', selectedCheckboxes.length);
+
+    if (selectedCheckboxes.length === 0) {
+        showMessage('warning', '请先选择要出库的库存项目');
+        return;
+    }
+
+    // 批量添加选中的库存项目到表格
+    let addedCount = 0;
+    console.log(`🔍 开始处理 ${selectedCheckboxes.length} 个选中项目...`);
+
+    selectedCheckboxes.forEach((checkbox, index) => {
+        console.log(`🔍 处理第 ${index + 1} 个项目...`);
+        const row = checkbox.closest('tr');
+        const palletInput = row.querySelector('.outbound-pallet-input');
+        const packageInput = row.querySelector('.outbound-package-input');
+
+        console.log(`🔍 找到输入框 - 板数输入框:`, palletInput, `件数输入框:`, packageInput);
+
+        const inventoryItem = {
+            customer_name: checkbox.dataset.customer,
+            identification_code: checkbox.dataset.code,
+            pallet_count: parseInt(palletInput.value) || 0,
+            package_count: parseInt(packageInput.value) || 0,
+            weight: parseFloat(checkbox.dataset.weight) || 0,
+            volume: parseFloat(checkbox.dataset.volume) || 0,
+            export_mode: checkbox.dataset.exportMode || '',
+            order_type: checkbox.dataset.orderType || '',
+            customs_broker: checkbox.dataset.customsBroker || '',
+            location: checkbox.dataset.location || '',
+            documents: checkbox.dataset.documents || ''
+        };
+
+        // 验证出库数量 - 板数和件数至少有一个大于0
+        if (inventoryItem.pallet_count === 0 && inventoryItem.package_count === 0) {
+            console.log(`⚠️ 跳过项目 ${inventoryItem.identification_code}: 出库数量为0`);
+            showMessage('warning', `${inventoryItem.identification_code} 请先设置出库板数或件数`);
+            return; // 跳过当前项，继续处理下一项
+        }
+
+        console.log(`🔍 处理库存项目: ${inventoryItem.identification_code}, 板数: ${inventoryItem.pallet_count}, 件数: ${inventoryItem.package_count}`);
+
+        try {
+            selectInventoryItem(inventoryItem);
+            addedCount++;
+            console.log(`✅ 成功添加库存项目: ${inventoryItem.identification_code}`);
+        } catch (error) {
+            console.error(`❌ 添加库存项目失败: ${inventoryItem.identification_code}`, error);
+            showMessage('error', `添加 ${inventoryItem.identification_code} 失败: ${error.message}`);
+        }
+    });
+
+    console.log(`🔍 处理完成，成功添加 ${addedCount} 个项目`);
+
+    if (addedCount > 0) {
+        showMessage('success', `已添加 ${addedCount} 个库存项目到表格`);
+        $('#inventoryModal').modal('hide');
+    } else {
+        showMessage('warning', '没有成功添加任何库存项目');
+    }
+}
+
+// 全局复选框事件监听器（备用方案）
+$(document).on('change', '.inventory-checkbox', function() {
+    console.log('🔍 全局复选框事件被触发');
+    console.log('🔍 复选框状态:', this.checked);
+    updateSelectedCount();
+});
+
+// 直接绑定的复选框处理函数
+function handleCheckboxChange(checkbox) {
+    console.log('🔍 handleCheckboxChange 被调用');
+    console.log('🔍 复选框状态:', checkbox.checked);
+    console.log('🔍 复选框元素:', checkbox);
+    updateSelectedCount();
+}
+
+// 测试复选框函数
+function testCheckboxes() {
+    console.log('🔍 开始测试复选框...');
+
+    const checkboxes = document.querySelectorAll('.inventory-checkbox');
+    console.log('🔍 找到复选框数量:', checkboxes.length);
+
+    if (checkboxes.length > 0) {
+        console.log('🔍 第一个复选框:', checkboxes[0]);
+        console.log('🔍 第一个复选框类名:', checkboxes[0].className);
+        console.log('🔍 第一个复选框状态:', checkboxes[0].checked);
+
+        // 手动选中第一个复选框
+        checkboxes[0].checked = true;
+        console.log('🔍 手动选中第一个复选框');
+
+        // 手动调用更新函数
+        updateSelectedCount();
+    } else {
+        console.log('❌ 没有找到任何复选框');
+    }
+}
+
+// 强制复选框监控器
+let checkboxMonitor = null;
+
+function startCheckboxMonitor() {
+    console.log('🔍 启动复选框监控器...');
+
+    if (checkboxMonitor) {
+        clearInterval(checkboxMonitor);
+    }
+
+    checkboxMonitor = setInterval(() => {
+        const modal = document.querySelector('#inventoryModal.show');
+        if (!modal) return; // 模态框未打开时不监控
+
+        const checkboxes = document.querySelectorAll('.inventory-checkbox');
+        const checkedCount = document.querySelectorAll('.inventory-checkbox:checked').length;
+        const confirmButton = document.getElementById('confirmSelectionBtn');
+
+        if (checkboxes.length > 0 && confirmButton) {
+            // 检查是否有选中的复选框
+            if (checkedCount > 0 && confirmButton.disabled) {
+                console.log('🔍 监控器检测到选中项目，启用按钮');
+                confirmButton.disabled = false;
+
+                // 更新选中计数显示
+                const countSpan = document.getElementById('selectedCount');
+                if (countSpan) {
+                    countSpan.textContent = checkedCount;
+                }
+            } else if (checkedCount === 0 && !confirmButton.disabled) {
+                console.log('🔍 监控器检测到无选中项目，禁用按钮');
+                confirmButton.disabled = true;
+
+                // 更新选中计数显示
+                const countSpan = document.getElementById('selectedCount');
+                if (countSpan) {
+                    countSpan.textContent = '0';
+                }
+            }
+        }
+    }, 500); // 每500ms检查一次
+}
+
+function stopCheckboxMonitor() {
+    if (checkboxMonitor) {
+        clearInterval(checkboxMonitor);
+        checkboxMonitor = null;
+        console.log('🔍 复选框监控器已停止');
+    }
+}
+
+function checkResourcesLoaded() {
+    const handsontableLoaded = typeof Handsontable !== 'undefined';
+    if (initializationAttempts % 5 === 0) { // 减少日志频率
+        console.log('资源检查:', {
+            handsontableLoaded,
+            attempt: initializationAttempts
+        });
+    }
+    return handsontableLoaded;
+}
+
+// 确保所有资源加载完成后再初始化
+function initializePage() {
+    initializationAttempts++;
+
+    // 检查资源是否完全加载
+    if (!checkResourcesLoaded()) {
+        if (initializationAttempts < MAX_ATTEMPTS) {
+            // 使用递增延迟，减少CPU占用
+            const delay = Math.min(50 + initializationAttempts * 10, 200);
+            setTimeout(initializePage, delay);
+            return;
+        } else {
+            console.error('❌ Handsontable 加载失败，已达到最大重试次数');
+            showMessage('error', 'Handsontable 库加载失败，请刷新页面重试');
+            return;
+        }
+    }
+
+    console.log('✅ 所有资源加载完成，开始初始化页面');
+    initStartTime = performance.now();
+
+    // 防抖函数
+    function debounce(func, wait) {
+        let timeout;
+        return function executedFunction(...args) {
+            const later = () => {
+                clearTimeout(timeout);
+                func(...args);
+            };
+            clearTimeout(timeout);
+            timeout = setTimeout(later, wait);
+        };
+    }
+    
+    // 初始化Handsontable
+    const container = document.getElementById('hot-container');
+    if (!container) {
+        console.error('❌ 找不到表格容器元素');
+        showMessage('error', '页面初始化失败：找不到表格容器');
+        return;
+    }
+
+    if (typeof Handsontable === 'undefined') {
+        console.error('❌ Handsontable 未定义');
+        showMessage('error', 'Handsontable 库未正确加载');
+        return;
+    }
+
+    // 使用全局 hot 变量
+    
+    // 表格列定义 - 专门针对前端仓直接配送客户
+    const columns = [
+        {
+            data: 'customer_name',
+            title: '<span class="required">客户名称*</span>',
+            type: 'text',
+            width: 150
+        },
+        {
+            data: 'identification_code',
+            title: '识别编码',
+            type: 'text',
+            readOnly: true,
+            width: 180
+        },
+        {
+            data: 'pallet_count',
+            title: '板数',
+            type: 'numeric',
+            numericFormat: {
+                pattern: '0'
+            },
+            width: 80
+        },
+        {
+            data: 'package_count',
+            title: '件数',
+            type: 'numeric',
+            numericFormat: {
+                pattern: '0'
+            },
+            width: 80
+        },
+        {
+            data: 'weight',
+            title: '重量(kg)',
+            type: 'numeric',
+            numericFormat: {
+                pattern: '0.00'
+            },
+            width: 100
+        },
+        {
+            data: 'volume',
+            title: '体积(m³)',
+            type: 'numeric',
+            numericFormat: {
+                pattern: '0.00'
+            },
+            width: 100
+        },
+        {
+            data: 'export_mode',
+            title: '出境模式',
+            type: 'text',
+            width: 100
+        },
+        {
+            data: 'order_type',
+            title: '订单类型',
+            type: 'text',
+            width: 100
+        },
+        {
+            data: 'customs_broker',
+            title: '报关行',
+            type: 'text',
+            width: 120
+        },
+        {
+            data: 'location',
+            title: '库位',
+            type: 'text',
+            width: 80
+        },
+        {
+            data: 'documents',
+            title: '单据',
+            type: 'text',
+            width: 80
+        },
+        {
+            data: 'remarks',
+            title: '备注',
+            type: 'text',
+            width: 150
+        }
+    ];
+    
+    // 表格初始化配置 - 平衡性能和显示效果
+    try {
+        hot = new Handsontable(container, {
+            data: [{}],
+            columns: columns,
+            rowHeaders: true,
+            colHeaders: true,
+            contextMenu: ['row_above', 'row_below', 'remove_row'],
+            manualRowResize: true, // 恢复行调整功能
+            manualColumnResize: true, // 恢复列调整功能
+            stretchH: 'all',
+            autoWrapRow: false,
+            autoWrapCol: false,
+            licenseKey: 'non-commercial-and-evaluation',
+            preventOverflow: 'horizontal',
+            width: '100%',
+            height: 480,
+            // 平衡性能和显示效果的配置
+            renderAllRows: true, // 禁用虚拟滚动确保正确显示
+            fixedColumnsLeft: 0, // 确保列对齐
+            fixedRowsTop: 0, // 确保行对齐
+            afterChange: function(changes, source) {
+                if (source === 'edit' && changes) {
+                    setTimeout(() => {
+                        generateIdentificationCodes();
+                    }, 150); // 增加延迟减少频繁调用
+                }
+            },
+            afterInit: function() {
+                console.log('✅ Handsontable 初始化完成');
+                // 确保表格正确渲染
+                setTimeout(() => {
+                    hot.render();
+                    hot.refreshDimensions();
+                }, 100);
+            }
+        });
+        console.log('✅ Handsontable 初始化成功');
+    } catch (error) {
+        console.error('❌ Handsontable 初始化失败:', error);
+        showMessage('error', 'Handsontable 初始化失败: ' + error.message);
+        return;
+    }
+    
+    // 添加行
+    $('#addRowBtn').click(function() {
+        hot.alter('insert_row', hot.countRows());
+    });
+    
+    // 删除行
+    $('#deleteRowBtn').click(function() {
+        const selected = hot.getSelected();
+        if (selected && selected.length > 0) {
+            hot.alter('remove_row', selected[0][0]);
+        }
+    });
+
+
+    // 保存全部 - 使用事件委托确保按钮可点击
+    $(document).off('click', '#saveAllBtn').on('click', '#saveAllBtn', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        console.log('🔍 保存按钮被点击');
+        console.log('🔍 按钮元素:', this);
+        console.log('🔍 事件对象:', e);
+        saveAllData();
+    });
+
+    // 清空表格
+    $('#clearAllBtn').click(function() {
+        if (confirm('确定要清空所有数据吗？')) {
+            hot.loadData([{}]);
+        }
+    });
+
+    // 库存选择
+    $('#selectInventoryBtn').click(function() {
+        loadInventoryData();
+    });
+
+
+
+    // 管理员用户选择始发仓时自动更新地址和联系人
+    {% if current_user.is_super_admin() %}
+    $('#commonSourceWarehouse').change(function() {
+        const selectedOption = $(this).find('option:selected');
+        const address = selectedOption.data('address') || '地址待完善';
+        const contact = selectedOption.data('contact') || '联系人待完善';
+
+        $('#commonSourceAddress').val(address);
+        $('#commonSourceContact').val(contact);
+    });
+    {% endif %}
+    
+    // 生成识别编码
+    function generateIdentificationCodes() {
+        // 实现识别编码生成逻辑
+        console.log('生成识别编码');
+    }
+    
+
+    // 保存数据
+    function saveAllData() {
+        console.log('🔍 saveAllData 函数开始执行');
+
+        // 获取公共字段
+        const commonFields = {
+            plate_number: $('#commonPlateNumber').val(),
+            driver_name: $('#commonDriverName').val(),
+            driver_phone: $('#commonDriverPhone').val(),
+            outbound_date: $('#commonOutboundDate').val(),
+            source_warehouse: $('#commonSourceWarehouse').val(),
+            source_address: $('#commonSourceAddress').val(),
+            source_contact: $('#commonSourceContact').val(),
+            destination: $('#commonDestination').val(),
+            destination_address: $('#commonDestinationAddress').val(),
+            destination_contact: $('#commonDestinationContact').val()
+        };
+
+        console.log('🔍 公共字段数据:', commonFields);
+
+        // 验证公共字段
+        if (!commonFields.plate_number || !commonFields.driver_name || !commonFields.driver_phone ||
+            !commonFields.outbound_date || !commonFields.destination || !commonFields.destination_address ||
+            !commonFields.destination_contact) {
+            console.log('🔍 公共字段验证失败');
+            console.log('🔍 缺失字段检查:');
+            console.log('  - plate_number:', commonFields.plate_number);
+            console.log('  - driver_name:', commonFields.driver_name);
+            console.log('  - driver_phone:', commonFields.driver_phone);
+            console.log('  - outbound_date:', commonFields.outbound_date);
+            console.log('  - destination:', commonFields.destination);
+            console.log('  - destination_address:', commonFields.destination_address);
+            console.log('  - destination_contact:', commonFields.destination_contact);
+            showMessage('error', '请填写完整的公共字段信息');
+            return;
+        }
+
+        console.log('🔍 公共字段验证通过');
+
+        // 管理员用户需要验证是否选择了始发仓
+        {% if current_user.is_super_admin() %}
+        if (!commonFields.source_warehouse) {
+            showMessage('error', '请选择始发仓');
+            return;
+        }
+        {% endif %}
+
+        const data = hot.getData();
+        console.log('🔍 表格数据:', data);
+
+        // 验证表格数据 - 修复数据格式问题
+        const validRecords = [];
+        for (let i = 0; i < data.length; i++) {
+            const row = data[i];
+            console.log(`🔍 检查第${i}行数据:`, row);
+
+            // 数据可能是数组格式，需要按列索引访问
+            let customer_name, identification_code, pallet_count, package_count, weight, volume;
+            let export_mode, order_type, customs_broker, location, documents, remarks;
+
+            if (Array.isArray(row)) {
+                // 数组格式：按列索引访问（移除批次号后调整索引）
+                customer_name = row[0];
+                identification_code = row[1];
+                pallet_count = row[2];
+                package_count = row[3];
+                weight = row[4];
+                volume = row[5];
+                export_mode = row[6];
+                order_type = row[7];
+                customs_broker = row[8];
+                location = row[9];
+                documents = row[10];
+                remarks = row[11]; // 批次号移除后，备注索引从12变为11
+            } else {
+                // 对象格式：按属性名访问
+                customer_name = row.customer_name;
+                identification_code = row.identification_code;
+                pallet_count = row.pallet_count;
+                package_count = row.package_count;
+                weight = row.weight;
+                volume = row.volume;
+                export_mode = row.export_mode;
+                order_type = row.order_type;
+                customs_broker = row.customs_broker;
+                location = row.location;
+                documents = row.documents;
+                remarks = row.remarks;
+            }
+
+            console.log(`🔍 第${i}行解析后数据:`, {
+                customer_name, identification_code, pallet_count, package_count
+            });
+
+            if (customer_name && identification_code) {
+                console.log(`🔍 第${i}行数据有效`);
+                // 合并公共字段和行数据
+                const record = {
+                    ...commonFields,
+                    customer_name: customer_name,
+                    identification_code: identification_code,
+                    pallet_count: pallet_count || 0,
+                    package_count: package_count || 0,
+                    weight: weight || 0,
+                    volume: volume || 0,
+                    export_mode: export_mode || '',
+                    order_type: order_type || '',
+                    customs_broker: customs_broker || '',
+                    location: location || '',
+                    documents: documents || '',
+                    remarks: remarks || ''
+                };
+                validRecords.push(record);
+            } else {
+                console.log(`🔍 第${i}行数据无效 - 客户名称: "${customer_name}", 识别编码: "${identification_code}"`);
+            }
+        }
+
+        console.log('🔍 有效记录数量:', validRecords.length);
+        console.log('🔍 有效记录:', validRecords);
+
+        if (validRecords.length === 0) {
+            console.log('🔍 没有有效记录，停止保存');
+            showMessage('error', '请至少添加一条有效的出库记录');
+            return;
+        }
+
+        console.log('🔍 开始发送保存请求');
+        console.log('保存前端仓直接配送客户数据:', validRecords);
+
+        // 发送到专门的API端点
+        console.log('🔍 发送AJAX请求到:', '/api/frontend/outbound/to_customer');
+        $.ajax({
+            url: '/api/frontend/outbound/to_customer',
+            method: 'POST',
+            data: JSON.stringify({
+                records: validRecords,
+                destination: 'customer',
+                warehouse_type: 'frontend'
+            }),
+            contentType: 'application/json',
+            beforeSend: function() {
+                console.log('🔍 AJAX请求开始发送');
+            },
+            success: function(response) {
+                console.log('🔍 AJAX请求成功，响应:', response);
+                if (response.success) {
+                    showMessage('success', '前端仓直接配送客户数据保存成功！');
+                    // 可以选择清空表格或跳转到记录列表
+                    if (confirm('保存成功！是否清空表格继续录入？')) {
+                        hot.loadData([{}]);
+                        // 清空公共字段（除了日期）
+                        $('#commonPlateNumber').val('');
+                        $('#commonDriverName').val('');
+                        $('#commonDriverPhone').val('');
+                        $('#commonDestination').val('');
+                        $('#commonDestinationAddress').val('');
+                        $('#commonDestinationContact').val('');
+                    }
+                } else {
+                    showMessage('error', '保存失败：' + response.message);
+                }
+            },
+            error: function(xhr, status, error) {
+                console.log('🔍 AJAX请求失败');
+                console.log('🔍 状态码:', xhr.status);
+                console.log('🔍 状态文本:', status);
+                console.log('🔍 错误信息:', error);
+                console.log('🔍 响应文本:', xhr.responseText);
+                showMessage('error', '保存失败，请检查网络连接');
+            }
+        });
+    }
+
+    // 加载库存数据
+    function loadInventoryData() {
+        console.log('🔍 调试: loadInventoryData 函数开始执行');
+
+        // 显示模态框
+        $('#inventoryModal').modal('show');
+
+        // 启动复选框监控器
+        startCheckboxMonitor();
+
+        // 根据用户权限选择API
+        const isAdmin = {% if current_user.is_super_admin() %}true{% else %}false{% endif %};
+        const apiUrl = isAdmin ? '/api/inventory' : '/api/inventory/frontend';
+
+        console.log('🔍 调试: isAdmin =', isAdmin);
+        console.log('🔍 调试: apiUrl =', apiUrl);
+
+        $.ajax({
+            url: apiUrl,
+            method: 'GET',
+            success: function(response) {
+                if (response.success) {
+                    const inventoryData = response.inventory || response.data || [];
+                    displayInventoryData(inventoryData);
+                } else {
+                    showMessage('warning', '当前没有可用的库存数据');
+                    $('#inventoryTableBody').html('<tr><td colspan="15" class="text-center text-muted">没有找到库存数据</td></tr>');
+                }
+            },
+            error: function() {
+                showMessage('error', '加载库存数据失败');
+                $('#inventoryTableBody').html('<tr><td colspan="15" class="text-center text-danger">加载失败，请重试</td></tr>');
+            }
+        });
+    }
+
+    // 显示库存数据
+    function displayInventoryData(inventoryData) {
+        const tbody = document.getElementById('inventoryTableBody');
+        tbody.innerHTML = '';
+
+        if (!inventoryData || inventoryData.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="15" class="text-center text-muted">没有找到库存数据</td></tr>';
+            return;
+        }
+
+        // 获取当前表格中已选择的识别编码
+        const selectedCodes = new Set();
+        if (hot) {
+            const currentSourceData = hot.getSourceData() || [];
+            currentSourceData.forEach(item => {
+                if (item.identification_code) {
+                    selectedCodes.add(item.identification_code);
+                }
+            });
+        }
+
+        // 使用文档片段提高性能
+        const fragment = document.createDocumentFragment();
+
+        inventoryData.forEach(function(item) {
+            const tr = document.createElement('tr');
+            const identificationCode = item.identification_code || '';
+            const displayCode = identificationCode; // 显示完整的识别编码
+
+            // 检查是否已经选择
+            const isSelected = selectedCodes.has(identificationCode);
+            const disabledClass = isSelected ? 'disabled' : '';
+            const disabledAttr = isSelected ? 'disabled' : '';
+            const rowClass = isSelected ? 'table-secondary' : '';
+            const buttonText = isSelected ? '已选择' : '选择';
+            const buttonIcon = isSelected ? 'fas fa-check-circle' : 'fas fa-check';
+            const buttonClass = isSelected ? 'btn-secondary' : 'btn-primary';
+
+            if (isSelected) {
+                tr.className = rowClass;
+            }
+
+            tr.innerHTML = `
+                <td>
+                    <div class="d-flex align-items-center gap-2">
+                        <input type="checkbox" class="form-check-input inventory-checkbox ${disabledClass}"
+                               value="${item.identification_code || ''}"
+                               data-customer="${item.customer_name || ''}"
+                               data-code="${item.identification_code || ''}"
+                               data-pallet="${item.pallet_count || 0}"
+                               data-package="${item.package_count || 0}"
+                               data-weight="${item.weight || 0}"
+                               data-volume="${item.volume || 0}"
+                               data-export-mode="${item.export_mode || ''}"
+                               data-order-type="${item.order_type || ''}"
+                               data-customs-broker="${item.customs_broker || ''}"
+                               data-location="${item.location || ''}"
+                               data-documents="${item.documents || ''}"
+                               ${disabledAttr}
+                               onchange="handleCheckboxChange(this)">
+                        <button type="button" class="btn btn-sm ${buttonClass} btn-select-inventory ${disabledClass}"
+                                data-customer="${item.customer_name || ''}"
+                                data-code="${item.identification_code || ''}"
+                                data-pallet="${item.pallet_count || 0}"
+                                data-package="${item.package_count || 0}"
+                                data-weight="${item.weight || 0}"
+                                data-volume="${item.volume || 0}"
+                                data-export-mode="${item.export_mode || ''}"
+                                data-order-type="${item.order_type || ''}"
+                                data-customs-broker="${item.customs_broker || ''}"
+                                data-location="${item.location || ''}"
+                                data-documents="${item.documents || ''}"
+                                ${disabledAttr}>
+                            <i class="${buttonIcon}"></i> ${buttonText}
+                        </button>
+                    </div>
+                </td>
+                <td>${item.customer_name || ''}</td>
+                <td title="${identificationCode}">${displayCode}</td>
+                <td>${item.pallet_count || 0}</td>
+                <td>${item.package_count || 0}</td>
+                <td>
+                    <button type="button" class="btn btn-sm btn-success btn-full-out ${disabledClass}"
+                            data-customer="${item.customer_name || ''}"
+                            data-code="${item.identification_code || ''}"
+                            data-pallet="${item.pallet_count || 0}"
+                            data-package="${item.package_count || 0}"
+                            data-weight="${item.weight || 0}"
+                            data-volume="${item.volume || 0}"
+                            data-export-mode="${item.export_mode || ''}"
+                            data-order-type="${item.order_type || ''}"
+                            data-customs-broker="${item.customs_broker || ''}"
+                            data-location="${item.location || ''}"
+                            data-documents="${item.documents || ''}"
+                            ${disabledAttr}>
+                        <i class="fas fa-arrow-up"></i> 全出
+                    </button>
+                </td>
+                <td>
+                    <input type="number" class="form-control form-control-sm outbound-pallet-input ${disabledClass}"
+                           min="0" max="${item.pallet_count || 0}" value="${item.pallet_count || 0}"
+                           data-max="${item.pallet_count || 0}" ${disabledAttr}>
+                </td>
+                <td>
+                    <input type="number" class="form-control form-control-sm outbound-package-input ${disabledClass}"
+                           min="0" max="${item.package_count || 0}" value="${item.package_count || 0}"
+                           data-max="${item.package_count || 0}" ${disabledAttr}>
+                </td>
+                <td>${item.weight || 0}</td>
+                <td>${item.volume || 0}</td>
+                <td>${item.location || ''}</td>
+                <td>${item.export_mode || ''}</td>
+                <td>${item.order_type || ''}</td>
+                <td>${item.customs_broker || ''}</td>
+                <td>${item.inbound_time || ''}</td>
+            `;
+            fragment.appendChild(tr);
+        });
+
+        tbody.appendChild(fragment);
+
+        // 初始化选择计数
+        setTimeout(() => {
+            updateSelectedCount();
+        }, 50);
+
+        // 使用事件委托绑定选择按钮事件
+        $(tbody).off('click', '.btn-select-inventory').on('click', '.btn-select-inventory', function() {
+            const btn = this;
+
+            // 检查按钮是否被禁用
+            if (btn.disabled || btn.classList.contains('disabled')) {
+                showMessage('warning', '该库存项目已经在表格中，不能重复选择');
+                return;
+            }
+
+            const row = btn.closest('tr');
+            const palletInput = row.querySelector('.outbound-pallet-input');
+            const packageInput = row.querySelector('.outbound-package-input');
+            const checkboxInput = row.querySelector('.inventory-checkbox');
+
+            // 选中对应的复选框
+            if (checkboxInput) {
+                checkboxInput.dataset.programmatic = 'true'; // 标记为程序触发
+                checkboxInput.checked = true;
+            }
+
+            const inventoryItem = {
+                customer_name: btn.dataset.customer,
+                identification_code: btn.dataset.code,
+                pallet_count: parseInt(palletInput.value) || 0,
+                package_count: parseInt(packageInput.value) || 0,
+                weight: parseFloat(btn.dataset.weight) || 0,
+                volume: parseFloat(btn.dataset.volume) || 0
+            };
+
+            // 验证出库数量
+            if (inventoryItem.pallet_count === 0 && inventoryItem.package_count === 0) {
+                showMessage('warning', '请先设置出库板数或件数');
+                return;
+            }
+
+            selectInventoryItem(inventoryItem);
+        });
+
+        // 绑定"全出"按钮事件
+        $(tbody).off('click', '.btn-full-out').on('click', '.btn-full-out', function() {
+            const btn = this;
+
+            // 检查按钮是否被禁用
+            if (btn.disabled || btn.classList.contains('disabled')) {
+                showMessage('warning', '该库存项目已经在表格中，不能重复选择');
+                return;
+            }
+
+            const row = btn.closest('tr');
+            const palletInput = row.querySelector('.outbound-pallet-input');
+            const packageInput = row.querySelector('.outbound-package-input');
+            const checkboxInput = row.querySelector('.inventory-checkbox');
+
+            // 选中对应的复选框
+            if (checkboxInput) {
+                checkboxInput.dataset.programmatic = 'true'; // 标记为程序触发
+                checkboxInput.checked = true;
+            }
+
+            // 设置为最大库存数量
+            palletInput.value = btn.dataset.pallet || 0;
+            packageInput.value = btn.dataset.package || 0;
+
+            // 高亮显示已设置全出
+            $(row).addClass('table-success');
+            setTimeout(() => {
+                $(row).removeClass('table-success');
+            }, 1000);
+
+            showMessage('success', '已设置为全出数量');
+        });
+
+        // 绑定复选框变化事件
+        $(tbody).off('change', '.inventory-checkbox').on('change', '.inventory-checkbox', function() {
+            console.log('🔍 复选框变化事件被触发');
+            console.log('🔍 复选框状态:', this.checked);
+            console.log('🔍 是否程序触发:', this.dataset.programmatic);
+
+            if (this.checked && !this.dataset.programmatic) {
+                // 选中时：不立即添加到表格，只更新选择计数
+                console.log('🔍 复选框被选中，调用 updateSelectedCount');
+                updateSelectedCount();
+            } else if (!this.checked && !this.dataset.programmatic) {
+                // 取消选中时：从表格中移除对应的行（如果已添加）
+                console.log('🔍 复选框被取消选中');
+                const identificationCode = this.dataset.code;
+                removeInventoryFromTable(identificationCode);
+                updateSelectedCount();
+            }
+            // 清除标志
+            delete this.dataset.programmatic;
+        });
+
+        // 绑定数量输入框变化事件
+        $(tbody).off('input', '.outbound-pallet-input, .outbound-package-input').on('input', '.outbound-pallet-input, .outbound-package-input', function() {
+            const input = this;
+            const max = parseInt(input.dataset.max) || 0;
+            const value = parseInt(input.value) || 0;
+
+            // 验证不能超过最大库存
+            if (value > max) {
+                input.value = max;
+                showMessage('warning', `数量不能超过库存最大值 ${max}`);
+            }
+
+            // 验证不能为负数
+            if (value < 0) {
+                input.value = 0;
+            }
+        });
+    }
+
+    // 从表格中移除库存项目
+    function removeInventoryFromTable(identificationCode) {
+        if (!hot) return;
+
+        const currentSourceData = hot.getSourceData() || [];
+        const newData = currentSourceData.filter(item =>
+            item.identification_code !== identificationCode
+        );
+
+        // 如果删除后没有数据，保留一个空行
+        if (newData.length === 0) {
+            newData.push({});
+        }
+
+        hot.loadData(newData);
+        showMessage('info', '已从表格中移除该库存项目');
+
+        // 如果库存选择模态框是打开的，刷新其状态
+        if ($('#inventoryModal').hasClass('show')) {
+            refreshInventoryModalState();
+        }
+    }
+
+    // 库存搜索功能（优化版本）
+    const searchInventory = debounce(function() {
+        const customerName = $('#inventorySearchCustomer').val().trim();
+        const identificationCode = $('#inventorySearchCode').val().trim();
+
+        console.log('🔍 调试: searchInventory 函数开始执行');
+
+        // 根据用户权限选择API
+        const isAdmin = {% if current_user.is_super_admin() %}true{% else %}false{% endif %};
+        const apiUrl = isAdmin ? '/api/inventory' : '/api/inventory/frontend';
+
+        console.log('🔍 调试: Search - isAdmin =', isAdmin);
+        console.log('🔍 调试: Search - apiUrl =', apiUrl);
+
+        const params = new URLSearchParams();
+        if (customerName) params.append('customer_name', customerName);
+        if (identificationCode) params.append('identification_code', identificationCode);
+
+        const searchUrl = params.toString() ? `${apiUrl}?${params.toString()}` : apiUrl;
+
+        // 显示加载状态
+        const tbody = document.getElementById('inventoryTableBody');
+        tbody.innerHTML = '<tr><td colspan="15" class="text-center"><i class="fas fa-spinner fa-spin"></i> 搜索中...</td></tr>';
+
+        fetch(searchUrl)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const inventoryData = data.inventory || data.data || [];
+                    displayInventoryData(inventoryData);
+                } else {
+                    showMessage('warning', '没有找到匹配的库存数据');
+                    tbody.innerHTML = '<tr><td colspan="12" class="text-center text-muted">没有找到匹配的库存数据</td></tr>';
+                }
+            })
+            .catch(error => {
+                console.error('搜索库存数据失败:', error);
+                showMessage('error', '搜索库存数据失败');
+                tbody.innerHTML = '<tr><td colspan="12" class="text-center text-danger">搜索失败，请重试</td></tr>';
+            });
+    }, 300);
+
+    $('#searchInventoryBtn').click(searchInventory);
+
+    // 重置搜索
+    $('#resetInventorySearchBtn').click(function() {
+        $('#inventorySearchCustomer').val('');
+        $('#inventorySearchCode').val('');
+        loadInventoryData();
+    });
+
+    // 工具函数：显示消息（优化版本）
+    function showMessage(type, message) {
+        // 移除现有的消息
+        const existingAlerts = document.querySelectorAll('.alert');
+        existingAlerts.forEach(alert => alert.remove());
+
+        // 创建消息元素
+        const alertClass = type === 'success' ? 'alert-success' :
+                          type === 'error' ? 'alert-danger' :
+                          type === 'warning' ? 'alert-warning' : 'alert-info';
+
+        const iconClass = type === 'success' ? 'check-circle' :
+                         type === 'error' ? 'exclamation-circle' : 'info-circle';
+
+        const alertDiv = document.createElement('div');
+        alertDiv.className = `alert ${alertClass} alert-dismissible fade show`;
+        alertDiv.setAttribute('role', 'alert');
+        alertDiv.innerHTML = `
+            <i class="fas fa-${iconClass}"></i>
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        `;
+
+        // 添加新消息到页面顶部
+        document.body.insertBefore(alertDiv, document.body.firstChild);
+
+        // 3秒后自动消失
+        setTimeout(() => {
+            if (alertDiv.parentNode) {
+                alertDiv.style.opacity = '0';
+                setTimeout(() => {
+                    if (alertDiv.parentNode) {
+                        alertDiv.remove();
+                    }
+                }, 300);
+            }
+        }, 3000);
+    }
+}
+
+// 防止重复初始化
+let isInitialized = false;
+
+function safeInitialize() {
+    if (isInitialized) {
+        return;
+    }
+
+    initializePage();
+    isInitialized = true;
+}
+
+// 优化的初始化入口 - 使用更高效的检测
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', safeInitialize);
+} else if (document.readyState === 'interactive' || document.readyState === 'complete') {
+    // DOM已经加载完成，延迟一点确保脚本执行完毕
+    setTimeout(safeInitialize, 10);
+} else {
+    // 备用方案
+    safeInitialize();
+}
+
+// 模态框样式设置
+$(document).ready(function() {
+    // 测试确认选择按钮是否可以被找到
+    console.log('🔍 页面加载完成，检查确认选择按钮...');
+    setTimeout(() => {
+        const btn = document.getElementById('confirmSelectionBtn');
+        console.log('🔍 确认选择按钮元素:', btn);
+        if (btn) {
+            console.log('✅ 确认选择按钮找到了');
+        } else {
+            console.log('❌ 确认选择按钮未找到');
+        }
+    }, 1000);
+
+    $('#inventoryModal').on('show.bs.modal', function (e) {
+        setTimeout(function() {
+            const modal = $('#inventoryModal');
+            const dialog = modal.find('.modal-dialog');
+            const content = modal.find('.modal-content');
+            const body = modal.find('.modal-body');
+
+            // 使用最强力的样式设置方法
+            const dialogElement = dialog[0];
+            const contentElement = content[0];
+            const bodyElement = body[0];
+
+            // 直接设置内联样式，优先级最高
+            dialogElement.style.setProperty('max-width', 'calc(100vw - 2rem)', 'important');
+            dialogElement.style.setProperty('width', 'calc(100vw - 2rem)', 'important');
+            dialogElement.style.setProperty('height', 'calc(100vh - 2rem)', 'important');
+            dialogElement.style.setProperty('max-height', 'calc(100vh - 2rem)', 'important');
+            dialogElement.style.setProperty('margin', '1rem auto', 'important');
+            dialogElement.style.setProperty('left', '0', 'important');
+            dialogElement.style.setProperty('right', '0', 'important');
+            dialogElement.style.setProperty('transform', 'none', 'important');
+
+            contentElement.style.setProperty('height', '100%', 'important');
+            contentElement.style.setProperty('width', '100%', 'important');
+            contentElement.style.setProperty('display', 'flex', 'important');
+            contentElement.style.setProperty('flex-direction', 'column', 'important');
+
+            bodyElement.style.setProperty('flex', '1', 'important');
+            bodyElement.style.setProperty('overflow', 'hidden', 'important');
+            bodyElement.style.setProperty('display', 'flex', 'important');
+            bodyElement.style.setProperty('flex-direction', 'column', 'important');
+            bodyElement.style.setProperty('min-height', '0', 'important');
+            bodyElement.style.setProperty('width', '100%', 'important');
+
+            console.log('✅ 样式设置完成，验证结果:');
+            console.log('- 设置后dialog宽度:', dialog.width());
+            console.log('- 设置后dialog高度:', dialog.height());
+            console.log('- 设置后CSS width:', dialog.css('width'));
+            console.log('- 设置后CSS max-width:', dialog.css('max-width'));
+            console.log('- 设置后CSS height:', dialog.css('height'));
+
+        }, 100);
+    });
+
+    $('#inventoryModal').on('shown.bs.modal', function (e) {
+        const modal = $(this);
+        const tableContainer = modal.find('.table-responsive');
+
+        // 启动复选框监控器
+        startCheckboxMonitor();
+
+        // 确保表格区域正确显示
+        tableContainer.css({
+            'flex': '1',
+            'overflow-y': 'auto',
+            'max-height': 'calc(90vh - 200px)',
+            'min-height': '400px'
+        });
+
+        // 初始化选择计数
+        updateSelectedCount();
+    });
+
+    // 性能报告
+    if (typeof initStartTime !== 'undefined') {
+        const initEndTime = performance.now();
+        const initDuration = initEndTime - initStartTime;
+        console.log(`🚀 页面初始化完成，耗时: ${initDuration.toFixed(2)}ms`);
+
+        if (initDuration > 1000) {
+            console.warn('⚠️ 页面初始化较慢，建议优化');
+        }
+    } else {
+        console.log('🚀 页面初始化完成');
+    }
+
+    // 模态框隐藏时停止监控器
+    $('#inventoryModal').on('hidden.bs.modal', function (e) {
+        stopCheckboxMonitor();
+    });
+
+});
+</script>
+{% endblock %}

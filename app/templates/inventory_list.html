@@ -1,0 +1,640 @@
+{% extends "base.html" %}
+
+{% from 'macros/pagination.html' import render_pagination %}
+
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/inventory-table-optimized.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/inventory-table-header-fix.css') }}">
+<style>
+/* 全库存查询界面表格样式优化 */
+.table {
+    font-size: 13px;  /* 适中字体 */
+    width: 100%;
+    min-width: 1480px;  /* 进一步优化最小宽度 */
+    table-layout: fixed;  /* 固定表格布局 */
+}
+
+.table th, .table td {
+    padding: 6px 4px;  /* 适中内边距 */
+    white-space: normal !important;  /* 允许自动换行 */
+    word-wrap: break-word !important;  /* 强制换行 */
+    word-break: break-all !important;  /* 在任意字符间换行 */
+    text-align: center !important; /* 所有内容居中 */
+    vertical-align: middle !important; /* 垂直居中 */
+    border: 1px solid #dee2e6 !important;  /* 添加边框 */
+    font-size: 13px !important;  /* 统一字体大小 */
+    line-height: 1.4 !important;  /* 行高适应换行 */
+    max-width: 120px;  /* 默认最大宽度 */
+}
+
+/* 强制设置表头样式 - 全库存查询蓝色主题 */
+.table th,
+.table thead th,
+.table > thead > tr > th,
+.table-striped > thead > tr > th,
+.table-bordered > thead > tr > th,
+.inventory-table thead th {
+    background-color: #007bff !important;  /* 蓝色表头 */
+    background: #007bff !important;
+    color: white !important;
+    font-weight: 600 !important;
+    font-size: 14px !important;  /* 表头字体稍大 */
+    padding: 8px 5px !important;
+    text-align: center !important; /* 表头也居中 */
+    border-color: #007bff !important;
+}
+
+/* 不同列的宽度控制 - 重新优化分配 */
+.table th:nth-child(1), .table td:nth-child(1) {
+    max-width: 35px; min-width: 35px; width: 35px;
+}   /* 序号 - 最小 */
+
+.table th:nth-child(2), .table td:nth-child(2) {
+    max-width: 75px; min-width: 75px; width: 75px;
+}   /* 入库日期 - 固定格式 */
+
+.table th:nth-child(3), .table td:nth-child(3) {
+    max-width: 75px; min-width: 75px; width: 75px;
+}   /* 入库车牌 - 中等 */
+
+.table th:nth-child(4), .table td:nth-child(4) {
+    max-width: 90px; min-width: 80px; width: 85px;
+}  /* 客户名称 - 缩小，允许换行 */
+
+.table th:nth-child(5), .table td:nth-child(5) {
+    max-width: 55px; min-width: 55px; width: 55px;
+}   /* 订单类型 - 较小 */
+
+.table th:nth-child(6), .table td:nth-child(6) {
+    max-width: 120px; min-width: 100px; width: 110px;
+    word-wrap: break-word !important;
+    word-break: break-all !important;
+    white-space: normal !important;
+    line-height: 1.3 !important;
+}  /* 识别编码 - 允许换行显示，减少列宽 */
+
+/* 识别编码数据单元格特殊样式 */
+.table td:nth-child(6) {
+    font-family: 'Courier New', monospace !important;
+    font-size: 12px !important;
+    font-weight: 500 !important;
+}
+
+.table th:nth-child(7), .table td:nth-child(7) {
+    max-width: 45px; min-width: 45px; width: 45px;
+}   /* 入库板数 - 数字 */
+
+.table th:nth-child(8), .table td:nth-child(8) {
+    max-width: 45px; min-width: 45px; width: 45px;
+}   /* 入库件数 - 数字 */
+
+.table th:nth-child(9), .table td:nth-child(9) {
+    max-width: 45px; min-width: 45px; width: 45px;
+}   /* 库存板数 - 数字 */
+
+.table th:nth-child(10), .table td:nth-child(10) {
+    max-width: 45px; min-width: 45px; width: 45px;
+} /* 库存件数 - 数字 */
+
+/* 库存数据列特殊样式 - 只对数据单元格应用 */
+.table td:nth-child(9), .table td:nth-child(10) {
+    font-weight: bold !important;
+    color: #007bff !important;
+}
+
+.table th:nth-child(11), .table td:nth-child(11) {
+    max-width: 55px; min-width: 55px; width: 55px;
+    font-family: 'Courier New', monospace !important;
+} /* 重量 - 数字稍宽，等宽字体 */
+
+.table th:nth-child(12), .table td:nth-child(12) {
+    max-width: 55px; min-width: 55px; width: 55px;
+    font-family: 'Courier New', monospace !important;
+} /* 体积 - 数字稍宽，等宽字体 */
+
+.table th:nth-child(13), .table td:nth-child(13) {
+    max-width: 70px; min-width: 65px; width: 68px;
+} /* 出境模式 - 中等 */
+
+.table th:nth-child(14), .table td:nth-child(14) {
+    max-width: 90px; min-width: 80px; width: 85px;
+}/* 报关行 - 适中 */
+
+.table th:nth-child(15), .table td:nth-child(15) {
+    max-width: 45px; min-width: 40px; width: 42px;
+} /* 单据 - 较小 */
+
+.table th:nth-child(16), .table td:nth-child(16) {
+    max-width: 60px; min-width: 55px; width: 58px;
+} /* 跟单客服 - 中等 */
+
+.table th:nth-child(17), .table td:nth-child(17) {
+    max-width: 40px; min-width: 40px; width: 40px;
+} /* 库位 - 较小 */
+
+.table th:nth-child(18), .table td:nth-child(18) {
+    max-width: 85px; min-width: 80px; width: 82px;
+}/* 货物当前状态 - 适中 */
+
+.table th:nth-child(19), .table td:nth-child(19) {
+    max-width: 75px; min-width: 70px; width: 72px;
+}/* 最后更新时间 - 纯日期格式，宽度适中 */
+
+.table th:nth-child(20), .table td:nth-child(20) {
+    max-width: 85px; min-width: 80px; width: 82px;
+}/* 操作 - 按钮宽度，增加以完整显示 */
+
+/* 数字列样式 */
+.table td:nth-child(1),  /* 序号 */
+.table td:nth-child(7), .table td:nth-child(8),  /* 入库板数、入库件数 */
+.table td:nth-child(9), .table td:nth-child(10) { /* 库存板数、库存件数 */
+    font-family: 'Courier New', monospace;
+    font-weight: 500;
+    white-space: nowrap !important;  /* 数字不换行 */
+    text-align: center !important;  /* 数字居中对齐 */
+}
+
+/* 重量、体积列样式 - 支持换行 */
+.table td:nth-child(11), .table td:nth-child(12) { /* 重量、体积 */
+    font-family: 'Courier New', monospace;
+    font-weight: 500;
+    white-space: normal !important;  /* 允许换行 */
+    word-wrap: break-word !important;  /* 自动换行 */
+    text-align: center !important;  /* 数字居中对齐 */
+}
+
+/* 识别编码列额外样式 */
+.table td:nth-child(6) {
+    vertical-align: top !important;
+    padding: 6px 4px !important;
+}
+
+/* 客户名称列特殊处理 */
+.table td:nth-child(4) {
+    word-break: break-word !important;
+}
+
+/* 报关行列特殊处理 */
+.table td:nth-child(14) {
+    word-break: break-word !important;
+}
+
+/* 时间列特殊处理 - 防止不必要的换行 */
+.table td:nth-child(2), .table td:nth-child(20) {
+    white-space: nowrap !important;
+    text-align: center !important;  /* 时间居中对齐 */
+}
+
+/* 操作列和按钮居中 */
+.table td:nth-child(21) {
+    text-align: center !important;  /* 操作列居中 */
+}
+
+.table td .btn {
+    margin: 0 auto;
+    padding: 2px 4px;  /* 适中按钮内边距 */
+    white-space: nowrap !important;  /* 按钮文字不换行 */
+}
+
+/* 表格容器优化 */
+.table-responsive {
+    overflow-x: auto;
+    max-height: 70vh;  /* 限制表格高度 */
+}
+
+/* 表格行高度自适应 */
+.table tbody tr {
+    height: auto !important;
+    min-height: 32px;  /* 减小最小行高 */
+}
+
+/* 货物状态列优化 */
+.table td:nth-child(19) {
+    font-weight: 500;
+    white-space: nowrap !important;
+    text-align: center !important;  /* 状态居中对齐 */
+}
+
+/* 样式更新时间戳 */
+/* 全库存查询界面列宽和字体优化 - 2025-07-10 07:45 */
+/* 文本对齐方式调整为居左显示 - 2025-07-10 07:50 */
+/* 字体大小统一调整 - 2025-07-10 07:55 */
+/*
+列宽分配原则：
+- 序号、数字列：最小宽度(35-65px)
+- 日期、车牌：固定宽度(85-90px)
+- 客户名称：较宽(160px)，内容较长
+- 识别编码：中等宽度(135px)，允许换行显示
+- 报关行、时间、状态：较宽(115-135px)
+- 其他文本：中等宽度(65-95px)
+
+字体大小：
+- 统一使用13px字体大小（与入库车牌一致）
+- 表头使用14px字体
+- 所有列保持一致的字体大小，提高整体视觉统一性
+
+对齐方式：
+- 文本内容：居左对齐
+- 数字、序号：居中对齐
+- 时间、状态、操作：居中对齐
+*/
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid inventory-list-page">
+    <!-- 搜索框 -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">搜索条件</h3>
+                    <div class="card-tools">
+                        <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                            <i class="fas fa-minus"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <form action="{{ url_for('main.inventory_list') }}" method="get" id="searchForm">
+                        <!-- 第一行：简化搜索 -->
+                        <div class="row mb-3">
+                            <div class="col-md-3">
+                                <div class="form-group">
+                                    <label for="search_field">搜索字段</label>
+                                    <select class="form-control" id="search_field" name="search_field">
+                                        <option value="customer_name" {% if search_params.search_field == 'customer_name' %}selected{% endif %}>客户名称</option>
+                                        <option value="identification_code" {% if search_params.search_field == 'identification_code' %}selected{% endif %}>识别编码</option>
+                                        <option value="location" {% if search_params.search_field == 'location' %}selected{% endif %}>库位</option>
+                                        <option value="order_type" {% if search_params.search_field == 'order_type' %}selected{% endif %}>订单类型</option>
+                                        <option value="export_mode" {% if search_params.search_field == 'export_mode' %}selected{% endif %}>出境模式</option>
+                                        <option value="customs_broker" {% if search_params.search_field == 'customs_broker' %}selected{% endif %}>报关行</option>
+                                        <option value="service_staff" {% if search_params.search_field == 'service_staff' %}selected{% endif %}>跟单客服</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label for="search_value">搜索内容</label>
+                                    <input type="text" class="form-control" id="search_value" name="search_value"
+                                           value="{{ search_params.search_value }}" placeholder="请输入搜索内容">
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="form-group">
+                                    <label for="warehouse_id">所属仓库</label>
+                                    <select class="form-control" id="warehouse_id" name="warehouse_id">
+                                        <option value="">全部仓库</option>
+                                        {% for warehouse in warehouses %}
+                                        <option value="{{ warehouse.id }}" {% if search_params.warehouse_id == warehouse.id|string %}selected{% endif %}>
+                                            {{ warehouse.warehouse_name }}
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-2 d-flex align-items-end">
+                                <div class="form-group mb-0 w-100">
+                                    <button type="submit" class="btn btn-primary btn-block">
+                                        <i class="fas fa-search"></i> 搜索
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 第二行：日期范围和重置 -->
+                        <div class="row">
+                            <div class="col-md-3">
+                                <div class="form-group">
+                                    <label for="start_date">入库开始日期</label>
+                                    <input type="date" class="form-control" id="start_date" name="start_date"
+                                           value="{{ search_params.start_date }}">
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="form-group">
+                                    <label for="end_date">入库结束日期</label>
+                                    <input type="date" class="form-control" id="end_date" name="end_date"
+                                           value="{{ search_params.end_date }}">
+                                </div>
+                            </div>
+                            <div class="col-md-2">
+                                <div class="form-group">
+                                    <label for="stock_status">库存状态</label>
+                                    <select class="form-control" id="stock_status" name="stock_status">
+                                        <option value="">全部</option>
+                                        <option value="has_stock" {% if search_params.stock_status == 'has_stock' %}selected{% endif %}>有库存</option>
+                                        <option value="low_stock" {% if search_params.stock_status == 'low_stock' %}selected{% endif %}>库存不足</option>
+                                        <option value="zero_stock" {% if search_params.stock_status == 'zero_stock' %}selected{% endif %}>零库存</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-2">
+                                <div class="form-group">
+                                    <label for="cargo_status">货物状态</label>
+                                    <select class="form-control" id="cargo_status" name="cargo_status">
+                                        <option value="">全部状态</option>
+                                        <option value="frontend" {% if search_params.cargo_status == 'frontend' %}selected{% endif %}>前端仓</option>
+                                        <option value="in_transit" {% if search_params.cargo_status == 'in_transit' %}selected{% endif %}>在途中</option>
+                                        <option value="backend" {% if search_params.cargo_status == 'backend' %}selected{% endif %}>末端仓</option>
+                                        <option value="shipped_to_chunjiang" {% if search_params.cargo_status == 'shipped_to_chunjiang' %}selected{% endif %}>已出库到凭祥保税仓/春疆</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-2 d-flex align-items-end">
+                                <div class="form-group mb-0 w-100 d-flex">
+                                    <button type="button" id="resetToday" class="btn btn-info mr-2 flex-fill">
+                                        <i class="fas fa-calendar-day"></i> 今日
+                                    </button>
+                                    <a href="{{ url_for('main.inventory_list') }}" class="btn btn-default flex-fill">
+                                        <i class="fas fa-redo"></i> 重置
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 数据列表 -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h3 class="card-title">库存列表</h3>
+                        <div>
+                            <a href="{{ url_for('main.export_inventory') }}?{{ request.query_string.decode('utf-8') }}" class="btn btn-success btn-sm">
+                                <i class="fas fa-file-export"></i> 导出Excel
+                            </a>
+                            <button id="refreshInventoryBtn" class="btn btn-info btn-sm ml-2">
+                                <i class="fas fa-sync-alt"></i> 刷新库存
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-striped inventory-table">
+                            <thead>
+                                <tr>
+                                    <th>序号</th>
+                                    <th>入库日期</th>
+                                    <th>入库车牌</th>
+                                    <th>客户名称</th>
+                                    <th>订单类型</th>
+                                    <th>识别编码</th>
+                                    <th>入库板数</th>
+                                    <th>入库件数</th>
+                                    <th>库存板数</th>
+                                    <th>库存件数</th>
+                                    <th>重量(kg)</th>
+                                    <th>体积(m³)</th>
+                                    <th>出境模式</th>
+                                    <th>报关行</th>
+                                    <th>单据</th>
+                                    <th>跟单客服</th>
+                                    <th>库位</th>
+                                    <th>货物当前状态</th>
+                                    <th>最后更新时间</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% if records.items %}
+                                    {% for record in records.items %}
+                                    <tr>
+                                        <td>{{ loop.index + (records.page - 1) * records.per_page }}</td>
+                                        <td>{{ record.inbound_time.strftime('%Y-%m-%d') if record.inbound_time else '' }}</td>
+                                        <td>{{ record.plate_number or '' }}</td>
+                                        <td>{{ record.customer_name }}</td>
+                                        <td>{{ record.order_type or '' }}</td>
+                                        <td>{{ record.identification_code or '' }}</td>
+                                        <td>{{ record.inbound_pallet_count if record.inbound_pallet_count is not none else '' }}</td>
+                                        <td>{{ record.inbound_package_count if record.inbound_package_count is not none else '' }}</td>
+                                        <td>{{ record.pallet_count }}</td>
+                                        <td>{{ record.package_count }}</td>
+                                        <td>
+                                            {% if record.weight and record.weight > 0 %}
+                                                {% if record.weight == record.weight|int %}
+                                                    {{ record.weight|int }}
+                                                {% else %}
+                                                    {{ "%.1f"|format(record.weight) }}
+                                                {% endif %}
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if record.volume and record.volume > 0 %}
+                                                {% if record.volume == record.volume|int %}
+                                                    {{ record.volume|int }}
+                                                {% else %}
+                                                    {{ "%.2f"|format(record.volume) }}
+                                                {% endif %}
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ record.export_mode or '' }}</td>
+                                        <td>{{ record.customs_broker or '' }}</td>
+                                        <td>{{ record.documents or '' }}</td>
+                                        <td>{{ record.service_staff or '' }}</td>
+                                        <td>{{ record.location or '' }}</td>
+                                        <td>
+                                            {% if record.cargo_status %}
+                                                {{ record.cargo_status.label }}
+                                            {% else %}
+                                                未知
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ record.inbound_time.strftime('%Y-%m-%d') if record.inbound_time else '' }}</td>
+                                        <td>
+                                            <button type="button" class="btn btn-primary btn-sm" onclick="openEditModal({{ record.id }}, '{{ record.customer_name|replace("'", "\\'") }}', '{{ record.location|replace("'", "\\'") }}')">
+                                                <i class="fas fa-edit"></i> 设置库位
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                {% else %}
+                                    <tr>
+                                        <td colspan="19" class="text-center">未找到库存记录</td>
+                                    </tr>
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- 分页控件 -->
+                    <div class="pagination-container">
+{{ render_pagination(records, 'main.inventory_list',
+                    kwargs={
+                      'customer_name': search_params.customer_name,
+                      'identification_code': search_params.identification_code
+                    }) }}
+                    </div>
+
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 编辑库位模态框 -->
+<div class="modal fade" id="editLocationModal" tabindex="-1" aria-labelledby="editLocationModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editLocationModalLabel">设置库位</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="editLocationForm" method="post">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                <div class="modal-body">
+                    <p id="customerNameDisplay"></p>
+                    <div class="form-group">
+                        <label for="locationInput">库位</label>
+                        <input type="text" class="form-control" id="locationInput" name="location">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="submit" class="btn btn-primary">保存</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function openEditModal(id, customerName, location) {
+        document.getElementById('customerNameDisplay').textContent = '客户: ' + customerName;
+        document.getElementById('locationInput').value = location;
+        document.getElementById('editLocationForm').action = "{{ url_for('main.edit_inventory', id=0) }}".replace('0', id);
+        // 使用Bootstrap 5的方式打开模态框
+        var myModal = new bootstrap.Modal(document.getElementById('editLocationModal'));
+        myModal.show();
+    }
+
+    // 强制设置表头样式
+    function forceInventoryTableHeaderStyle() {
+        const tableHeaders = document.querySelectorAll('.inventory-table thead th, .table thead th');
+        tableHeaders.forEach(th => {
+            th.style.setProperty('background-color', '#007bff', 'important');
+            th.style.setProperty('background', '#007bff', 'important');
+            th.style.setProperty('color', 'white', 'important');
+            th.style.setProperty('border-color', '#007bff', 'important');
+        });
+    }
+    
+    // 添加明确的模态框关闭功能，以防data-bs-dismiss属性不起作用
+    document.addEventListener('DOMContentLoaded', function() {
+        // 为关闭按钮添加点击事件
+        const closeButton = document.querySelector('#editLocationModal .btn-close');
+        if (closeButton) {
+            closeButton.addEventListener('click', function() {
+                // 使用Bootstrap 5的方式关闭模态框
+                var myModal = bootstrap.Modal.getInstance(document.getElementById('editLocationModal'));
+                if (myModal) {
+                    myModal.hide();
+                }
+            });
+        }
+        
+        // 为取消按钮添加点击事件
+        const cancelButton = document.querySelector('#editLocationModal .btn-secondary');
+        if (cancelButton) {
+            cancelButton.addEventListener('click', function() {
+                // 使用Bootstrap 5的方式关闭模态框
+                var myModal = bootstrap.Modal.getInstance(document.getElementById('editLocationModal'));
+                if (myModal) {
+                    myModal.hide();
+                }
+            });
+        }
+    });
+    
+    // 刷新库存按钮功能
+    document.getElementById('refreshInventoryBtn').onclick = function() {
+        if (confirm('确定要刷新库存数据吗？')) {
+            // 显示加载中提示
+            var btn = this;
+            var originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 处理中...';
+            btn.disabled = true;
+            
+            // 发送请求刷新库存
+            var xhr = new XMLHttpRequest();
+            xhr.open('POST', '/api/inventory/refresh', true);
+            xhr.setRequestHeader('Content-Type', 'application/json');
+            xhr.setRequestHeader('X-CSRFToken', '{{ csrf_token() }}');
+            
+            xhr.onload = function() {
+                if (xhr.status === 200) {
+                    var response = JSON.parse(xhr.responseText);
+                    if (response.success) {
+                        alert('库存刷新成功！');
+                        location.reload(); // 刷新页面
+                    } else {
+                        alert('库存刷新失败: ' + response.message);
+                        // 恢复按钮状态
+                        btn.innerHTML = originalText;
+                        btn.disabled = false;
+                    }
+                } else {
+                    alert('请求失败，错误代码: ' + xhr.status);
+                    // 恢复按钮状态
+                    btn.innerHTML = originalText;
+                    btn.disabled = false;
+                }
+            };
+            
+            xhr.onerror = function() {
+                console.error('网络错误');
+                alert('网络错误，请稍后再试');
+                // 恢复按钮状态
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            };
+            
+            xhr.send();
+        }
+    };
+
+    // 搜索功能增强
+    document.addEventListener('DOMContentLoaded', function() {
+        // 强制设置表头样式
+        setTimeout(forceInventoryTableHeaderStyle, 100);
+
+        // 今日按钮功能
+        document.getElementById('resetToday').onclick = function() {
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('start_date').value = today;
+            document.getElementById('end_date').value = today;
+        };
+
+        // 搜索字段变化时更新输入框提示
+        const searchField = document.getElementById('search_field');
+        const searchValue = document.getElementById('search_value');
+
+        function updatePlaceholder() {
+            const fieldText = searchField.options[searchField.selectedIndex].text;
+            searchValue.placeholder = `请输入${fieldText}`;
+        }
+
+        searchField.addEventListener('change', updatePlaceholder);
+        updatePlaceholder(); // 初始化
+
+        // 回车键搜索
+        searchValue.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                document.getElementById('searchForm').submit();
+            }
+        });
+
+        // 定期检查表头样式
+        setInterval(forceInventoryTableHeaderStyle, 30000);
+    });
+</script>
+{% endblock %}

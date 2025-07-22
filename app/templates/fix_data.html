@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>数据修复工具</title>
+    <link href="https://cdn.bootcdn.net/ajax/libs/twitter-bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container mt-5">
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-header bg-warning text-dark">
+                        <h4 class="card-title mb-0">
+                            <i class="fas fa-tools me-2"></i>后端仓库存数据修复工具
+                        </h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="alert alert-info">
+                            <h6><i class="fas fa-info-circle me-2"></i>修复说明</h6>
+                            <p class="mb-0">此工具将修复后端仓库存中缺失的重量和体积数据，数据来源优先级：</p>
+                            <ol class="mb-0 mt-2">
+                                <li>接收记录中的重量和体积</li>
+                                <li>原始出库记录中的重量和体积</li>
+                            </ol>
+                        </div>
+                        
+                        <div class="text-center mb-4">
+                            <button type="button" class="btn btn-warning btn-lg" id="fixDataBtn">
+                                <i class="fas fa-wrench me-2"></i>开始修复数据
+                            </button>
+                        </div>
+                        
+                        <div id="resultArea" style="display: none;">
+                            <div class="alert alert-success" id="successAlert" style="display: none;">
+                                <h6><i class="fas fa-check-circle me-2"></i>修复完成</h6>
+                                <p id="successMessage"></p>
+                            </div>
+                            
+                            <div class="alert alert-danger" id="errorAlert" style="display: none;">
+                                <h6><i class="fas fa-exclamation-triangle me-2"></i>修复失败</h6>
+                                <p id="errorMessage"></p>
+                            </div>
+                            
+                            <div id="detailsArea">
+                                <h6>修复详情：</h6>
+                                <div class="table-responsive">
+                                    <table class="table table-sm table-striped">
+                                        <thead>
+                                            <tr>
+                                                <th>ID</th>
+                                                <th>客户</th>
+                                                <th>识别编码</th>
+                                                <th>数据来源</th>
+                                                <th>重量变化</th>
+                                                <th>体积变化</th>
+                                                <th>状态</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="detailsTableBody">
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.bootcdn.net/ajax/libs/jquery/3.6.4/jquery.min.js"></script>
+    <script src="https://cdn.bootcdn.net/ajax/libs/twitter-bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            $('#fixDataBtn').click(function() {
+                const btn = $(this);
+                btn.prop('disabled', true);
+                btn.html('<i class="fas fa-spinner fa-spin me-2"></i>修复中...');
+                
+                $.ajax({
+                    url: '/api/fix_backend_inventory_data',
+                    method: 'POST',
+                    contentType: 'application/json',
+                    success: function(response) {
+                        $('#resultArea').show();
+                        
+                        if (response.success) {
+                            $('#successAlert').show();
+                            $('#errorAlert').hide();
+                            $('#successMessage').text(response.message);
+                            
+                            // 显示详情
+                            const tbody = $('#detailsTableBody');
+                            tbody.empty();
+                            
+                            response.details.forEach(function(detail) {
+                                const row = $('<tr>');
+                                row.append(`<td>${detail.id}</td>`);
+                                row.append(`<td>${detail.customer}</td>`);
+                                row.append(`<td style="font-size: 11px;">${detail.identification_code}</td>`);
+                                
+                                if (detail.error) {
+                                    row.append(`<td colspan="4" class="text-danger">${detail.error}</td>`);
+                                } else {
+                                    row.append(`<td>${detail.source}</td>`);
+                                    row.append(`<td>${detail.old_weight} → ${detail.new_weight}</td>`);
+                                    row.append(`<td>${detail.old_volume} → ${detail.new_volume}</td>`);
+                                    row.append(`<td><span class="badge bg-success">成功</span></td>`);
+                                }
+                                
+                                tbody.append(row);
+                            });
+                        } else {
+                            $('#successAlert').hide();
+                            $('#errorAlert').show();
+                            $('#errorMessage').text(response.message);
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        $('#resultArea').show();
+                        $('#successAlert').hide();
+                        $('#errorAlert').show();
+                        $('#errorMessage').text('修复失败：' + error);
+                    },
+                    complete: function() {
+                        btn.prop('disabled', false);
+                        btn.html('<i class="fas fa-wrench me-2"></i>开始修复数据');
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>

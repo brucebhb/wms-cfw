@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">出库单详情 - 批次号: {{ record.batch_no }}</h3>
+                    <div class="card-tools">
+                        <button type="button" class="btn btn-tool" onclick="window.print()">
+                            <i class="fas fa-print"></i> 打印
+                        </button>
+                        <a href="{{ url_for('main.outbound_list') }}" class="btn btn-tool">
+                            <i class="fas fa-arrow-left"></i> 返回列表
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="print-section">
+                        <div class="company-header text-center mb-4">
+                            <h2>广州XX物流仓储有限公司</h2>
+                            <h3>出库单</h3>
+                        </div>
+                        
+                        <div class="batch-info mb-4">
+                            <div class="row">
+                                <div class="col-6">
+                                    <p><strong>批次号：</strong>{{ record.batch_no }}</p>
+                                    <p><strong>出库日期：</strong>{{ record.outbound_time.strftime('%Y-%m-%d') }}</p>
+                                </div>
+                                <div class="col-6 text-right">
+                                    <p><strong>批次序号：</strong>{{ record.batch_sequence }}/{{ record.batch_total }}</p>
+                                    <p><strong>打印时间：</strong>{{ now.strftime('%Y-%m-%d %H:%M') }}</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="record-details">
+                            <div class="row mb-2">
+                                <div class="col-3"><strong>客户名称：</strong>{{ record.customer_name }}</div>
+                                <div class="col-3"><strong>出库车牌：</strong>{{ record.plate_number }}</div>
+                                <div class="col-3"><strong>入库车牌：</strong>{{ record.inbound_plate }}</div>
+                                <div class="col-3"><strong>订单类型：</strong>{{ record.order_type }}</div>
+                            </div>
+                            <div class="row mb-2">
+                                <div class="col-3"><strong>识别编码：</strong>{{ record.identification_code }}</div>
+                                <div class="col-3"><strong>目的地：</strong>{{ record.destination }}</div>
+                                <div class="col-3"><strong>运输公司：</strong>{{ record.transport_company }}</div>
+                                <div class="col-3"><strong>跟单客服：</strong>{{ record.service_staff }}</div>
+                            </div>
+                            <div class="row mb-2">
+                                <div class="col-3"><strong>板数：</strong>{{ record.pallet_count }}</div>
+                                <div class="col-3"><strong>件数：</strong>{{ record.package_count }}</div>
+                                <div class="col-3"><strong>重量(kg)：</strong>{{ record.weight }}</div>
+                                <div class="col-3"><strong>体积(m³)：</strong>{{ record.volume }}</div>
+                            </div>
+                            <div class="row mb-2">
+                                <div class="col-3"><strong>出境模式：</strong>{{ record.export_mode }}</div>
+                                <div class="col-3"><strong>报关行：</strong>{{ record.customs_broker }}</div>
+                                <div class="col-3"><strong>库位：</strong>{{ record.location }}</div>
+                                <div class="col-3"><strong>单据号：</strong>{{ record.document_no }}</div>
+                            </div>
+                            <div class="row mb-4">
+                                <div class="col-12"><strong>备注：</strong>{{ record.remarks }}</div>
+                            </div>
+                        </div>
+                        
+                        <div class="signatures mt-4 pt-4">
+                            <div class="row">
+                                <div class="col-4 text-center">
+                                    <div class="signature-line">填单人签名</div>
+                                </div>
+                                <div class="col-4 text-center">
+                                    <div class="signature-line">领货人签名</div>
+                                </div>
+                                <div class="col-4 text-center">
+                                    <div class="signature-line">仓管签名</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    @media print {
+        body * {
+            visibility: hidden;
+        }
+        .print-section, .print-section * {
+            visibility: visible;
+        }
+        .print-section {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+        }
+        .card-header, .card-footer {
+            display: none;
+        }
+    }
+    .company-header {
+        border-bottom: 2px solid #000;
+        padding-bottom: 15px;
+    }
+    .signature-line {
+        border-top: 1px solid #000;
+        margin-top: 50px;
+        padding-top: 5px;
+    }
+</style>
+{% endblock %} 

@@ -1,0 +1,480 @@
+{% extends "base.html" %}
+{% set title = "客户业务分析" %}
+
+{% block content %}
+<div class="container-fluid customer-analysis-dashboard">
+    <!-- 页面标题 -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2 class="mb-1">
+                        <i class="fas fa-users text-success"></i>
+                        客户业务分析
+                    </h2>
+                    <p class="text-muted mb-0">客户货量排行、活跃度分析、价值评估和增长趋势</p>
+                </div>
+                <div>
+                    <span class="badge bg-success">实时更新</span>
+                    <span id="lastUpdateTime" class="text-muted ms-2"></span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 时间维度选择器 -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body py-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="btn-group" role="group" id="periodSelector">
+                            <input type="radio" class="btn-check" name="period" id="weekPeriod" value="week" autocomplete="off">
+                            <label class="btn btn-outline-success" for="weekPeriod">
+                                <i class="fas fa-calendar-week"></i> 最近一周
+                            </label>
+
+                            <input type="radio" class="btn-check" name="period" id="monthPeriod" value="month" autocomplete="off" checked>
+                            <label class="btn btn-outline-success" for="monthPeriod">
+                                <i class="fas fa-calendar-alt"></i> 最近一月
+                            </label>
+
+                            <input type="radio" class="btn-check" name="period" id="quarterPeriod" value="quarter" autocomplete="off">
+                            <label class="btn btn-outline-success" for="quarterPeriod">
+                                <i class="fas fa-calendar"></i> 最近三月
+                            </label>
+
+                            <input type="radio" class="btn-check" name="period" id="yearPeriod" value="year" autocomplete="off">
+                            <label class="btn btn-outline-success" for="yearPeriod">
+                                <i class="fas fa-calendar-plus"></i> 最近一年
+                            </label>
+                        </div>
+
+                        <button type="button" class="btn btn-success" id="refreshBtn">
+                            <i class="fas fa-sync-alt"></i> 刷新数据
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 客户活跃度概览 -->
+    <div class="row mb-4">
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card border-primary h-100">
+                <div class="card-body text-center">
+                    <div class="mb-2">
+                        <i class="fas fa-user-check text-primary" style="font-size: 2rem;"></i>
+                    </div>
+                    <h5 class="card-title text-primary">活跃客户</h5>
+                    <h3 class="mb-0" id="activeCustomersCount">-</h3>
+                    <small class="text-muted">最近7天</small>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card border-success h-100">
+                <div class="card-body text-center">
+                    <div class="mb-2">
+                        <i class="fas fa-user-plus text-success" style="font-size: 2rem;"></i>
+                    </div>
+                    <h5 class="card-title text-success">新增客户</h5>
+                    <h3 class="mb-0" id="newCustomersCount">-</h3>
+                    <small class="text-muted">最近30天</small>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card border-warning h-100">
+                <div class="card-body text-center">
+                    <div class="mb-2">
+                        <i class="fas fa-user-clock text-warning" style="font-size: 2rem;"></i>
+                    </div>
+                    <h5 class="card-title text-warning">沉睡客户</h5>
+                    <h3 class="mb-0" id="sleepingCustomersCount">-</h3>
+                    <small class="text-muted">超过30天未活跃</small>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card border-info h-100">
+                <div class="card-body text-center">
+                    <div class="mb-2">
+                        <i class="fas fa-users text-info" style="font-size: 2rem;"></i>
+                    </div>
+                    <h5 class="card-title text-info">总客户数</h5>
+                    <h3 class="mb-0" id="totalCustomersCount">-</h3>
+                    <small class="text-muted">最近30天活跃</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 客户货量排行榜 -->
+    <div class="row mb-4">
+        <div class="col-lg-8 mb-3">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-0">
+                    <h6 class="card-title mb-0">
+                        <i class="fas fa-trophy text-warning me-2"></i>
+                        客户货量排行榜
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div id="customerRankingContainer">
+                        <div class="text-center py-4">
+                            <i class="fas fa-spinner fa-spin text-primary"></i>
+                            <div class="mt-2 text-muted">加载中...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4 mb-3">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-0">
+                    <h6 class="card-title mb-0">
+                        <i class="fas fa-chart-pie text-info me-2"></i>
+                        业务类型分布
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div id="businessTypeChart" style="height: 300px;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 客户价值分析和增长趋势 -->
+    <div class="row mb-4">
+        <div class="col-lg-6 mb-3">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-0">
+                    <h6 class="card-title mb-0">
+                        <i class="fas fa-gem text-purple me-2"></i>
+                        高价值客户
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div id="highValueCustomersContainer">
+                        <div class="text-center py-4">
+                            <i class="fas fa-spinner fa-spin text-primary"></i>
+                            <div class="mt-2 text-muted">加载中...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-6 mb-3">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-0">
+                    <h6 class="card-title mb-0">
+                        <i class="fas fa-chart-line text-success me-2"></i>
+                        客户增长趋势
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div id="customerGrowthChart" style="height: 300px;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- ECharts -->
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+<script>
+class CustomerAnalysisDashboard {
+    constructor() {
+        this.currentPeriod = 'month';
+        this.charts = {};
+        this.init();
+    }
+
+    init() {
+        this.bindEvents();
+        this.loadData();
+        this.updateLastUpdateTime();
+
+        // 每5分钟自动刷新数据
+        setInterval(() => {
+            this.loadData();
+        }, 5 * 60 * 1000);
+    }
+
+    bindEvents() {
+        // 时间维度选择器
+        document.querySelectorAll('input[name="period"]').forEach(radio => {
+            radio.addEventListener('change', (e) => {
+                this.currentPeriod = e.target.value;
+                this.loadData();
+            });
+        });
+
+        // 刷新按钮
+        document.getElementById('refreshBtn').addEventListener('click', () => {
+            this.loadData();
+        });
+    }
+
+    async loadData() {
+        try {
+            console.log('开始加载客户分析数据...');
+
+            // 并行加载所有数据
+            const [activityData, rankingData, valueData, growthData, distributionData] = await Promise.allSettled([
+                this.fetchCustomerActivity(),
+                this.fetchCustomerRanking(),
+                this.fetchCustomerValue(),
+                this.fetchCustomerGrowth(),
+                this.fetchCustomerDistribution()
+            ]);
+
+            // 更新UI
+            if (activityData.status === 'fulfilled') {
+                this.updateActivityOverview(activityData.value);
+            }
+
+            if (rankingData.status === 'fulfilled') {
+                this.updateCustomerRanking(rankingData.value);
+            }
+
+            if (valueData.status === 'fulfilled') {
+                this.updateHighValueCustomers(valueData.value);
+            }
+
+            if (growthData.status === 'fulfilled') {
+                this.updateGrowthChart(growthData.value);
+            }
+
+            if (distributionData.status === 'fulfilled') {
+                this.updateBusinessTypeChart(distributionData.value);
+            }
+
+            this.updateLastUpdateTime();
+
+        } catch (error) {
+            console.error('数据加载失败:', error);
+        }
+    }
+
+    async fetchCustomerActivity() {
+        const response = await fetch('/reports/api/customer/activity');
+        if (!response.ok) throw new Error('获取客户活跃度数据失败');
+        const result = await response.json();
+        if (!result.success) throw new Error(result.message);
+        return result.data;
+    }
+
+    async fetchCustomerRanking() {
+        const response = await fetch(`/reports/api/customer/ranking?period=${this.currentPeriod}&limit=10`);
+        if (!response.ok) throw new Error('获取客户排行榜数据失败');
+        const result = await response.json();
+        if (!result.success) throw new Error(result.message);
+        return result.data;
+    }
+
+    async fetchCustomerValue() {
+        const response = await fetch('/reports/api/customer/value?limit=10');
+        if (!response.ok) throw new Error('获取客户价值数据失败');
+        const result = await response.json();
+        if (!result.success) throw new Error(result.message);
+        return result.data;
+    }
+
+    async fetchCustomerGrowth() {
+        const response = await fetch('/reports/api/customer/growth');
+        if (!response.ok) throw new Error('获取客户增长趋势数据失败');
+        const result = await response.json();
+        if (!result.success) throw new Error(result.message);
+        return result.data;
+    }
+
+    async fetchCustomerDistribution() {
+        const response = await fetch('/reports/api/customer/distribution');
+        if (!response.ok) throw new Error('获取客户分布数据失败');
+        const result = await response.json();
+        if (!result.success) throw new Error(result.message);
+        return result.data;
+    }
+
+    updateActivityOverview(data) {
+        document.getElementById('activeCustomersCount').textContent = data.recent_active_count || 0;
+        document.getElementById('newCustomersCount').textContent = data.new_customers_count || 0;
+        document.getElementById('sleepingCustomersCount').textContent = data.sleeping_count || 0;
+        document.getElementById('totalCustomersCount').textContent = data.month_active_count || 0;
+    }
+
+    updateCustomerRanking(data) {
+        const container = document.getElementById('customerRankingContainer');
+
+        if (!data.ranking || data.ranking.length === 0) {
+            container.innerHTML = '<div class="text-center py-4 text-muted">暂无数据</div>';
+            return;
+        }
+
+        let html = '<div class="table-responsive"><table class="table table-hover">';
+        html += '<thead><tr>';
+        html += '<th>排名</th><th>客户名称</th><th>总票数</th><th>总板数</th><th>总件数</th>';
+        html += '</tr></thead><tbody>';
+
+        data.ranking.forEach((customer, index) => {
+            const rankClass = index < 3 ? ['text-warning', 'text-secondary', 'text-warning'][index] : '';
+            const rankIcon = index < 3 ? ['🥇', '🥈', '🥉'][index] : (index + 1);
+
+            html += `<tr>
+                <td><span class="${rankClass}">${rankIcon}</span></td>
+                <td><strong>${customer.customer_name}</strong></td>
+                <td>${customer.total_count}</td>
+                <td>${this.formatNumber(customer.total_pallets)}</td>
+                <td>${this.formatNumber(customer.total_packages)}</td>
+            </tr>`;
+        });
+
+        html += '</tbody></table></div>';
+        container.innerHTML = html;
+    }
+
+    updateHighValueCustomers(data) {
+        const container = document.getElementById('highValueCustomersContainer');
+
+        if (!data.high_value_customers || data.high_value_customers.length === 0) {
+            container.innerHTML = '<div class="text-center py-4 text-muted">暂无数据</div>';
+            return;
+        }
+
+        let html = '<div class="table-responsive"><table class="table table-sm">';
+        html += '<thead><tr>';
+        html += '<th>客户名称</th><th>价值评分</th><th>业务频率</th><th>最后活跃</th>';
+        html += '</tr></thead><tbody>';
+
+        data.high_value_customers.slice(0, 8).forEach(customer => {
+            const scoreClass = customer.value_score >= 80 ? 'text-success' :
+                              customer.value_score >= 60 ? 'text-warning' : 'text-muted';
+
+            html += `<tr>
+                <td><strong>${customer.customer_name}</strong></td>
+                <td><span class="${scoreClass}">${customer.value_score.toFixed(1)}</span></td>
+                <td>${customer.inbound_frequency + customer.outbound_frequency}</td>
+                <td>${customer.last_activity_days}天前</td>
+            </tr>`;
+        });
+
+        html += '</tbody></table></div>';
+        container.innerHTML = html;
+    }
+
+    updateGrowthChart(data) {
+        const chartDom = document.getElementById('customerGrowthChart');
+        if (!this.charts.growth) {
+            this.charts.growth = echarts.init(chartDom);
+        }
+
+        const months = data.monthly_trends.map(item => item.month);
+        const activeCustomers = data.monthly_trends.map(item => item.active_customers);
+        const newCustomers = data.monthly_trends.map(item => item.new_customers);
+
+        const option = {
+            tooltip: {
+                trigger: 'axis',
+                axisPointer: {
+                    type: 'cross'
+                }
+            },
+            legend: {
+                data: ['活跃客户', '新增客户']
+            },
+            xAxis: {
+                type: 'category',
+                data: months
+            },
+            yAxis: {
+                type: 'value'
+            },
+            series: [
+                {
+                    name: '活跃客户',
+                    type: 'line',
+                    data: activeCustomers,
+                    smooth: true,
+                    itemStyle: { color: '#28a745' }
+                },
+                {
+                    name: '新增客户',
+                    type: 'bar',
+                    data: newCustomers,
+                    itemStyle: { color: '#17a2b8' }
+                }
+            ]
+        };
+
+        this.charts.growth.setOption(option);
+    }
+
+    updateBusinessTypeChart(data) {
+        const chartDom = document.getElementById('businessTypeChart');
+        if (!this.charts.businessType) {
+            this.charts.businessType = echarts.init(chartDom);
+        }
+
+        const chartData = [
+            { value: data.business_type_distribution.inbound_only_count, name: '仅入库业务' },
+            { value: data.business_type_distribution.outbound_only_count, name: '仅出库业务' },
+            { value: data.business_type_distribution.both_count, name: '进出库业务' }
+        ];
+
+        const option = {
+            tooltip: {
+                trigger: 'item',
+                formatter: '{a} <br/>{b}: {c} ({d}%)'
+            },
+            legend: {
+                orient: 'vertical',
+                left: 'left'
+            },
+            series: [
+                {
+                    name: '业务类型',
+                    type: 'pie',
+                    radius: '50%',
+                    data: chartData,
+                    emphasis: {
+                        itemStyle: {
+                            shadowBlur: 10,
+                            shadowOffsetX: 0,
+                            shadowColor: 'rgba(0, 0, 0, 0.5)'
+                        }
+                    }
+                }
+            ]
+        };
+
+        this.charts.businessType.setOption(option);
+    }
+
+    formatNumber(num) {
+        if (num === null || num === undefined) return '0';
+        return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+    }
+
+    updateLastUpdateTime() {
+        const now = new Date();
+        const timeStr = now.toLocaleTimeString('zh-CN');
+        document.getElementById('lastUpdateTime').textContent = `最后更新: ${timeStr}`;
+    }
+}
+
+// 页面加载完成后初始化
+document.addEventListener('DOMContentLoaded', function() {
+    const dashboard = new CustomerAnalysisDashboard();
+});
+</script>
+{% endblock %}

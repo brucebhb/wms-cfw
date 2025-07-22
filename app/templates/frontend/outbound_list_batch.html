@@ -1,0 +1,438 @@
+{% extends "base.html" %}
+
+{% from 'macros/pagination.html' import render_pagination %}
+
+{% block styles %}
+<style>
+/* 批次分组样式 */
+.batch-group {
+    margin-bottom: 30px;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.batch-header {
+    background: linear-gradient(135deg, #198754 0%, #20c997 100%);
+    color: white;
+    padding: 15px 20px;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.batch-summary {
+    background-color: transparent;
+    padding: 15px 20px;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.batch-details {
+    padding: 0;
+}
+
+/* 汇总信息网格 */
+.summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+    margin-top: 10px;
+}
+
+.summary-item {
+    background: transparent;
+    padding: 10px 15px;
+    border-radius: 6px;
+    border-left: 4px solid #198754;
+}
+
+.summary-label {
+    font-size: 12px;
+    color: #6c757d;
+    margin-bottom: 5px;
+}
+
+.summary-value {
+    font-size: 16px;
+    font-weight: 600;
+    color: #212529;
+}
+
+/* 表格样式 */
+.batch-table {
+    font-size: 13px;
+    margin-bottom: 0;
+}
+
+.batch-table th, .batch-table td {
+    padding: 8px 6px;
+    text-align: left;
+    vertical-align: middle;
+    border: 1px solid #dee2e6;
+    white-space: normal;
+    word-wrap: break-word;
+}
+
+.batch-table th {
+    background-color: #e9ecef;
+    color: #495057;
+    font-weight: 600;
+    font-size: 12px;
+    text-align: center;
+}
+
+/* 数字列居中 */
+.batch-table td:nth-child(6), .batch-table td:nth-child(7),
+.batch-table td:nth-child(8), .batch-table td:nth-child(9),
+.batch-table td:nth-child(12), .batch-table td:nth-child(13) {
+    text-align: center;
+    font-family: 'Courier New', monospace;
+    font-weight: 500;
+}
+
+/* 状态标签 */
+.badge {
+    font-size: 10px;
+    padding: 3px 8px;
+}
+
+/* 响应式调整 */
+@media (max-width: 768px) {
+    .summary-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+    
+    .batch-table {
+        font-size: 10px;
+    }
+    
+    .batch-table th, .batch-table td {
+        padding: 6px 4px;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- 页面标题 -->
+    <div class="row mb-3">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <h2 class="text-success mb-0">
+                    <i class="fas fa-truck-loading me-2"></i>前端仓出库记录
+                    <small class="text-muted">(按批次分组)</small>
+                </h2>
+                <div class="d-flex align-items-center">
+                    <span class="badge bg-info me-2">共 {{ batch_groups.total }} 个批次</span>
+                    <a href="{{ url_for('main.frontend_outbound_list_original') }}" class="btn btn-outline-secondary btn-sm">
+                        <i class="fas fa-list me-1"></i>列表视图
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 搜索框 -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title" style="font-size: 16px;">搜索条件</h3>
+                    <div class="card-tools">
+                        <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                            <i class="fas fa-minus"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body search-form">
+                    <form action="{{ url_for('main.frontend_outbound_list') }}" method="get" id="searchForm">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                        <div class="row">
+                            <!-- 搜索字段选择器 -->
+                            <div class="col-md-2">
+                                <div class="form-group">
+                                    <label for="search_field" class="form-label">搜索字段</label>
+                                    <select class="form-select" id="search_field" name="search_field">
+                                        <option value="customer_name" {{ 'selected' if search_params.get('search_field') == 'customer_name' else '' }}>客户名称</option>
+                                        <option value="plate_number" {{ 'selected' if search_params.get('search_field') == 'plate_number' else '' }}>出库车牌</option>
+                                        <option value="batch_no" {{ 'selected' if search_params.get('search_field') == 'batch_no' else '' }}>批次号</option>
+                                        <option value="identification_code" {{ 'selected' if search_params.get('search_field') == 'identification_code' else '' }}>识别编码</option>
+                                        <option value="destination" {{ 'selected' if search_params.get('search_field') == 'destination' else '' }}>目的地</option>
+                                        <option value="customs_broker" {{ 'selected' if search_params.get('search_field') == 'customs_broker' else '' }}>报关行</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <!-- 搜索值 -->
+                            <div class="col-md-3">
+                                <div class="form-group">
+                                    <label for="search_value" class="form-label">搜索内容</label>
+                                    <input type="text" class="form-control" id="search_value" name="search_value" 
+                                           value="{{ search_params.get('search_value', '') }}" placeholder="请输入搜索内容">
+                                </div>
+                            </div>
+                            
+                            <!-- 开始日期 -->
+                            <div class="col-md-2">
+                                <div class="form-group">
+                                    <label for="date_start" class="form-label">开始日期</label>
+                                    <input type="date" class="form-control" id="date_start" name="date_start" 
+                                           value="{{ search_params.get('date_start', '') }}">
+                                </div>
+                            </div>
+                            
+                            <!-- 结束日期 -->
+                            <div class="col-md-2">
+                                <div class="form-group">
+                                    <label for="date_end" class="form-label">结束日期</label>
+                                    <input type="date" class="form-control" id="date_end" name="date_end" 
+                                           value="{{ search_params.get('date_end', '') }}">
+                                </div>
+                            </div>
+                            
+                            <!-- 操作按钮 -->
+                            <div class="col-md-3">
+                                <div class="form-group">
+                                    <label class="form-label">&nbsp;</label>
+                                    <div class="d-flex gap-2">
+                                        <button type="submit" class="btn btn-success">
+                                            <i class="fas fa-search me-1"></i>搜索
+                                        </button>
+                                        <button type="button" class="btn btn-warning" onclick="setYesterdayToday()">
+                                            <i class="fas fa-calendar me-1"></i>重置
+                                        </button>
+                                        <button type="button" class="btn btn-secondary" onclick="clearSearch()">
+                                            <i class="fas fa-eraser me-1"></i>清空
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 批次分组显示 -->
+    <div class="row">
+        <div class="col-12">
+            {% if batch_groups.items %}
+                {% for batch in batch_groups.items %}
+                <div class="batch-group">
+                    <!-- 批次头部信息 -->
+                    <div class="batch-header">
+                        <div class="row align-items-center">
+                            <div class="col-md-8">
+                                <h4 class="mb-1">
+                                    <i class="fas fa-layer-group me-2"></i>批次号: {{ batch.batch_no }}
+                                    <span class="badge bg-secondary text-white ms-2">{{ batch.record_count }} 条记录</span>
+                                </h4>
+                                <div class="d-flex flex-wrap gap-3 mt-2">
+                                    <span><i class="fas fa-truck me-1"></i>出库车牌: {{ batch.plate_number or '-' }}</span>
+                                    <span><i class="fas fa-truck-loading me-1"></i>入库车牌: {{ batch.inbound_plate or '-' }}</span>
+                                    <span><i class="fas fa-map-marker-alt me-1"></i>目的地: 
+                                        {% if batch.destination == '直接配送客户工厂' %}
+                                            直接配送
+                                        {% elif batch.destination_warehouse %}
+                                            {{ batch.destination_warehouse.warehouse_name }}
+                                        {% else %}
+                                            {{ batch.destination or '-' }}
+                                        {% endif %}
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="col-md-4 text-end">
+                                <div class="text-white-50">
+                                    <span style="font-size: 16px; font-weight: bold; color: #ffffff; text-shadow: 1px 1px 2px rgba(0,0,0,0.5);">出库时间</span><br>
+                                    <strong>
+                                        {% if batch.departure_time %}
+                                            {{ batch.departure_time.strftime('%Y-%m-%d %H:%M') }}
+                                        {% elif batch.outbound_time %}
+                                            {{ batch.outbound_time.strftime('%Y-%m-%d %H:%M') }}
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </strong>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 批次汇总信息 -->
+                    <div class="batch-summary">
+                        <div class="summary-grid">
+                            <div class="summary-item">
+                                <div class="summary-label">总板数</div>
+                                <div class="summary-value">{{ batch.total_pallet }}</div>
+                            </div>
+                            <div class="summary-item">
+                                <div class="summary-label">总件数</div>
+                                <div class="summary-value">{{ batch.total_package }}</div>
+                            </div>
+                            <div class="summary-item">
+                                <div class="summary-label">总重量(KG)</div>
+                                <div class="summary-value">{{ "%.2f"|format(batch.total_weight) }}</div>
+                            </div>
+                            <div class="summary-item">
+                                <div class="summary-label">总体积(CBM)</div>
+                                <div class="summary-value">{{ "%.2f"|format(batch.total_volume) }}</div>
+                            </div>
+                            <div class="summary-item">
+                                <div class="summary-label">操作仓库</div>
+                                <div class="summary-value">{{ batch.operated_warehouse.warehouse_name if batch.operated_warehouse else '-' }}</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 批次详细记录 -->
+                    <div class="batch-details">
+                        <div class="table-responsive">
+                            <table class="table batch-table">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 120px;">客户名称</th>
+                                        <th style="width: 150px;">识别编码</th>
+                                        <th style="width: 80px;">订单类型</th>
+                                        <th style="width: 80px;">报关行</th>
+                                        <th style="width: 80px;">跟单客服</th>
+                                        <th style="width: 60px;">板数</th>
+                                        <th style="width: 60px;">件数</th>
+                                        <th style="width: 80px;">重量(KG)</th>
+                                        <th style="width: 80px;">体积(CBM)</th>
+                                        <th style="width: 80px;">单据</th>
+                                        <th style="width: 90px;">入库日期</th>
+                                        <th style="width: 100px;">备注1</th>
+                                        <th style="width: 100px;">备注2</th>
+                                        <th style="width: 80px;">操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for record in batch.records %}
+                                    <tr>
+                                        <td>{{ record.customer_name or '-' }}</td>
+                                        <td>{{ record.identification_code or '-' }}</td>
+                                        <td>{{ record.order_type or '-' }}</td>
+                                        <td>{{ record.customs_broker or '-' }}</td>
+                                        <td>{{ record.service_staff or '-' }}</td>
+                                        <td>{{ record.pallet_count or 0 }}</td>
+                                        <td>{{ record.package_count or 0 }}</td>
+                                        <td>{{ "%.2f"|format(record.weight or 0) }}</td>
+                                        <td>{{ "%.2f"|format(record.volume or 0) }}</td>
+                                        <td>{{ record.documents or '-' }}</td>
+                                        <td>{{ record.inbound_date.strftime('%Y-%m-%d') if record.inbound_date else '-' }}</td>
+                                        <td>{{ record.remark1 or '-' }}</td>
+                                        <td>{{ record.remark2 or '-' }}</td>
+                                        <td>
+                                            <button type="button" class="btn btn-info btn-sm" onclick="viewRecord({{ record.id }})">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-body text-center py-5">
+                            <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                            <h5 class="text-muted">暂无出库记录</h5>
+                            <p class="text-muted">请调整搜索条件或检查数据</p>
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- 分页 -->
+    {% if batch_groups.pages > 1 %}
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-footer">
+                    {{ render_pagination(batch_groups, 'main.frontend_outbound_list', search_params) }}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- 记录详情模态框 -->
+<div class="modal fade" id="recordDetailModal" tabindex="-1" aria-labelledby="recordDetailModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="recordDetailModalLabel">
+                    <i class="fas fa-info-circle me-2"></i>出库记录详情
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="recordDetailContent">
+                    <!-- 动态加载内容 -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// 设置一周前到今天的日期
+function setYesterdayToday() {
+    const today = new Date();
+    const oneWeekAgo = new Date(today);
+    oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+
+    // 格式化日期为 YYYY-MM-DD
+    const formatDate = (date) => {
+        return date.getFullYear() + '-' +
+               String(date.getMonth() + 1).padStart(2, '0') + '-' +
+               String(date.getDate()).padStart(2, '0');
+    };
+
+    $('#date_start').val(formatDate(oneWeekAgo));
+    $('#date_end').val(formatDate(today));
+}
+
+// 清空搜索
+function clearSearch() {
+    $('#search_value').val('');
+    $('#date_start').val('');
+    $('#date_end').val('');
+    $('#search_field').val('customer_name');
+}
+
+// 查看记录详情
+function viewRecord(recordId) {
+    $('#recordDetailContent').html('<div class="text-center"><i class="fas fa-spinner fa-spin"></i> 加载中...</div>');
+    $('#recordDetailModal').modal('show');
+    
+    // 这里可以添加AJAX请求来获取记录详情
+    // 暂时显示基本信息
+    setTimeout(() => {
+        $('#recordDetailContent').html(`
+            <div class="alert alert-info">
+                <h6>记录ID: ${recordId}</h6>
+                <p>详细信息加载功能待实现</p>
+            </div>
+        `);
+    }, 500);
+}
+
+// 页面加载完成后执行
+$(document).ready(function() {
+    // 如果没有搜索条件，默认设置日期范围
+    if (!$('#date_start').val() && !$('#date_end').val()) {
+        setYesterdayToday();
+    }
+});
+</script>
+{% endblock %}

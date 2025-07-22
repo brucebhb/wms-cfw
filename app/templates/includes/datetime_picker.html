@@ -1,0 +1,21 @@
+{% macro datetime_picker(id, label, required=False, value=None, placeholder='选择日期') %}
+<div class="date-time-picker-container" id="{{ id }}-container">
+    <label for="{{ id }}-date" class="{{ 'required-field' if required else '' }}">{{ label }}</label>
+    <div class="date-time-picker">
+        <input type="text" class="form-control date-input" id="{{ id }}-date" 
+               placeholder="{{ placeholder }}" {{ 'required' if required else '' }} data-testid="date-input">
+        <input type="text" class="form-control time-input" id="{{ id }}-time" 
+               placeholder="HH:MM" maxlength="5" {{ 'required' if required else '' }} data-testid="time-input">
+        <button class="btn btn-outline-secondary calendar-btn" type="button" data-testid="calendar-button">
+            <i class="fas fa-calendar"></i>
+        </button>
+    </div>
+    <input type="hidden" class="datetime-value" id="{{ id }}" name="{{ id }}" 
+           value="{{ value if value else '' }}" {{ 'required' if required else '' }}>
+    <!-- 调试用信息区域 -->
+    <div class="debug-info" style="display: none; font-size: 12px; color: #6c757d; margin-top: 2px;">
+        <span class="date-value-display"></span> | 
+        <span class="time-value-display"></span>
+    </div>
+</div>
+{% endmacro %} 

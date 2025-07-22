@@ -1,0 +1,266 @@
+{% extends "base.html" %}
+
+{% block title %}后端仓出库操作{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- 页面标题 -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-danger">
+                <div class="card-header bg-danger text-white">
+                    <h3 class="card-title mb-0">
+                        <i class="fas fa-shipping-fast me-2"></i>后端仓出库操作
+                        <span class="badge bg-light text-danger ms-2">Backend Warehouse</span>
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <p class="card-text mb-0">
+                        <i class="fas fa-info-circle me-1"></i>
+                        凭祥北投仓的货物出库操作 - 请选择出库类型
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 出库类型选择 -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title">
+                        <i class="fas fa-route me-2"></i>出库类型选择
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <!-- 出库到末端 -->
+                        <div class="col-md-6 mb-3">
+                            <div class="card border-primary h-100">
+                                <div class="card-body text-center d-flex flex-column">
+                                    <i class="fas fa-flag-checkered fa-4x text-primary mb-3"></i>
+                                    <h5 class="card-title">出库到末端</h5>
+                                    <p class="card-text flex-grow-1">
+                                        发货到保税仓或春疆货场<br>
+                                        <small class="text-muted">最终目的地配送</small>
+                                    </p>
+                                    <div class="mt-auto">
+                                        <a href="{{ url_for('main.backend_outbound_to_final') }}" class="btn btn-primary btn-lg">
+                                            <i class="fas fa-arrow-right me-1"></i>选择此类型
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- 返回前端仓 -->
+                        <div class="col-md-6 mb-3">
+                            <div class="card border-warning h-100">
+                                <div class="card-body text-center d-flex flex-column">
+                                    <i class="fas fa-undo fa-4x text-warning mb-3"></i>
+                                    <h5 class="card-title">返回前端仓</h5>
+                                    <p class="card-text flex-grow-1">
+                                        将货物返回到前端仓<br>
+                                        <small class="text-muted">适用于需要重新处理的货物</small>
+                                    </p>
+                                    <div class="mt-auto">
+                                        <a href="{{ url_for('main.backend_outbound_return_frontend') }}" class="btn btn-warning btn-lg">
+                                            <i class="fas fa-reply me-1"></i>选择此类型
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 快捷操作 -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title">
+                        <i class="fas fa-tools me-2"></i>快捷操作
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3 mb-2">
+                            <a href="{{ url_for('main.backend_outbound_list') }}" class="btn btn-outline-primary w-100">
+                                <i class="fas fa-list me-1"></i>出库记录
+                            </a>
+                        </div>
+                        <div class="col-md-3 mb-2">
+                            <a href="{{ url_for('main.backend_inventory_list') }}" class="btn btn-outline-info w-100">
+                                <i class="fas fa-boxes me-1"></i>库存查询
+                            </a>
+                        </div>
+                        <div class="col-md-3 mb-2">
+                            <a href="{{ url_for('main.outbound_print_list') }}" class="btn btn-outline-secondary w-100">
+                                <i class="fas fa-print me-1"></i>打印出库单
+                            </a>
+                        </div>
+                        <div class="col-md-3 mb-2">
+                            <a href="{{ url_for('main.export_outbound') }}" class="btn btn-outline-success w-100">
+                                <i class="fas fa-download me-1"></i>导出数据
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 操作说明 -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card border-info">
+                <div class="card-header bg-info text-white">
+                    <h6 class="card-title mb-0">
+                        <i class="fas fa-question-circle me-1"></i>操作说明
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6 class="text-primary">
+                                <i class="fas fa-flag-checkered me-1"></i>出库到末端
+                            </h6>
+                            <ul class="small">
+                                <li>货物将被运输到保税仓或春疆货场</li>
+                                <li>这是货物的最终配送环节</li>
+                                <li>需要完成报关、检验等所有手续</li>
+                                <li>系统会生成最终配送单据</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="text-warning">
+                                <i class="fas fa-undo me-1"></i>返回前端仓
+                            </h6>
+                            <ul class="small">
+                                <li>将货物返回到原来的前端仓</li>
+                                <li>适用于需要重新处理或客户要求的情况</li>
+                                <li>需要填写返回原因和相关说明</li>
+                                <li>系统会更新货物状态和位置信息</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 统计信息 -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title">
+                        <i class="fas fa-chart-bar me-2"></i>今日统计
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-md-3">
+                            <div class="card border-primary">
+                                <div class="card-body">
+                                    <h5 class="card-title text-primary">
+                                        <i class="fas fa-truck me-1"></i>今日出库
+                                    </h5>
+                                    <h3 class="text-primary" id="todayOutbound">-</h3>
+                                    <small class="text-muted">票</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card border-success">
+                                <div class="card-body">
+                                    <h5 class="card-title text-success">
+                                        <i class="fas fa-boxes me-1"></i>当前库存
+                                    </h5>
+                                    <h3 class="text-success" id="currentInventory">-</h3>
+                                    <small class="text-muted">票</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card border-warning">
+                                <div class="card-body">
+                                    <h5 class="card-title text-warning">
+                                        <i class="fas fa-clock me-1"></i>待处理
+                                    </h5>
+                                    <h3 class="text-warning" id="pendingItems">-</h3>
+                                    <small class="text-muted">票</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card border-info">
+                                <div class="card-body">
+                                    <h5 class="card-title text-info">
+                                        <i class="fas fa-calendar me-1"></i>本月出库
+                                    </h5>
+                                    <h3 class="text-info" id="monthlyOutbound">-</h3>
+                                    <small class="text-muted">票</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+$(document).ready(function() {
+    console.log('后端仓出库主页面已加载');
+    
+    // 加载统计数据
+    loadStatistics();
+    
+    // 添加卡片悬停效果
+    $('.card').hover(
+        function() {
+            $(this).addClass('shadow-lg');
+        },
+        function() {
+            $(this).removeClass('shadow-lg');
+        }
+    );
+    
+    // 加载统计数据
+    function loadStatistics() {
+        $.ajax({
+            url: '/api/backend/statistics',
+            method: 'GET',
+            headers: {
+                'X-CSRFToken': $('meta[name=csrf-token]').attr('content')
+            },
+            success: function(response) {
+                if (response.success) {
+                    $('#todayOutbound').text(response.data.today_outbound || 0);
+                    $('#currentInventory').text(response.data.current_inventory || 0);
+                    $('#pendingItems').text(response.data.pending_items || 0);
+                    $('#monthlyOutbound').text(response.data.monthly_outbound || 0);
+                }
+            },
+            error: function(xhr, status, error) {
+                console.log('加载统计数据失败', xhr.status, error);
+                // 显示默认值
+                $('#todayOutbound').text('0');
+                $('#currentInventory').text('0');
+                $('#pendingItems').text('0');
+                $('#monthlyOutbound').text('0');
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

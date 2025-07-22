@@ -1,0 +1,15 @@
+<svg width="160" height="50" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <style>
+      .cfw-text { font-family: Arial, sans-serif; font-weight: bold; font-style: italic; }
+      .cfw-red { fill: #dc3545; }
+      .cfw-black { fill: #000000; }
+    </style>
+  </defs>
+
+  <!-- CFW文字 -->
+  <text x="8" y="32" class="cfw-text cfw-red" font-size="26">CFW</text>
+
+  <!-- 车夫网文字 -->
+  <text x="68" y="32" class="cfw-text cfw-black" font-size="22">车夫网</text>
+</svg>

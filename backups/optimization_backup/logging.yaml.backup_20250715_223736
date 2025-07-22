@@ -1,0 +1,119 @@
+# 日志配置文件
+# 可以通过修改这个文件来调整日志行为
+
+# 日志级别配置
+levels:
+  # 全局日志级别 (DEBUG, INFO, WARNING, ERROR, CRITICAL)
+  global: INFO
+  
+  # 特定模块的日志级别
+  modules:
+    scheduler: WARNING      # 调度器模块，减少频繁日志
+    maintenance: INFO       # 维护模块
+    database: WARNING       # 数据库模块
+    auth: INFO             # 认证模块
+    business: INFO         # 业务模块
+
+# 日志文件配置
+files:
+  # 错误日志
+  error:
+    filename: logs/error.log
+    max_size_mb: 50
+    backup_count: 3
+    level: WARNING
+    
+  # 业务日志
+  business:
+    filename: logs/business.log
+    max_size_mb: 30
+    backup_count: 3
+    level: INFO
+    
+  # 系统日志
+  system:
+    filename: logs/system.log
+    max_size_mb: 20
+    backup_count: 2
+    level: INFO
+
+# 过滤器配置
+filters:
+  # 要忽略的日志消息模式
+  ignore_patterns:
+    - "Working outside of application context"
+    - "轻量级清理异常"
+    - "3分钟维护周期异常"
+    - "检查仓库权限"
+    - "用户已认证"
+    - "用户仓库类型"
+    - "查看权限"
+    - "获取收货人列表"
+    - "调度器已关闭"
+    
+  # 重要的业务操作模式（总是记录）
+  important_patterns:
+    - "出库记录保存成功"
+    - "入库记录保存成功"
+    - "用户登录"
+    - "用户登出"
+    - "批次号"
+    - "创建出库记录"
+    - "创建入库记录"
+    - "库存更新"
+    - "接收记录"
+    - "数据导入"
+    - "数据导出"
+    - "打印操作"
+    - "维护完成"
+    - "清理完成"
+
+# 性能监控配置
+performance:
+  # 是否启用性能日志
+  enabled: true
+  
+  # 慢查询阈值（秒）
+  slow_query_threshold: 1.0
+  
+  # 慢请求阈值（秒）
+  slow_request_threshold: 2.0
+
+# 日志格式配置
+formats:
+  # 开发模式格式
+  development: "%(asctime)s [%(levelname)s] %(name)s: %(message)s"
+  
+  # 生产模式格式
+  production: "%(asctime)s [%(levelname)s] %(name)s: %(message)s [in %(pathname)s:%(lineno)d]"
+  
+  # 简化格式
+  simple: "%(asctime)s [%(levelname)s]: %(message)s"
+
+# 日志轮转配置
+rotation:
+  # 是否启用基于时间的轮转
+  time_based: false
+  
+  # 轮转间隔（when: 'midnight', 'H', 'D', 'W0'-'W6'）
+  when: "midnight"
+  
+  # 轮转间隔数
+  interval: 1
+  
+  # 保留的日志文件数量
+  backup_count: 7
+
+# 特殊配置
+special:
+  # 是否在控制台显示错误
+  console_errors: true
+  
+  # 是否记录SQL查询
+  log_sql: false
+  
+  # 是否记录请求详情
+  log_requests: false
+  
+  # 是否启用调试模式日志
+  debug_mode: false

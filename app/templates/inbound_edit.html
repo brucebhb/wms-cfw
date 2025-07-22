@@ -1,0 +1,283 @@
+{% extends "base.html" %}
+
+{% block styles %}
+{{ super() }}
+<style>
+    .form-card {
+        margin-bottom: 20px;
+    }
+    .form-container {
+        padding: 20px;
+    }
+    .form-group {
+        margin-bottom: 20px;
+    }
+    .form-label {
+        font-weight: 500;
+        color: #495057;
+    }
+    .required-label:after {
+        content: "*";
+        color: red;
+        margin-left: 3px;
+    }
+    .validation-note {
+        font-size: 12px;
+        color: #666;
+        margin-top: 5px;
+    }
+    .validation-hint {
+        color: #dc3545;
+        font-size: 13px;
+        margin-top: 2px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <div>
+            <h4 class="card-title"><i class="fas fa-edit me-2"></i>编辑入库记录</h4>
+            <small class="text-muted"><i class="fas fa-info-circle me-1"></i>修改后保存生效</small>
+        </div>
+        <div>
+            <a href="{{ url_for('main.view_inbound', id=record.id) }}" class="btn btn-info btn-sm me-2">
+                <i class="fas fa-eye"></i> 查看详情
+            </a>
+            <a href="{{ url_for('main.inbound_list') }}" class="btn btn-secondary btn-sm">
+                <i class="fas fa-arrow-left"></i> 返回列表
+            </a>
+        </div>
+    </div>
+    
+    <div class="card-body form-container">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        {% for category, message in messages %}
+        <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        {% endfor %}
+        {% endif %}
+        {% endwith %}
+        
+        <form method="POST" action="{{ url_for('main.edit_inbound', id=record.id) }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+            {{ form.hidden_tag() }}
+            
+            <div class="row">
+                <!-- 左侧表单 -->
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label class="form-label required-label">入库时间</label>
+                        <input type="text" class="form-control" name="inbound_time" id="inbound_time" value="{{ record.inbound_time.strftime('%Y-%m-%d') if record.inbound_time else '' }}" required placeholder="YYYY-MM-DD">
+                        {% if form.inbound_time.errors %}
+                        <div class="text-danger">
+                            {% for error in form.inbound_time.errors %}
+                            <small>{{ error }}</small>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                        <div class="validation-note">格式：YYYY-MM-DD（如：2025-06-27）</div>
+                        <script>
+                            // 确保日期输入框的值格式正确
+                            document.getElementById('inbound_time').addEventListener('change', function() {
+                                // 获取输入值
+                                var dateValue = this.value;
+                                if (dateValue) {
+                                    // 检查日期格式是否符合YYYY-MM-DD
+                                    var datePattern = /^\d{4}-\d{2}-\d{2}$/;
+                                    if (!datePattern.test(dateValue)) {
+                                        // 如果格式不正确，显示警告
+                                        alert("请使用正确的日期格式：YYYY-MM-DD（如：2025-06-27）");
+                                        // 清空输入框
+                                        this.value = '';
+                                    }
+                                }
+                            });
+                        </script>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label required-label">入库车牌</label>
+                        {{ form.plate_number(class="form-control") }}
+                        {% if form.plate_number.errors %}
+                        <div class="text-danger">
+                            {% for error in form.plate_number.errors %}
+                            <small>{{ error }}</small>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label required-label">客户名称</label>
+                        {{ form.customer_name(class="form-control") }}
+                        {% if form.customer_name.errors %}
+                        <div class="text-danger">
+                            {% for error in form.customer_name.errors %}
+                            <small>{{ error }}</small>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">识别编码</label>
+                        {{ form.identification_code(class="form-control") }}
+                        {% if form.identification_code.errors %}
+                        <div class="text-danger">
+                            {% for error in form.identification_code.errors %}
+                            <small>{{ error }}</small>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                        <div class="validation-note">系统自动生成，如：0627/裕同/粤B123-001</div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label required-label">板数</label>
+                        {{ form.pallet_count(class="form-control", type="number") }}
+                        {% if form.pallet_count.errors %}
+                        <div class="text-danger">
+                            {% for error in form.pallet_count.errors %}
+                            <small>{{ error }}</small>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                        <div class="validation-note">注意：件数和板数不能同时为0或为空</div>
+                    </div>
+                </div>
+                
+                <!-- 右侧表单 -->
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label class="form-label required-label">件数</label>
+                        {{ form.package_count(class="form-control", type="number") }}
+                        {% if form.package_count.errors %}
+                        <div class="text-danger">
+                            {% for error in form.package_count.errors %}
+                            <small>{{ error }}</small>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                        <div class="validation-note">注意：件数和板数不能同时为0或为空</div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">重量(kg)</label>
+                        {{ form.weight(class="form-control", type="number", step="0.01") }}
+                        {% if form.weight.errors %}
+                        <div class="text-danger">
+                            {% for error in form.weight.errors %}
+                            <small>{{ error }}</small>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                        <div class="validation-note">可以为空，默认为0</div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">体积(m³)</label>
+                        {{ form.volume(class="form-control", type="number", step="0.01") }}
+                        {% if form.volume.errors %}
+                        <div class="text-danger">
+                            {% for error in form.volume.errors %}
+                            <small>{{ error }}</small>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                        <div class="validation-note">可以为空，默认为0</div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">订单类型</label>
+                        {{ form.order_type(class="form-control") }}
+                        {% if form.order_type.errors %}
+                        <div class="text-danger">
+                            {% for error in form.order_type.errors %}
+                            <small>{{ error }}</small>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">出境模式</label>
+                        {{ form.export_mode(class="form-control") }}
+                        {% if form.export_mode.errors %}
+                        <div class="text-danger">
+                            {% for error in form.export_mode.errors %}
+                            <small>{{ error }}</small>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">报关行</label>
+                        {{ form.customs_broker(class="form-control") }}
+                        {% if form.customs_broker.errors %}
+                        <div class="text-danger">
+                            {% for error in form.customs_broker.errors %}
+                            <small>{{ error }}</small>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">库位</label>
+                        {{ form.location(class="form-control") }}
+                        {% if form.location.errors %}
+                        <div class="text-danger">
+                            {% for error in form.location.errors %}
+                            <small>{{ error }}</small>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                        <div class="validation-note">如：A区-01-01</div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">单据</label>
+                        {{ form.documents(class="form-control") }}
+                        {% if form.documents.errors %}
+                        <div class="text-danger">
+                            {% for error in form.documents.errors %}
+                            <small>{{ error }}</small>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label required-label">跟单客服</label>
+                        {{ form.service_staff(class="form-control") }}
+                        {% if form.service_staff.errors %}
+                        <div class="text-danger">
+                            {% for error in form.service_staff.errors %}
+                            <small>{{ error }}</small>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            
+            <hr class="my-4">
+            
+            <div class="d-flex justify-content-center">
+                <a href="{{ url_for('main.inbound_list') }}" class="btn btn-secondary me-2">
+                    <i class="fas fa-times"></i> 取消
+                </a>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save"></i> 保存
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %} 

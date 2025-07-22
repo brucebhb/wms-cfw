@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>后端仓出库单</title>
+    <style>
+        @page {
+            size: A4;
+            margin: 15mm;
+        }
+
+        @media print {
+            body {
+                margin: 0;
+                font-size: 11px;
+            }
+            .no-print { display: none; }
+            .page-break { page-break-before: always; }
+            .header h1 { font-size: 20px; }
+            .cargo-table { font-size: 10px; }
+        }
+
+        body {
+            font-family: "Microsoft YaHei", Arial, sans-serif;
+            font-size: 12px;
+            margin: 15px;
+            line-height: 1.3;
+            color: #333;
+        }
+
+        .container {
+            max-width: 210mm;
+            margin: 0 auto;
+            border: 2px solid #000;
+            padding: 15px;
+            background-color: #fff;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 15px;
+            position: relative;
+        }
+
+        .logo {
+            position: absolute;
+            left: 0;
+            top: 0;
+            height: 35px;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 22px;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+
+        .info-section {
+            margin-bottom: 15px;
+        }
+
+        .info-table {
+            width: 100%;
+            border-collapse: collapse;
+            border: 1.5px solid #000;
+            margin-bottom: 15px;
+        }
+
+        .info-table td {
+            border: 1px solid #000;
+            padding: 6px 8px;
+            text-align: center;
+            height: 28px;
+            vertical-align: middle;
+        }
+
+        .info-table .label {
+            background-color: #f5f5f5;
+            font-weight: bold;
+            width: 12%;
+            font-size: 11px;
+        }
+
+        .info-table .value {
+            text-align: left;
+            padding-left: 10px;
+        }
+
+        .cargo-section {
+            margin-bottom: 15px;
+        }
+
+        .cargo-table {
+            width: 100%;
+            border-collapse: collapse;
+            border: 1.5px solid #000;
+            margin-bottom: 15px;
+        }
+
+        .cargo-table th,
+        .cargo-table td {
+            border: 1px solid #000;
+            padding: 4px 3px;
+            text-align: center;
+            vertical-align: middle;
+            font-size: 10px;
+        }
+
+        .cargo-table th {
+            background-color: #f5f5f5;
+            font-weight: bold;
+            height: 25px;
+            font-size: 11px;
+        }
+
+        .cargo-table .identification-code {
+            font-size: 9px;
+            line-height: 1.2;
+            word-break: break-all;
+            text-align: left;
+            padding: 3px;
+        }
+
+        .cargo-table .customer-name {
+            text-align: left;
+            padding-left: 5px;
+            font-size: 10px;
+        }
+
+        .cargo-table .remarks {
+            font-size: 9px;
+            text-align: left;
+            padding: 3px;
+            word-wrap: break-word;
+        }
+
+        .total-row {
+            background-color: #f8f9fa;
+            font-weight: bold;
+        }
+
+        .signature-section {
+            margin-top: 15px;
+        }
+
+        .signature-table {
+            width: 100%;
+            border-collapse: collapse;
+            border: 1.5px solid #000;
+        }
+
+        .signature-table td {
+            border: 1px solid #000;
+            padding: 8px;
+            height: 35px;
+            vertical-align: top;
+        }
+
+        .signature-table .label {
+            background-color: #f5f5f5;
+            font-weight: bold;
+            width: 16%;
+            text-align: center;
+            font-size: 11px;
+        }
+
+        .batch-info {
+            text-align: center;
+            margin-top: 10px;
+            font-size: 9px;
+            color: #666;
+        }
+
+        .btn {
+            padding: 8px 16px;
+            margin: 0 5px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .btn-primary {
+            background-color: #007bff;
+            color: white;
+        }
+
+        .btn-secondary {
+            background-color: #6c757d;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="no-print" style="text-align: center; margin-bottom: 20px;">
+        <button class="btn btn-primary" onclick="window.print()">
+            <i class="fas fa-print"></i> 打印
+        </button>
+        <button class="btn btn-secondary" onclick="closeWindow()">
+            <i class="fas fa-times"></i> 关闭
+        </button>
+    </div>
+
+    {% for batch in batch_groups %}
+    <div class="container {% if not loop.first %}page-break{% endif %}">
+        <!-- 头部 -->
+        <div class="header">
+            <img src="{{ url_for('static', filename='img/cfw_logo.png') }}" alt="CFW车夫网" class="logo">
+            <h1>后端仓出库单</h1>
+        </div>
+
+        <!-- 基本信息 -->
+        <div class="info-section">
+            <table class="info-table">
+                <tr>
+                    <td class="label">出库单号</td>
+                    <td class="value" style="width: 18%;">{{ batch.batch_no }}</td>
+                    <td class="label">出库时间</td>
+                    <td class="value" style="width: 15%;">{{ batch.outbound_time.strftime('%Y-%m-%d') if batch.outbound_time else '' }}</td>
+                    <td class="label">打印时间</td>
+                    <td class="value" style="width: 15%;">{{ now.strftime('%m-%d %H:%M') }}</td>
+                    <td class="label">始发仓</td>
+                    <td class="value">{{ batch.operated_warehouse.warehouse_name if batch.operated_warehouse else '后端仓' }}</td>
+                </tr>
+                <tr>
+                    <td class="label">车牌号</td>
+                    <td class="value">{{ batch.plate_number or '' }}</td>
+                    <td class="label">司机姓名</td>
+                    <td class="value">{{ batch.driver_name or '' }}</td>
+                    <td class="label">联系方式</td>
+                    <td class="value">{{ batch.driver_phone or '' }}</td>
+                    <td class="label">目的地</td>
+                    <td class="value">{{ batch.destination or '' }}</td>
+                </tr>
+            </table>
+        </div>
+
+        <!-- 货物明细 -->
+        <div class="cargo-section">
+            <table class="cargo-table">
+                <thead>
+                    <tr>
+                        <th style="width: 4%;">序号</th>
+                        <th style="width: 18%;">客户名称</th>
+                        <th style="width: 28%;">识别编码</th>
+                        <th style="width: 7%;">板数</th>
+                        <th style="width: 7%;">件数</th>
+                        <th style="width: 9%;">重量(kg)</th>
+                        <th style="width: 9%;">体积(m³)</th>
+                        <th style="width: 7%;">单据</th>
+                        <th style="width: 11%;">备注</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for record in batch.records %}
+                    <tr>
+                        <td>{{ loop.index }}</td>
+                        <td class="customer-name">{{ record.customer_name or '' }}</td>
+                        <td class="identification-code">{{ record.identification_code or '' }}</td>
+                        <td>{{ record.pallet_count or '' }}</td>
+                        <td>{{ record.package_count or '' }}</td>
+                        <td>{{ record.weight or '' }}</td>
+                        <td>{{ record.volume or '' }}</td>
+                        <td>{{ record.documents or '' }}</td>
+                        <td class="remarks">
+                            {% if record.remarks %}
+                                {% set clean_remarks = record.remarks.replace('后端仓返回前端仓 - ', '').replace('后端仓返回前端仓', '').strip() %}
+                                {{ clean_remarks if clean_remarks else '' }}
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+
+                    <!-- 合计行 -->
+                    <tr class="total-row">
+                        <td>合计</td>
+                        <td>{{ batch.records|length }} 票</td>
+                        <td>-</td>
+                        <td>{{ batch.total_pallet_count or 0 }}</td>
+                        <td>{{ batch.total_package_count or 0 }}</td>
+                        <td>{{ "%.1f"|format(batch.total_weight or 0) }}</td>
+                        <td>{{ "%.2f"|format(batch.total_volume or 0) }}</td>
+                        <td>-</td>
+                        <td>-</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- 签名区域 -->
+        <div class="signature-section">
+            <table class="signature-table">
+                <tr>
+                    <td class="label">司机签字</td>
+                    <td style="width: 26%;"></td>
+                    <td class="label">发货人签字</td>
+                    <td style="width: 26%;"></td>
+                    <td class="label">收货人签字</td>
+                    <td style="width: 26%;"></td>
+                </tr>
+                <tr>
+                    <td class="label">查验时间</td>
+                    <td></td>
+                    <td class="label">数行时间</td>
+                    <td></td>
+                    <td class="label">签字人员</td>
+                    <td></td>
+                </tr>
+            </table>
+        </div>
+
+        <div class="batch-info">
+            批次号: {{ batch.batch_no }} | 打印时间: {{ now.strftime('%Y-%m-%d %H:%M:%S') }}
+        </div>
+    </div>
+    {% endfor %}
+
+    <script>
+        function closeWindow() {
+            try {
+                window.close();
+                setTimeout(function() {
+                    if (window.history.length > 1) {
+                        window.history.back();
+                    } else {
+                        window.location.href = '/backend/outbound_print';
+                    }
+                }, 100);
+            } catch (e) {
+                window.location.href = '/backend/outbound_print';
+            }
+        }
+    </script>
+</body>
+</html>

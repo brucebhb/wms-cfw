@@ -1,0 +1,2597 @@
+{% extends "base.html" %}
+
+{% block title %}后端仓入库操作{% endblock %}
+
+{% block head %}
+<style>
+/* 确保表头显示 - 最高优先级 */
+#pendingReceiveTable thead {
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 1000 !important;
+    background-color: #212529 !important;
+    background: #212529 !important;
+}
+
+#pendingReceiveTable thead th {
+    background-color: #212529 !important;
+    background: #212529 !important;
+    color: white !important;
+    border-bottom: 2px solid #dee2e6 !important;
+    font-weight: 600 !important;
+    white-space: nowrap !important;
+    padding: 12px 8px !important;
+    vertical-align: middle !important;
+}
+
+/* 强制覆盖任何可能的样式冲突 - 超高优先级 */
+body #pendingReceiveTable thead th,
+html body #pendingReceiveTable thead th,
+.container-fluid #pendingReceiveTable thead th,
+.table-dark th,
+.table thead.table-dark th,
+#pendingReceiveTable thead.table-dark th,
+#pendingReceiveTable.table thead th {
+    background-color: #212529 !important;
+    background: #212529 !important;
+    color: white !important;
+    border-color: #32383e !important;
+}
+
+/* 确保表头行也有正确的背景 - 超高优先级 */
+body #pendingReceiveTable thead tr,
+html body #pendingReceiveTable thead tr,
+#pendingReceiveTable thead tr {
+    background-color: #212529 !important;
+    background: #212529 !important;
+}
+
+/* 覆盖Bootstrap默认样式 */
+.table > :not(caption) > * > * {
+    background-color: inherit !important;
+}
+
+#pendingReceiveTable thead > tr > th {
+    background-color: #212529 !important;
+    background: #212529 !important;
+    color: white !important;
+}
+
+/* 终极覆盖 - 使用最高优先级 */
+#pendingReceiveTable thead th[style],
+#pendingReceiveTable thead th:not([style]) {
+    background-color: #212529 !important;
+    background: #212529 !important;
+    color: white !important;
+}
+
+/* 覆盖任何动态添加的样式 */
+[id="pendingReceiveTable"] thead th {
+    background-color: #212529 !important;
+    background: #212529 !important;
+    color: white !important;
+}
+
+/* 覆盖Bootstrap变量 */
+#pendingReceiveTable {
+    --bs-table-bg: #212529 !important;
+    --bs-table-color: white !important;
+}
+
+/* 强制覆盖所有可能的表头样式 */
+.table thead th,
+.table > thead > tr > th,
+.table-striped > thead > tr > th,
+.table-hover > thead > tr > th {
+    background-color: #212529 !important;
+    background: #212529 !important;
+    color: white !important;
+}
+
+/* 批次货物明细表格表头样式 - 使用浅色背景 */
+body #batchReceiveModal .table thead th,
+html body #batchReceiveModal .table thead th,
+#batchReceiveModal .table thead th {
+    background-color: #f8f9fa !important;
+    background: #f8f9fa !important;
+    color: #212529 !important;
+    border-bottom: 2px solid #dee2e6 !important;
+    font-weight: 600 !important;
+    white-space: nowrap !important;
+    padding: 12px 8px !important;
+    vertical-align: middle !important;
+}
+
+body #batchReceiveModal .table thead tr,
+html body #batchReceiveModal .table thead tr,
+#batchReceiveModal .table thead tr {
+    background-color: #f8f9fa !important;
+    background: #f8f9fa !important;
+}
+
+body #batchReceiveModal .table-dark th,
+html body #batchReceiveModal .table-dark th,
+body #batchReceiveModal .table thead.table-dark th,
+html body #batchReceiveModal .table thead.table-dark th,
+#batchReceiveModal .table-dark th,
+#batchReceiveModal .table thead.table-dark th {
+    background-color: #f8f9fa !important;
+    background: #f8f9fa !important;
+    color: #212529 !important;
+    border-color: #dee2e6 !important;
+}
+
+#pendingReceiveTable tbody td {
+    padding: 8px;
+    vertical-align: middle;
+    white-space: nowrap;
+    height: 45px; /* 固定行高 */
+    line-height: 1.2;
+}
+
+/* 稳定hover效果，避免布局跳动 */
+#pendingReceiveTable tbody tr {
+    height: 45px; /* 固定行高 */
+    transition: none; /* 移除过渡效果 */
+}
+
+#pendingReceiveTable tbody tr:hover {
+    background-color: rgba(0, 123, 255, 0.1) !important;
+    transform: none; /* 确保不会有变形 */
+}
+
+/* 文本截断样式，避免tooltip导致的布局变化 */
+.text-truncate-stable {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 100%;
+    display: inline-block;
+}
+
+/* 确保按钮不会导致行高变化 */
+#pendingReceiveTable .btn-sm {
+    padding: 2px 6px;
+    font-size: 10px;
+    line-height: 1.2;
+    height: 24px;
+}
+
+/* 表格容器样式 */
+.table-responsive {
+    max-height: 70vh;
+    overflow-y: auto;
+    border: 1px solid #dee2e6;
+    border-radius: 0.375rem;
+}
+
+/* 确保表格宽度 */
+#pendingReceiveTable {
+    min-width: 1800px;
+    margin-bottom: 0;
+    font-size: 11px;
+}
+
+/* 列宽设置 - 根据字段内容长度合理分配 */
+#pendingReceiveTable th:nth-child(1) { width: 45px; }   /* 选择框 - 最小 */
+#pendingReceiveTable th:nth-child(2) { width: 120px; }  /* 发货时间 - 中等 */
+#pendingReceiveTable th:nth-child(3) { width: 140px; }  /* 批次号 - 中等 */
+#pendingReceiveTable th:nth-child(4) { width: 70px; }   /* 货物数量 - 较小 */
+#pendingReceiveTable th:nth-child(5) { width: 200px; }  /* 客户名称 - 最宽（字数多） */
+#pendingReceiveTable th:nth-child(6) { width: 100px; }  /* 入库车牌 - 中小 */
+#pendingReceiveTable th:nth-child(7) { width: 110px; }  /* 送货干线车 - 中小 */
+#pendingReceiveTable th:nth-child(8) { width: 70px; }   /* 总板数 - 较小 */
+#pendingReceiveTable th:nth-child(9) { width: 70px; }   /* 总件数 - 较小 */
+#pendingReceiveTable th:nth-child(10) { width: 90px; }  /* 总重量 - 中小 */
+#pendingReceiveTable th:nth-child(11) { width: 90px; }  /* 总体积 - 中小 */
+#pendingReceiveTable th:nth-child(12) { width: 100px; } /* 发货仓库 - 中小 */
+#pendingReceiveTable th:nth-child(13) { width: 120px; } /* 操作 - 中等 */
+
+/* 表格字体大小调整 - 更紧凑的设计，使用!important确保优先级 */
+.table-sm {
+    font-size: 11px !important;
+}
+
+.table-sm th {
+    font-size: 10px !important;
+    font-weight: 600 !important;
+    padding: 4px 3px !important;
+    line-height: 1.2 !important;
+}
+
+.table-sm td {
+    font-size: 11px !important;
+    padding: 3px 3px !important;
+    line-height: 1.1 !important;
+}
+
+/* 数字字段使用稍大字体但仍保持紧凑 */
+.table-sm td:nth-child(8),  /* 总板数 */
+.table-sm td:nth-child(9),  /* 总件数 */
+.table-sm td:nth-child(10), /* 总重量 */
+.table-sm td:nth-child(11), /* 总体积 */
+.table-sm td:nth-child(13), /* 实收板数 */
+.table-sm td:nth-child(14), /* 实收件数 */
+.table-sm td:nth-child(15), /* 重量 */
+.table-sm td:nth-child(16)  /* 体积 */ {
+    font-size: 12px !important;
+    font-weight: 500 !important;
+}
+
+/* 针对待接收批次表格的特定样式 */
+#pendingReceiveTable th {
+    font-size: 10px !important;
+    padding: 4px 3px !important;
+    line-height: 1.2 !important;
+}
+
+#pendingReceiveTable td {
+    font-size: 11px !important;
+    padding: 3px 3px !important;
+    line-height: 1.1 !important;
+}
+
+/* 针对明细表格的特定样式 */
+.table-responsive .table th {
+    font-size: 10px !important;
+    padding: 4px 3px !important;
+    line-height: 1.2 !important;
+}
+
+/* 隐藏数字输入框的上下箭头 */
+input[type=number].actual-pallet::-webkit-outer-spin-button,
+input[type=number].actual-pallet::-webkit-inner-spin-button,
+input[type=number].actual-package::-webkit-outer-spin-button,
+input[type=number].actual-package::-webkit-inner-spin-button {
+    -webkit-appearance: none !important;
+    margin: 0 !important;
+}
+
+/* Firefox浏览器隐藏数字输入框的上下箭头 */
+input[type=number].actual-pallet,
+input[type=number].actual-package {
+    -moz-appearance: textfield !important;
+}
+
+/* 通用规则：隐藏所有模态框中数字输入框的箭头 */
+#batchReceiveModal input[type=number]::-webkit-outer-spin-button,
+#batchReceiveModal input[type=number]::-webkit-inner-spin-button {
+    -webkit-appearance: none !important;
+    margin: 0 !important;
+}
+
+#batchReceiveModal input[type=number] {
+    -moz-appearance: textfield !important;
+}
+
+/* 最强优先级：直接针对具体类名 */
+.form-control.form-control-sm.actual-pallet::-webkit-outer-spin-button,
+.form-control.form-control-sm.actual-pallet::-webkit-inner-spin-button,
+.form-control.form-control-sm.actual-package::-webkit-outer-spin-button,
+.form-control.form-control-sm.actual-package::-webkit-inner-spin-button {
+    -webkit-appearance: none !important;
+    margin: 0 !important;
+    display: none !important;
+}
+
+.form-control.form-control-sm.actual-pallet,
+.form-control.form-control-sm.actual-package {
+    -moz-appearance: textfield !important;
+}
+
+.table-responsive .table td {
+    font-size: 11px !important;
+    padding: 3px 3px !important;
+    line-height: 1.1 !important;
+}
+
+/* 批次接收明细表格列宽强制设置 */
+.table th[style*="width: 97px"] {
+    width: 97px !important;
+    min-width: 97px !important;
+    max-width: 97px !important;
+}
+
+.table th[style*="width: 131px"] {
+    width: 131px !important;
+    min-width: 131px !important;
+    max-width: 131px !important;
+}
+
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- 页面标题 -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-danger">
+                <div class="card-header bg-danger text-white">
+                    <h3 class="card-title mb-0">
+                        <i class="fas fa-warehouse me-2"></i>后端仓批次接收操作
+                        <span class="badge bg-light text-danger ms-2">凭祥北投仓</span>
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <p class="card-text mb-0">
+                        <i class="fas fa-info-circle me-1"></i>
+                        凭祥北投仓货物接收和新增入库操作
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 操作按钮栏 -->
+    <div class="row mb-3">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body py-2">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="btn-group" role="group">
+                            <button type="button" class="btn btn-success" id="receiveSelectedBtn" disabled>
+                                <i class="fas fa-check me-1"></i>接收选中
+                            </button>
+                            <button type="button" class="btn btn-primary" id="addNewBtn">
+                                <i class="fas fa-plus me-1"></i>新增入库
+                            </button>
+                            <button type="button" class="btn btn-warning" id="batchImportBtn">
+                                <i class="fas fa-upload me-1"></i>批量导入
+                            </button>
+                            <button type="button" class="btn btn-info" id="refreshBtn">
+                                <i class="fas fa-sync me-1"></i>刷新数据
+                            </button>
+                        </div>
+                        <div class="text-muted">
+                            <small><i class="fas fa-info-circle me-1"></i>选择前端仓发来的货物进行接收，或新增直接入库</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+
+
+
+    <!-- 快速统计 -->
+    <div class="row mt-4">
+        <div class="col-md-3">
+            <div class="card text-white bg-danger">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h6 class="card-title">今日接收</h6>
+                            <h4 class="mb-0">--</h4>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-truck-loading fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-warning">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h6 class="card-title">待平移</h6>
+                            <h4 class="mb-0">--</h4>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-exchange-alt fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-info">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h6 class="card-title">待出库</h6>
+                            <h4 class="mb-0">--</h4>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-truck fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-secondary">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h6 class="card-title">库存总量</h6>
+                            <h4 class="mb-0">--</h4>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-boxes fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 待接收货物列表 -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-light">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-list me-2"></i>前端仓发货批次列表（待接收）
+                        <span class="badge bg-secondary ms-2" id="dataCount">0</span>
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped table-sm" id="pendingReceiveTable" style="font-size: 10px !important;">
+                            <thead class="table-dark" style="position: sticky; top: 0; z-index: 10; background-color: #212529 !important; background: #212529 !important;">
+                                <tr style="background-color: #212529 !important; background: #212529 !important;">
+                                    <th scope="col" style="width: 45px; background-color: #212529 !important; background: #212529 !important; color: white !important;" class="text-center">
+                                        <input type="checkbox" id="selectAll" class="form-check-input">
+                                    </th>
+                                    <th scope="col" style="width: 120px; background-color: #212529 !important; background: #212529 !important; color: white !important;" class="text-left">发货时间</th>
+                                    <th scope="col" style="width: 140px; background-color: #212529 !important; background: #212529 !important; color: white !important;" class="text-left">批次号</th>
+                                    <th scope="col" style="width: 70px; background-color: #212529 !important; background: #212529 !important; color: white !important;" class="text-left">货物数量</th>
+                                    <th scope="col" style="width: 200px; background-color: #212529 !important; background: #212529 !important; color: white !important;" class="text-left">客户名称</th>
+                                    <th scope="col" style="width: 100px; background-color: #212529 !important; background: #212529 !important; color: white !important;" class="text-left">入库车牌</th>
+                                    <th scope="col" style="width: 110px; background-color: #212529 !important; background: #212529 !important; color: white !important;" class="text-left">送货干线车</th>
+                                    <th scope="col" style="width: 70px; background-color: #212529 !important; background: #212529 !important; color: white !important;" class="text-left">总板数</th>
+                                    <th scope="col" style="width: 70px; background-color: #212529 !important; background: #212529 !important; color: white !important;" class="text-left">总件数</th>
+                                    <th scope="col" style="width: 90px; background-color: #212529 !important; background: #212529 !important; color: white !important;" class="text-left">总重量(kg)</th>
+                                    <th scope="col" style="width: 90px; background-color: #212529 !important; background: #212529 !important; color: white !important;" class="text-left">总体积(m³)</th>
+                                    <th scope="col" style="width: 100px; background-color: #212529 !important; background: #212529 !important; color: white !important;" class="text-left">发货仓库</th>
+                                    <th scope="col" style="width: 120px; background-color: #212529 !important; background: #212529 !important; color: white !important;" class="text-left">操作</th>
+                                </tr>
+                            </thead>
+                            <tbody id="pendingReceiveTableBody">
+                                <tr>
+                                    <td colspan="13" class="text-center text-muted py-4">
+                                        <i class="fas fa-spinner fa-spin me-2"></i>正在加载数据...
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 批次接收弹窗 -->
+<div class="modal fade" id="batchReceiveModal" tabindex="-1">
+    <div class="modal-dialog modal-fullscreen">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-boxes me-2"></i>批次接收 - <span id="modalBatchNumber"></span>
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>
+                    请核对每个货物的实际接收数量，如有差异请修改相应字段并在备注中说明原因。
+                </div>
+
+                <div class="mb-3">
+                    <label for="receiveTime" class="form-label">接收时间</label>
+                    <input type="datetime-local" class="form-control" id="receiveTime" required>
+                </div>
+
+                <div class="mb-3">
+                    <button type="button" class="btn btn-success" onclick="batchFullReceive()">
+                        <i class="fas fa-check-double me-2"></i>批量全收
+                    </button>
+                    <small class="text-muted ms-2">点击后将所有货物的实收数量设置为送货数量</small>
+                </div>
+
+                <div class="table-responsive" style="max-height: 70vh; overflow-y: auto;">
+                    <table class="table table-striped table-sm" style="min-width: 1850px; font-size: 10px !important;">
+                        <thead class="table-light" style="position: sticky; top: 0; z-index: 10; background-color: #f8f9fa !important; background: #f8f9fa !important;">
+                            <tr style="background-color: #f8f9fa !important; background: #f8f9fa !important;">
+                                <th scope="col" style="width: 50px; background-color: #f8f9fa !important; background: #f8f9fa !important; color: #212529 !important;" class="text-left">序号</th>
+                                <th scope="col" style="width: 100px; background-color: #f8f9fa !important; background: #f8f9fa !important; color: #212529 !important;" class="text-left">发货时间</th>
+                                <th scope="col" style="width: 85px; background-color: #f8f9fa !important; background: #f8f9fa !important; color: #212529 !important;" class="text-left">送货干线车</th>
+                                <th scope="col" style="width: 85px; background-color: #f8f9fa !important; background: #f8f9fa !important; color: #212529 !important;" class="text-left">入库车牌</th>
+                                <th scope="col" style="width: 150px; background-color: #f8f9fa !important; background: #f8f9fa !important; color: #212529 !important;" class="text-left">客户名称</th>
+                                <th scope="col" style="width: 180px; background-color: #f8f9fa !important; background: #f8f9fa !important; color: #212529 !important;" class="text-left">识别编码</th>
+                                <th scope="col" style="width: 70px; background-color: #f8f9fa !important; background: #f8f9fa !important; color: #212529 !important;" class="text-left">订单类型</th>
+                                <th scope="col" style="width: 70px; background-color: #f8f9fa !important; background: #f8f9fa !important; color: #212529 !important;" class="text-left">出境模式</th>
+                                <th scope="col" style="width: 80px; background-color: #f8f9fa !important; background: #f8f9fa !important; color: #212529 !important;" class="text-left">报关行</th>
+                                <th scope="col" style="width: 65px; background-color: #f8f9fa !important; background: #f8f9fa !important; color: #212529 !important;" class="text-left">送货板数</th>
+                                <th scope="col" style="width: 65px; background-color: #f8f9fa !important; background: #f8f9fa !important; color: #212529 !important;" class="text-left">送货件数</th>
+                                <th scope="col" style="width: 80px; background-color: #f8f9fa !important; background: #f8f9fa !important; color: #212529 !important;" class="text-left">全收操作</th>
+                                <th scope="col" style="width: 65px; background-color: #f8f9fa !important; background: #f8f9fa !important; color: #212529 !important;" class="text-left">实收板数*</th>
+                                <th scope="col" style="width: 65px; background-color: #f8f9fa !important; background: #f8f9fa !important; color: #212529 !important;" class="text-left">实收件数*</th>
+                                <th scope="col" style="width: 75px; background-color: #f8f9fa !important; background: #f8f9fa !important; color: #212529 !important;" class="text-left">重量(kg)</th>
+                                <th scope="col" style="width: 75px; background-color: #f8f9fa !important; background: #f8f9fa !important; color: #212529 !important;" class="text-left">体积(m³)</th>
+                                <th scope="col" style="width: 65px; background-color: #f8f9fa !important; background: #f8f9fa !important; color: #212529 !important;" class="text-left">单据份数</th>
+                                <th scope="col" style="width: 80px; background-color: #f8f9fa !important; background: #f8f9fa !important; color: #212529 !important;" class="text-left">跟单客服</th>
+                                <th scope="col" style="width: 90px; background-color: #f8f9fa !important; background: #f8f9fa !important; color: #212529 !important;" class="text-left">备注1</th>
+                                <th scope="col" style="width: 120px; background-color: #f8f9fa !important; background: #f8f9fa !important; color: #212529 !important;" class="text-left">备注2</th>
+                                <th scope="col" style="width: 90px; background-color: #f8f9fa !important; background: #f8f9fa !important; color: #212529 !important;" class="text-left">差异状态</th>
+                                <th scope="col" style="width: 70px; background-color: #f8f9fa !important; background: #f8f9fa !important; color: #212529 !important;" class="text-left">库位</th>
+                            </tr>
+                        </thead>
+                        <tbody id="batchReceiveTableBody">
+                            <!-- 批次货物明细数据 -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-success" id="confirmBatchReceiveBtn">
+                    <i class="fas fa-check me-1"></i>确认接收整个批次
+                </button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-1"></i>取消
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 新增入库弹窗 -->
+<div class="modal fade" id="addInboundModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-plus me-2"></i>新增入库
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <!-- 入库表单 -->
+                <form id="inboundForm">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="inbound_time" class="form-label">入库时间 <span class="text-danger">*</span></label>
+                                <input type="datetime-local" class="form-control" id="inbound_time" name="inbound_time" required>
+                            </div>
+                        </div>
+
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="inbound_plate" class="form-label">入库车牌 <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="inbound_plate" name="inbound_plate" placeholder="如：粤B12345" required>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="customer_name" class="form-label">客户名称 <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="customer_name" name="customer_name" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="order_type" class="form-label">订单类型 <span class="text-danger">*</span></label>
+                                <select class="form-select" id="order_type" name="order_type" required>
+                                    <option value="">请选择订单类型</option>
+                                    <option value="原车出境">原车出境</option>
+                                    <option value="换车出境">换车出境</option>
+                                    <option value="零担">零担</option>
+                                    <option value="TP订单">TP订单</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="board_count" class="form-label">板数 <span class="text-danger">*</span></label>
+                                <input type="number" class="form-control" id="board_count" name="board_count" min="0" step="1">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="piece_count" class="form-label">件数 <span class="text-danger">*</span></label>
+                                <input type="number" class="form-control" id="piece_count" name="piece_count" min="0">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="weight" class="form-label">重量(kg)</label>
+                                <input type="number" class="form-control" id="weight" name="weight" min="0" step="0.01">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="volume" class="form-label">体积(m³)</label>
+                                <input type="number" class="form-control" id="volume" name="volume" min="0" step="0.01">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="export_mode" class="form-label">出境模式 <span class="text-danger">*</span></label>
+                                <select class="form-select" id="export_mode" name="export_mode" required>
+                                    <option value="">请选择出境模式</option>
+                                    <option value="保税">保税</option>
+                                    <option value="清关">清关</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="customs_broker" class="form-label">报关行</label>
+                                <input type="text" class="form-control" id="customs_broker" name="customs_broker">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="storage_location" class="form-label">库位</label>
+                                <input type="text" class="form-control" id="storage_location" name="storage_location">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="document_type" class="form-label">单据</label>
+                                <input type="text" class="form-control" id="document_type" name="document_type">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="customer_service" class="form-label">跟单客服 <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="customer_service" name="customer_service" required>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" id="saveInboundBtn">
+                    <i class="fas fa-save me-1"></i>保存入库
+                </button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-1"></i>取消
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 批量导入弹窗 -->
+<div class="modal fade" id="batchImportModal" tabindex="-1">
+    <div class="modal-dialog modal-fullscreen">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-upload me-2"></i>后端仓批量入库导入
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <!-- 使用说明 -->
+                <div class="row mb-3">
+                    <div class="col-12">
+                        <div class="alert alert-info">
+                            <h6><i class="fas fa-info-circle me-2"></i>批量导入说明</h6>
+                            <ul class="mb-0">
+                                <li>可以直接在下方表格中录入数据，或下载模板文件填写后导入</li>
+                                <li>必填字段：入库时间、入库车牌、客户名称、跟单客服</li>
+                                <li>板数和件数至少需要填写一项（不能都为空）</li>
+                                <li>数值字段（重量、体积）如果为空将默认为0</li>
+                                <li>点击"填充当前时间"可以快速设置所有行的入库时间</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 批量导入界面，复制前端仓的批量入库功能 -->
+                <div class="row">
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="card-title">
+                                    <i class="fas fa-plus-circle me-2"></i>批量入库录入
+                                </h5>
+                            </div>
+                            <div class="card-body">
+
+                                <!-- 批量录入表格 -->
+                                <div class="table-responsive" style="max-height: 60vh; overflow-y: auto;">
+                                    <table class="table table-bordered table-sm" id="batchInboundTable">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th width="150">入库时间 <span class="text-danger">*</span></th>
+                                                <th width="120">入库车牌 <span class="text-danger">*</span></th>
+                                                <th width="120">客户名称 <span class="text-danger">*</span></th>
+                                                <th width="80">板数 <span class="text-danger">*</span></th>
+                                                <th width="80">件数 <span class="text-danger">*</span></th>
+                                                <th width="100">重量(kg)</th>
+                                                <th width="100">体积(m³)</th>
+                                                <th width="120">出境模式</th>
+                                                <th width="120">订单类型</th>
+                                                <th width="120">报关行</th>
+                                                <th width="100">库位</th>
+                                                <th width="100">单据</th>
+                                                <th width="120">跟单客服 <span class="text-danger">*</span></th>
+                                                <th width="80">操作</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="batchInboundTableBody">
+                                            <!-- 动态生成的行 -->
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                                <!-- 操作按钮 -->
+                                <div class="row mt-3">
+                                    <div class="col-12">
+                                        <button type="button" class="btn btn-success me-2" id="addRowBtn">
+                                            <i class="fas fa-plus me-1"></i>添加行
+                                        </button>
+                                        <button type="button" class="btn btn-info me-2" id="fillCurrentTimeBtn">
+                                            <i class="fas fa-clock me-1"></i>填充当前时间
+                                        </button>
+                                        <button type="button" class="btn btn-warning me-2" id="clearAllBtn">
+                                            <i class="fas fa-trash me-1"></i>清空所有
+                                        </button>
+                                        <button type="button" class="btn btn-outline-primary me-2" id="downloadTemplateBtn">
+                                            <i class="fas fa-download me-1"></i>下载模板
+                                        </button>
+                                        <button type="button" class="btn btn-outline-info me-2" id="importExcelBtn">
+                                            <i class="fas fa-file-excel me-1"></i>Excel导入
+                                        </button>
+                                        <input type="file" id="fileUpload" accept=".xlsx,.xls" style="display: none;">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" id="saveBatchInboundBtn">
+                    <i class="fas fa-save me-1"></i>批量保存
+                </button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-1"></i>取消
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://unpkg.com/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script>
+$(document).ready(function() {
+    console.log('后端仓批次接收页面已加载');
+
+    // 加载待接收批次数据
+    loadPendingReceiveData();
+
+    // 检查XLSX库是否加载
+    setTimeout(function() {
+        if (typeof XLSX !== 'undefined') {
+            console.log('XLSX库加载成功，版本:', XLSX.version);
+            // 测试XLSX功能
+            try {
+                var testWB = XLSX.utils.book_new();
+                console.log('XLSX功能测试成功');
+            } catch (e) {
+                console.error('XLSX功能测试失败:', e);
+            }
+        } else {
+            console.error('XLSX库加载失败，请检查网络连接');
+            alert('Excel导入功能不可用，请刷新页面重试或检查网络连接');
+        }
+    }, 2000);
+
+    // 初始化页面
+    initializePage();
+
+    // 加载前端仓发货数据 (如果相关元素存在)
+    if (document.getElementById('shipmentTableBody')) {
+        loadFrontendShipmentData();
+    }
+
+    // 设置当前时间为默认入库时间
+    const now = new Date();
+    now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+    document.getElementById('inbound_time').value = now.toISOString().slice(0, 16);
+});
+
+// 初始化页面事件
+function initializePage() {
+    // 安全地绑定事件，检查元素是否存在
+
+    // 全选/取消全选 (如果存在)
+    const selectAllBtn = document.getElementById('selectAll');
+    if (selectAllBtn) {
+        selectAllBtn.addEventListener('change', function() {
+            const checkboxes = document.querySelectorAll('input[name="shipment_select"]');
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = this.checked;
+            });
+            updateReceiveButton();
+        });
+    }
+
+    // 接收选中按钮 (如果存在)
+    const receiveSelectedBtn = document.getElementById('receiveSelectedBtn');
+    if (receiveSelectedBtn) {
+        receiveSelectedBtn.addEventListener('click', function() {
+            const selectedItems = getSelectedShipments();
+            if (selectedItems.length === 0) {
+                alert('请先选择要接收的货物');
+                return;
+            }
+
+            if (selectedItems.length === 1) {
+                // 单个选择，显示货物明细
+                showCargoDetail(selectedItems[0]);
+            } else {
+                // 多个选择，批量接收
+                batchReceiveShipments(selectedItems);
+            }
+        });
+    }
+
+    // 新增入库按钮
+    const addNewBtn = document.getElementById('addNewBtn');
+    if (addNewBtn) {
+        addNewBtn.addEventListener('click', function() {
+            const modal = new bootstrap.Modal(document.getElementById('addInboundModal'));
+            modal.show();
+        });
+    }
+
+    // 批量导入按钮
+    const batchImportBtn = document.getElementById('batchImportBtn');
+    if (batchImportBtn) {
+        batchImportBtn.addEventListener('click', function() {
+            const modal = new bootstrap.Modal(document.getElementById('batchImportModal'));
+            modal.show();
+            // 初始化批量导入表格
+            initBatchImportTable();
+        });
+    }
+
+    // 刷新数据按钮 (如果存在)
+    const refreshBtn = document.getElementById('refreshBtn');
+    if (refreshBtn) {
+        refreshBtn.addEventListener('click', function() {
+            console.log('刷新待接收货物数据...');
+            loadPendingReceiveData();
+        });
+    }
+
+
+
+    // 保存入库按钮 (如果存在)
+    const saveInboundBtn = document.getElementById('saveInboundBtn');
+    if (saveInboundBtn) {
+        saveInboundBtn.addEventListener('click', function() {
+            saveNewInbound();
+        });
+    }
+
+    // 确认接收按钮 (如果存在)
+    const confirmReceiveBtn = document.getElementById('confirmReceiveBtn');
+    if (confirmReceiveBtn) {
+        confirmReceiveBtn.addEventListener('click', function() {
+            confirmReceiveShipment();
+        });
+    }
+}
+
+// 加载前端仓发货数据
+function loadFrontendShipmentData() {
+    const tableBody = document.getElementById('shipmentTableBody');
+    const dataCount = document.getElementById('dataCount');
+
+    // 检查元素是否存在
+    if (!tableBody) {
+        console.log('shipmentTableBody元素不存在，跳过数据加载');
+        return;
+    }
+
+    // 显示加载状态
+    tableBody.innerHTML = `
+        <tr>
+            <td colspan="11" class="text-center text-muted py-4">
+                <i class="fas fa-spinner fa-spin me-2"></i>正在加载数据...
+            </td>
+        </tr>
+    `;
+
+    // 模拟数据加载（实际应该从后端API获取）
+    setTimeout(() => {
+        const mockData = [
+            {
+                id: 'BATCH001',
+                batchNumber: 'PH20250102001',
+                sourceWarehouse: '平湖仓',
+                shipmentTime: '2025-01-02 14:30',
+                plateNumber: '粤B12345',
+                customerCount: 5,
+                totalBoards: 12.5,
+                totalPieces: 156,
+                totalWeight: 2580.5,
+                status: '在途'
+            },
+            {
+                id: 'BATCH002',
+                batchNumber: 'KS20250102002',
+                sourceWarehouse: '昆山仓',
+                shipmentTime: '2025-01-02 16:45',
+                plateNumber: '苏A67890',
+                customerCount: 3,
+                totalBoards: 8.0,
+                totalPieces: 89,
+                totalWeight: 1456.2,
+                status: '在途'
+            },
+            {
+                id: 'BATCH003',
+                batchNumber: 'CD20250102003',
+                sourceWarehouse: '成都仓',
+                shipmentTime: '2025-01-02 18:20',
+                plateNumber: '川A11111',
+                customerCount: 7,
+                totalBoards: 15.5,
+                totalPieces: 234,
+                totalWeight: 3245.8,
+                status: '在途'
+            }
+        ];
+
+        renderShipmentTable(mockData);
+        if (dataCount) {
+            dataCount.textContent = mockData.length;
+        }
+    }, 1000);
+}
+
+// 渲染发货数据表格
+function renderShipmentTable(data) {
+    const tableBody = document.getElementById('shipmentTableBody');
+
+    if (data.length === 0) {
+        tableBody.innerHTML = `
+            <tr>
+                <td colspan="11" class="text-center text-muted py-4">
+                    <i class="fas fa-inbox me-2"></i>暂无前端仓发货数据
+                </td>
+            </tr>
+        `;
+        return;
+    }
+
+    const rows = data.map(item => `
+        <tr>
+            <td>
+                <input type="checkbox" name="shipment_select" value="${item.id}"
+                       class="form-check-input" onchange="updateReceiveButton()">
+            </td>
+            <td><strong>${item.batchNumber}</strong></td>
+            <td><span class="badge bg-primary">${item.sourceWarehouse}</span></td>
+            <td>${item.shipmentTime}</td>
+            <td>${item.plateNumber}</td>
+            <td>${item.customerCount}</td>
+            <td>${item.totalBoards}</td>
+            <td>${item.totalPieces}</td>
+            <td>${item.totalWeight} kg</td>
+            <td><span class="badge bg-warning">${item.status}</span></td>
+            <td>
+                <button class="btn btn-sm btn-outline-info" onclick="showCargoDetail('${item.id}')">
+                    <i class="fas fa-eye"></i> 明细
+                </button>
+            </td>
+        </tr>
+    `).join('');
+
+    tableBody.innerHTML = rows;
+}
+
+// 更新接收按钮状态
+function updateReceiveButton() {
+    const selectedItems = getSelectedShipments();
+    const receiveBtn = document.getElementById('receiveSelectedBtn');
+
+    if (selectedItems.length > 0) {
+        receiveBtn.disabled = false;
+        receiveBtn.innerHTML = `<i class="fas fa-check me-1"></i>接收选中 (${selectedItems.length})`;
+    } else {
+        receiveBtn.disabled = true;
+        receiveBtn.innerHTML = '<i class="fas fa-check me-1"></i>接收选中';
+    }
+}
+
+// 获取选中的发货项
+function getSelectedShipments() {
+    const checkboxes = document.querySelectorAll('input[name="shipment_select"]:checked');
+    return Array.from(checkboxes).map(cb => cb.value);
+}
+
+// 显示货物明细
+function showCargoDetail(shipmentId) {
+    // 模拟获取货物明细数据
+    const mockCargoData = [
+        {
+            customerName: '客户A',
+            boards: 3.5,
+            pieces: 45,
+            weight: 756.2,
+            volume: 2.8,
+            exitMode: '陆运',
+            orderType: '一般贸易',
+            customsBroker: '报关行A',
+            location: 'A-01',
+            customerService: '张三'
+        },
+        {
+            customerName: '客户B',
+            boards: 2.0,
+            pieces: 28,
+            weight: 432.1,
+            volume: 1.5,
+            exitMode: '海运',
+            orderType: '跨境电商',
+            customsBroker: '报关行B',
+            location: 'A-02',
+            customerService: '李四'
+        },
+        {
+            customerName: '客户C',
+            boards: 7.0,
+            pieces: 83,
+            weight: 1392.2,
+            volume: 4.2,
+            exitMode: '陆运',
+            orderType: '个人物品',
+            customsBroker: '报关行A',
+            location: 'B-01',
+            customerService: '王五'
+        }
+    ];
+
+    // 填充货物明细表格
+    const cargoTableBody = document.getElementById('cargoDetailTableBody');
+    const rows = mockCargoData.map(item => `
+        <tr>
+            <td>${item.customerName}</td>
+            <td>${item.boards}</td>
+            <td>${item.pieces}</td>
+            <td>${item.weight}</td>
+            <td>${item.volume}</td>
+            <td>${item.exitMode}</td>
+            <td>${item.orderType}</td>
+            <td>${item.customsBroker}</td>
+            <td>${item.location}</td>
+            <td>${item.customerService}</td>
+        </tr>
+    `).join('');
+
+    cargoTableBody.innerHTML = rows;
+
+    // 设置批次号
+    document.getElementById('modalBatchNumber').textContent = `批次号: ${shipmentId}`;
+
+    // 显示模态框
+    const modal = new bootstrap.Modal(document.getElementById('cargoDetailModal'));
+    modal.show();
+}
+
+// 批量接收发货
+function batchReceiveShipments(shipmentIds) {
+    if (confirm(`确定要批量接收 ${shipmentIds.length} 个批次的货物吗？`)) {
+        // 这里应该调用后端API进行批量接收
+        console.log('批量接收:', shipmentIds);
+
+        // 模拟接收成功
+        setTimeout(() => {
+            alert('批量接收成功！');
+            loadFrontendShipmentData(); // 重新加载数据
+        }, 1000);
+    }
+}
+
+// 确认接收单个发货
+function confirmReceiveShipment() {
+    const batchNumber = document.getElementById('modalBatchNumber').textContent;
+
+    if (confirm(`确定要接收 ${batchNumber} 的货物吗？`)) {
+        // 这里应该调用后端API进行接收
+        console.log('接收货物:', batchNumber);
+
+        // 模拟接收成功
+        setTimeout(() => {
+            alert('接收成功！');
+
+            // 关闭模态框
+            const modal = bootstrap.Modal.getInstance(document.getElementById('cargoDetailModal'));
+            modal.hide();
+
+            // 重新加载数据
+            loadFrontendShipmentData();
+        }, 1000);
+    }
+}
+
+// 保存新增入库
+function saveNewInbound() {
+    const form = document.getElementById('inboundForm');
+    const formData = new FormData(form);
+
+    // 验证必填字段
+    const requiredFields = ['inbound_time', 'inbound_plate', 'customer_name', 'order_type', 'customer_service'];
+    let isValid = true;
+
+    requiredFields.forEach(field => {
+        const input = document.getElementById(field);
+        if (!input.value.trim()) {
+            input.classList.add('is-invalid');
+            isValid = false;
+        } else {
+            input.classList.remove('is-invalid');
+        }
+    });
+
+    // 验证板数和件数至少填写一项
+    const boardCount = document.getElementById('board_count').value;
+    const pieceCount = document.getElementById('piece_count').value;
+
+    if (!boardCount && !pieceCount) {
+        alert('板数和件数至少需要填写一项');
+        document.getElementById('board_count').classList.add('is-invalid');
+        document.getElementById('piece_count').classList.add('is-invalid');
+        isValid = false;
+    } else {
+        document.getElementById('board_count').classList.remove('is-invalid');
+        document.getElementById('piece_count').classList.remove('is-invalid');
+    }
+
+    if (!isValid) {
+        alert('请填写所有必填字段');
+        return;
+    }
+
+    // 这里应该调用后端API保存数据
+    console.log('保存入库数据:', Object.fromEntries(formData));
+
+    // 模拟保存成功
+    setTimeout(() => {
+        alert('入库数据保存成功！');
+
+        // 关闭模态框
+        const modal = bootstrap.Modal.getInstance(document.getElementById('addInboundModal'));
+        modal.hide();
+
+        // 重置表单
+        form.reset();
+
+        // 重新设置默认时间
+        const now = new Date();
+        now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+        document.getElementById('inbound_time').value = now.toISOString().slice(0, 16);
+    }, 1000);
+}
+
+// ==================== 批量导入相关函数 ====================
+
+// 初始化批量导入表格
+function initBatchImportTable() {
+    // 清空表格
+    const tbody = document.getElementById('batchInboundTableBody');
+    tbody.innerHTML = '';
+
+    // 添加5行默认数据
+    for (let i = 0; i < 5; i++) {
+        addBatchImportRow();
+    }
+
+    // 只在第一次初始化时绑定事件
+    bindBatchImportEvents();
+}
+
+// 添加批量导入行
+function addBatchImportRow() {
+    const tbody = document.getElementById('batchInboundTableBody');
+    const rowIndex = tbody.children.length;
+
+    const row = document.createElement('tr');
+    row.innerHTML = `
+        <td><input type="datetime-local" class="form-control form-control-sm" name="inbound_time_${rowIndex}" required></td>
+        <td><input type="text" class="form-control form-control-sm" name="plate_number_${rowIndex}" placeholder="入库车牌" required></td>
+        <td><input type="text" class="form-control form-control-sm" name="customer_name_${rowIndex}" placeholder="客户名称" required></td>
+        <td><input type="number" class="form-control form-control-sm" name="pallet_count_${rowIndex}" min="0" placeholder="板数"></td>
+        <td><input type="number" class="form-control form-control-sm" name="package_count_${rowIndex}" min="0" placeholder="件数"></td>
+        <td><input type="number" class="form-control form-control-sm" name="weight_${rowIndex}" min="0" step="0.01" placeholder="重量"></td>
+        <td><input type="number" class="form-control form-control-sm" name="volume_${rowIndex}" min="0" step="0.01" placeholder="体积"></td>
+        <td>
+            <select class="form-select form-select-sm" name="export_mode_${rowIndex}">
+                <option value="">请选择出境模式</option>
+                <option value="保税">保税</option>
+                <option value="清关">清关</option>
+            </select>
+        </td>
+        <td>
+            <select class="form-select form-select-sm" name="order_type_${rowIndex}">
+                <option value="">请选择订单类型</option>
+                <option value="原车出境">原车出境</option>
+                <option value="换车出境">换车出境</option>
+                <option value="零担">零担</option>
+                <option value="TP订单">TP订单</option>
+            </select>
+        </td>
+        <td><input type="text" class="form-control form-control-sm" name="customs_broker_${rowIndex}" placeholder="报关行"></td>
+        <td><input type="text" class="form-control form-control-sm" name="location_${rowIndex}" placeholder="库位"></td>
+        <td><input type="text" class="form-control form-control-sm" name="documents_${rowIndex}" placeholder="单据"></td>
+        <td><input type="text" class="form-control form-control-sm" name="service_staff_${rowIndex}" placeholder="跟单客服" required></td>
+        <td>
+            <button type="button" class="btn btn-sm btn-danger" onclick="removeBatchImportRow(this)">
+                <i class="fas fa-trash"></i>
+            </button>
+        </td>
+    `;
+
+    tbody.appendChild(row);
+}
+
+// 删除批量导入行
+function removeBatchImportRow(button) {
+    const row = button.closest('tr');
+    row.remove();
+}
+
+// 绑定批量导入事件
+function bindBatchImportEvents() {
+    // 防止重复绑定事件
+    if (window.batchImportEventsInitialized) {
+        return;
+    }
+    window.batchImportEventsInitialized = true;
+
+    console.log('初始化批量导入事件监听器');
+
+    // 添加行按钮
+    const addRowBtn = document.getElementById('addRowBtn');
+    if (addRowBtn) {
+        addRowBtn.addEventListener('click', function() {
+            addBatchImportRow();
+        });
+    }
+
+    // 填充当前时间按钮
+    const fillCurrentTimeBtn = document.getElementById('fillCurrentTimeBtn');
+    if (fillCurrentTimeBtn) {
+        fillCurrentTimeBtn.addEventListener('click', function() {
+            const now = new Date();
+            now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+            const timeString = now.toISOString().slice(0, 16);
+
+            const timeInputs = document.querySelectorAll('#batchInboundTableBody input[type="datetime-local"]');
+            timeInputs.forEach(input => {
+                input.value = timeString;
+            });
+        });
+    }
+
+    // 清空所有按钮
+    const clearAllBtn = document.getElementById('clearAllBtn');
+    if (clearAllBtn) {
+        clearAllBtn.addEventListener('click', function() {
+            if (confirm('确定要清空所有数据吗？')) {
+                console.log('清空所有数据');
+                initBatchImportTable();
+                // 同时清空文件输入
+                const fileUpload = document.getElementById('fileUpload');
+                if (fileUpload) {
+                    fileUpload.value = '';
+                    console.log('已清空文件输入');
+                }
+            }
+        });
+    }
+
+    // 批量保存按钮
+    const saveBatchInboundBtn = document.getElementById('saveBatchInboundBtn');
+    if (saveBatchInboundBtn) {
+        saveBatchInboundBtn.addEventListener('click', function() {
+            saveBatchInbound();
+        });
+    }
+
+    // 文件导入按钮
+    const importFileBtn = document.getElementById('importFileBtn');
+    if (importFileBtn) {
+        importFileBtn.addEventListener('click', function() {
+            const fileInput = document.getElementById('templateFileInput');
+            const file = fileInput.files[0];
+
+            if (!file) {
+                alert('请先选择要导入的文件');
+                return;
+            }
+
+            importTemplateFile(file);
+        });
+    }
+
+    // Excel导入按钮
+    const importExcelBtn = document.getElementById('importExcelBtn');
+    if (importExcelBtn) {
+        importExcelBtn.addEventListener('click', function() {
+            console.log('Excel导入按钮被点击');
+            const fileUpload = document.getElementById('fileUpload');
+            if (fileUpload) {
+                console.log('触发文件选择对话框');
+                fileUpload.click();
+            } else {
+                console.error('找不到文件上传元素');
+            }
+        });
+    }
+
+    // 文件上传处理
+    const fileUpload = document.getElementById('fileUpload');
+    if (fileUpload) {
+        fileUpload.addEventListener('change', function(e) {
+            console.log('文件选择事件触发');
+            const file = e.target.files[0];
+            if (file) {
+                console.log('选择的文件:', file.name, '大小:', file.size);
+                const fileName = file.name.toLowerCase();
+                if (fileName.endsWith('.xlsx') || fileName.endsWith('.xls')) {
+                    if (typeof XLSX !== 'undefined') {
+                        importExcelFile(file);
+                        // 导入完成后清空文件输入，确保下次可以选择同一文件
+                        setTimeout(() => {
+                            e.target.value = '';
+                        }, 1000);
+                    } else {
+                        alert('Excel导入功能不可用，请刷新页面重试');
+                    }
+                } else {
+                    alert('不支持的文件格式，请选择Excel(.xlsx/.xls)文件');
+                }
+            } else {
+                console.log('没有选择文件');
+            }
+        });
+    }
+
+    // 下载模板按钮
+    const downloadTemplateBtn = document.getElementById('downloadTemplateBtn');
+    if (downloadTemplateBtn) {
+        downloadTemplateBtn.addEventListener('click', function() {
+            downloadTemplate();
+        });
+    }
+}
+
+// 保存批量入库数据
+function saveBatchInbound() {
+    const tbody = document.getElementById('batchInboundTableBody');
+    const rows = tbody.querySelectorAll('tr');
+    const batchData = [];
+
+    // 收集所有行的数据
+    rows.forEach((row, index) => {
+        const inputs = row.querySelectorAll('input, select');
+        const rowData = {};
+
+        inputs.forEach(input => {
+            const fieldName = input.name.replace(`_${index}`, '');
+            const value = input.value.trim();
+            rowData[fieldName] = value;
+        });
+
+        // 检查是否有有效数据（只检查关键字段，忽略默认值为0的数字字段）
+        const hasValidData = rowData.customer_name || rowData.plate_number || rowData.inbound_time;
+
+        // 只添加有有效数据的行
+        if (hasValidData) {
+            // 验证必填字段
+            if (!rowData.inbound_time || !rowData.plate_number || !rowData.customer_name) {
+                alert(`第 ${index + 1} 行缺少必填字段（入库时间、车牌号、客户名称）`);
+                return;
+            }
+
+            batchData.push(rowData);
+        }
+    });
+
+    if (batchData.length === 0) {
+        alert('请至少填写一行数据');
+        return;
+    }
+
+    console.log('准备发送的批量数据:', batchData);
+
+    // 发送到后端API
+    fetch('/api/backend/inbound/direct/batch', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({records: batchData})
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log('后端API响应:', data);
+        if (data.success) {
+            alert(`批量入库成功！${data.message}`);
+
+            // 关闭模态框
+            const modal = bootstrap.Modal.getInstance(document.getElementById('batchImportModal'));
+            modal.hide();
+
+            // 刷新数据
+            loadPendingReceiveData();
+        } else {
+            // 显示详细错误信息
+            let errorMessage = data.message || '批量入库失败';
+            if (data.errors && data.errors.length > 0) {
+                errorMessage += '\n详细错误：\n' + data.errors.join('\n');
+            }
+            alert(errorMessage);
+        }
+    })
+    .catch(error => {
+        console.error('批量入库错误:', error);
+        alert('批量入库失败，请检查网络连接');
+    });
+}
+
+// 导入模板文件
+function importTemplateFile(file) {
+    const reader = new FileReader();
+
+    reader.onload = function(e) {
+        try {
+            const content = e.target.result;
+            let data = [];
+
+            if (file.name.toLowerCase().endsWith('.csv')) {
+                // 处理CSV文件
+                data = parseCSV(content);
+            } else if (file.name.toLowerCase().endsWith('.xlsx') || file.name.toLowerCase().endsWith('.xls')) {
+                alert('Excel文件导入功能需要额外的库支持，请使用CSV格式文件');
+                return;
+            } else {
+                alert('不支持的文件格式，请使用CSV或Excel文件');
+                return;
+            }
+
+            if (data.length === 0) {
+                alert('文件中没有找到有效数据');
+                return;
+            }
+
+            // 清空现有表格
+            const tbody = document.getElementById('batchInboundTableBody');
+            tbody.innerHTML = '';
+
+            // 填充数据到表格
+            data.forEach((rowData, index) => {
+                addBatchImportRow();
+                fillRowData(index, rowData);
+            });
+
+            alert(`成功导入 ${data.length} 行数据`);
+
+        } catch (error) {
+            console.error('文件导入错误:', error);
+            alert('文件导入失败，请检查文件格式是否正确');
+        }
+    };
+
+    reader.readAsText(file, 'utf-8');
+}
+
+// 解析CSV内容
+function parseCSV(content) {
+    const lines = content.split('\n');
+    const data = [];
+
+    // 跳过表头（第一行）
+    for (let i = 1; i < lines.length; i++) {
+        const line = lines[i].trim();
+        if (!line) continue;
+
+        // 简单的CSV解析（不处理引号内的逗号）
+        const values = line.split(',');
+
+        if (values.length >= 3) { // 至少要有必填字段
+            const rowData = {
+                inbound_time: values[0] || '',
+                plate_number: values[1] || '',
+                customer_name: values[2] || '',
+                pallet_count: values[3] || '0',
+                package_count: values[4] || '0',
+                weight: values[5] || '0',
+                volume: values[6] || '0',
+                export_mode: values[7] || '',
+                order_type: values[8] || '',
+                customs_broker: values[9] || '',
+                location: values[10] || '',
+                documents: values[11] || '',
+                service_staff: values[12] || ''
+            };
+
+            data.push(rowData);
+        }
+    }
+
+    return data;
+}
+
+// 填充行数据
+function fillRowData(rowIndex, rowData) {
+    const row = document.getElementById('batchInboundTableBody').children[rowIndex];
+    if (!row) return;
+
+    const inputs = row.querySelectorAll('input');
+    const selects = row.querySelectorAll('select');
+
+    // 处理时间格式
+    if (rowData.inbound_time) {
+        // 如果是日期格式，转换为datetime-local格式
+        let timeValue = rowData.inbound_time;
+        if (timeValue.match(/^\d{4}-\d{2}-\d{2}$/)) {
+            timeValue += 'T08:00'; // 默认时间
+        } else if (timeValue.match(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/)) {
+            timeValue = timeValue.replace(' ', 'T').substring(0, 16);
+        }
+        inputs[0].value = timeValue;
+    }
+
+    inputs[1].value = rowData.plate_number || '';
+    inputs[2].value = rowData.customer_name || '';
+    inputs[3].value = rowData.pallet_count || '0';
+    inputs[4].value = rowData.package_count || '0';
+    inputs[5].value = rowData.weight || '0';
+    inputs[6].value = rowData.volume || '0';
+    // 出境模式和订单类型现在是下拉框
+    if (selects[0]) selects[0].value = rowData.export_mode || '';
+    if (selects[1]) selects[1].value = rowData.order_type || '';
+    inputs[7].value = rowData.customs_broker || '';
+    inputs[8].value = rowData.location || '';
+    inputs[9].value = rowData.documents || '';
+    inputs[10].value = rowData.service_staff || '';
+}
+
+// Excel文件导入功能
+function importExcelFile(file) {
+    console.log('开始导入Excel文件:', file.name, '大小:', file.size);
+
+    if (typeof XLSX === 'undefined') {
+        alert('Excel导入功能不可用，XLSX库未加载');
+        return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        try {
+            console.log('文件读取完成，开始解析Excel');
+            const data = new Uint8Array(e.target.result);
+            console.log('数据长度:', data.length);
+
+            const workbook = XLSX.read(data, {type: 'array'});
+            console.log('工作簿解析成功，工作表数量:', workbook.SheetNames.length);
+
+            const firstSheetName = workbook.SheetNames[0];
+            console.log('使用工作表:', firstSheetName);
+
+            const worksheet = workbook.Sheets[firstSheetName];
+            const jsonData = XLSX.utils.sheet_to_json(worksheet, {header: 1});
+            console.log('转换为JSON数据，行数:', jsonData.length);
+
+            if (jsonData.length < 2) {
+                alert('Excel文件格式不正确，请确保包含表头和数据行');
+                return;
+            }
+
+            // 清空现有数据
+            const tbody = document.getElementById('batchInboundTableBody');
+            tbody.innerHTML = '';
+
+            let importCount = 0;
+            // 跳过表头，从第二行开始处理数据
+            for (let i = 1; i < jsonData.length; i++) {
+                const row = jsonData[i];
+                console.log(`处理第${i}行数据:`, row);
+
+                // 检查是否有有效数据（至少有车牌或客户名称）
+                if (row.length === 0 || (!row[1] && !row[2])) {
+                    console.log(`跳过空行: ${i}`);
+                    continue; // 跳过空行
+                }
+
+                addBatchImportRow();
+                const newRow = tbody.lastElementChild;
+                const inputs = newRow.querySelectorAll('input, select');
+
+                // 填充数据到表格，使用简化的数据处理逻辑
+                // 安全地设置字段值，检查输入字段是否存在
+                if (inputs[0]) inputs[0].value = row[0] ? formatDateTime(row[0]) : ''; // 入库时间
+                if (inputs[1]) inputs[1].value = cleanValue(row[1]); // 入库车牌
+                if (inputs[2]) inputs[2].value = cleanValue(row[2]); // 客户名称
+                if (inputs[3]) inputs[3].value = cleanNumberValue(row[3]); // 板数
+                if (inputs[4]) inputs[4].value = cleanNumberValue(row[4]); // 件数
+                if (inputs[5]) inputs[5].value = cleanNumberValue(row[5]); // 重量
+                if (inputs[6]) inputs[6].value = cleanNumberValue(row[6]); // 体积
+                if (inputs[7]) inputs[7].value = cleanValue(row[7]); // 出境模式
+                if (inputs[8]) inputs[8].value = cleanValue(row[8]); // 订单类型
+                if (inputs[9]) inputs[9].value = cleanValue(row[9]); // 报关行
+                if (inputs[10]) inputs[10].value = cleanValue(row[10]); // 库位
+                if (inputs[11]) inputs[11].value = cleanValue(row[11]); // 单据
+                if (inputs[12]) inputs[12].value = cleanValue(row[12]); // 跟单客服
+
+                importCount++;
+            }
+
+            console.log(`导入完成，成功导入 ${importCount} 条记录`);
+            console.log('importCount值:', importCount, '类型:', typeof importCount);
+
+            if (importCount > 0) {
+                alert(`✅ 成功导入 ${importCount} 条记录！`);
+            } else if (importCount === 0) {
+                alert('⚠️ 没有找到有效的数据行，请检查Excel文件格式');
+            } else {
+                console.error('importCount为undefined或null:', importCount);
+                alert('❌ 导入完成，但记录数量统计异常');
+            }
+        } catch (error) {
+            console.error('导入Excel文件时出错:', error);
+            console.error('错误堆栈:', error.stack);
+            alert(`导入Excel文件时出错: ${error.message}\n请检查文件格式是否正确`);
+        }
+    };
+
+    reader.onerror = function(error) {
+        console.error('文件读取失败:', error);
+        alert('文件读取失败，请重试');
+    };
+
+    reader.readAsArrayBuffer(file);
+}
+
+// 清理字符串值 - 简化版本
+function cleanValue(value) {
+    if (value == null || value === '' || value === '空白' || value === '空属性') {
+        return '';
+    }
+    return String(value).trim();
+}
+
+// 清理数字值 - 简化版本
+function cleanNumberValue(value) {
+    if (value == null || value === '' || value === '空白' || value === '空属性') {
+        return '';
+    }
+
+    // 如果是数字，直接返回
+    if (typeof value === 'number' && !isNaN(value)) {
+        return value;
+    }
+
+    // 如果是字符串，尝试转换
+    if (typeof value === 'string') {
+        const cleaned = value.trim();
+        if (cleaned === '' || cleaned === '空白' || cleaned === '空属性') {
+            return '';
+        }
+        const numValue = Number(cleaned);
+        return isNaN(numValue) ? '' : numValue;
+    }
+
+    return '';
+}
+
+// 格式化日期时间
+function formatDateTime(dateValue) {
+    if (!dateValue || dateValue === undefined || dateValue === null) return '';
+
+    let date;
+    try {
+        if (typeof dateValue === 'number') {
+            // Excel日期序列号转换
+            date = new Date((dateValue - 25569) * 86400 * 1000);
+        } else if (typeof dateValue === 'string') {
+            // 处理字符串日期
+            if (dateValue.trim() === '') return '';
+            date = new Date(dateValue);
+        } else if (dateValue instanceof Date) {
+            date = dateValue;
+        } else {
+            console.warn('无法识别的日期格式:', dateValue);
+            return '';
+        }
+
+        if (isNaN(date.getTime())) {
+            console.warn('无效的日期值:', dateValue);
+            return '';
+        }
+
+        // 格式化为 YYYY-MM-DDTHH:MM 格式
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        const hours = String(date.getHours()).padStart(2, '0');
+        const minutes = String(date.getMinutes()).padStart(2, '0');
+
+        return `${year}-${month}-${day}T${hours}:${minutes}`;
+    } catch (error) {
+        console.error('日期格式化错误:', error, '原始值:', dateValue);
+        return '';
+    }
+}
+
+// 下载模板功能
+function downloadTemplate() {
+    console.log('开始下载模板');
+
+    // 使用简单直接的下载方法
+    const a = document.createElement('a');
+    a.href = '/api/export/inbound_template';
+    a.download = '入库数据模板.xlsx';
+    a.style.display = 'none';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+
+    console.log('Excel模板下载已触发');
+}
+
+// 加载待接收批次数据
+function loadPendingReceiveData() {
+    console.log('开始加载待接收批次数据...');
+
+    // 显示加载状态
+    $('#pendingReceiveTableBody').html(`
+        <tr>
+            <td colspan="13" class="text-center text-muted py-4">
+                <i class="fas fa-spinner fa-spin me-2"></i>正在加载数据...
+            </td>
+        </tr>
+    `);
+
+    // 调用新的批次API
+    fetch('/api/backend/pending-receive-batches')
+        .then(response => response.json())
+        .then(data => {
+            console.log('待接收批次数据:', data);
+
+            if (data.success) {
+                displayPendingReceiveBatches(data.data);
+            } else {
+                console.error('加载数据失败:', data.message);
+                $('#pendingReceiveTableBody').html(`
+                    <tr>
+                        <td colspan="13" class="text-center text-danger py-4">
+                            <i class="fas fa-exclamation-triangle me-2"></i>加载数据失败: ${data.message}
+                        </td>
+                    </tr>
+                `);
+            }
+        })
+        .catch(error => {
+            console.error('请求失败:', error);
+            $('#pendingReceiveTableBody').html(`
+                <tr>
+                    <td colspan="13" class="text-center text-danger py-4">
+                        <i class="fas fa-exclamation-triangle me-2"></i>网络请求失败
+                    </td>
+                </tr>
+            `);
+        });
+}
+
+// 显示待接收批次数据
+function displayPendingReceiveBatches(data) {
+    const tbody = $('#pendingReceiveTableBody');
+    const dataCount = $('#dataCount');
+
+    if (!data || data.length === 0) {
+        tbody.html(`
+            <tr>
+                <td colspan="13" class="text-center text-muted py-4">
+                    <i class="fas fa-info-circle me-2"></i>暂无待接收批次
+                </td>
+            </tr>
+        `);
+        dataCount.text('0');
+        return;
+    }
+
+    // 更新数据计数
+    dataCount.text(data.length);
+
+    let html = '';
+    data.forEach((batch, index) => {
+        html += `
+            <tr>
+                <td class="text-left">
+                    <input type="checkbox" class="form-check-input row-checkbox" value="${batch.batch_no}">
+                </td>
+                <td class="text-left">${batch.outbound_time_str || '-'}</td>
+                <td class="text-left">
+                    <strong class="text-primary">${batch.batch_no}</strong>
+                </td>
+                <td class="text-left">
+                    <span class="badge bg-info">${batch.item_count}</span>
+                </td>
+                <td class="text-left">
+                    <span class="text-truncate-stable" title="${batch.customer_names}">${batch.customer_names}</span>
+                </td>
+                <td class="text-left">
+                    <span class="text-truncate-stable" title="${batch.inbound_plate_numbers || '-'}">${batch.inbound_plate_numbers || '-'}</span>
+                </td>
+                <td class="text-left">
+                    <span class="text-truncate-stable" title="${batch.plate_numbers}">${batch.plate_numbers}</span>
+                </td>
+                <td class="text-left">${batch.total_pallet_count || 0}</td>
+                <td class="text-left">${batch.total_package_count || 0}</td>
+                <td class="text-left">${batch.total_weight || 0}</td>
+                <td class="text-left">${batch.total_volume || 0}</td>
+                <td class="text-left">
+                    <span class="badge bg-primary">${batch.source_warehouse || '-'}</span>
+                </td>
+                <td class="text-left">
+                    <button class="btn btn-sm btn-outline-info me-1" onclick="showBatchDetail('${batch.batch_no}')">
+                        <i class="fas fa-eye"></i> 查看
+                    </button>
+                    <button class="btn btn-sm btn-success" onclick="receiveBatch('${batch.batch_no}')">
+                        <i class="fas fa-check"></i> 接收
+                    </button>
+                </td>
+            </tr>
+        `;
+    });
+
+    tbody.html(html);
+
+    // 绑定全选功能
+    $('#selectAll').off('change').on('change', function() {
+        $('.row-checkbox').prop('checked', this.checked);
+        updateReceiveButton();
+    });
+
+    // 绑定行选择功能
+    $('.row-checkbox').off('change').on('change', function() {
+        updateReceiveButton();
+
+        // 更新全选状态
+        const totalRows = $('.row-checkbox').length;
+        const checkedRows = $('.row-checkbox:checked').length;
+        $('#selectAll').prop('checked', totalRows > 0 && checkedRows === totalRows);
+    });
+
+    // 数据加载完成后，确保表头样式正确
+    setTimeout(() => {
+        const tableHeaders = document.querySelectorAll('#pendingReceiveTable thead th');
+        tableHeaders.forEach((th) => {
+            th.style.setProperty('background-color', '#212529', 'important');
+            th.style.setProperty('background', '#212529', 'important');
+            th.style.setProperty('color', 'white', 'important');
+        });
+    }, 100);
+}
+
+// 更新接收按钮状态
+function updateReceiveButton() {
+    const checkedCount = $('.row-checkbox:checked').length;
+    $('#receiveSelectedBtn').prop('disabled', checkedCount === 0);
+}
+
+// 快速接收单个货物
+function quickReceive(itemId) {
+    if (confirm('确定要快速接收这个货物吗？')) {
+        console.log('快速接收货物ID:', itemId);
+
+        // 显示加载状态
+        const button = event.target.closest('button');
+        const originalHtml = button.innerHTML;
+        button.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+        button.disabled = true;
+
+        // 调用后端API进行接收
+        fetch('/api/backend/quick-receive', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                item_id: itemId,
+                receive_time: new Date().toISOString()
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                if (typeof showMessage === 'function') {
+                    showMessage('接收成功！', 'success');
+                } else {
+                    alert('接收成功！');
+                }
+                loadPendingReceiveData(); // 重新加载数据
+            } else {
+                if (typeof showError === 'function') {
+                    showError('接收失败：' + data.message);
+                } else {
+                    alert('接收失败：' + data.message);
+                }
+                // 恢复按钮状态
+                button.innerHTML = originalHtml;
+                button.disabled = false;
+            }
+        })
+        .catch(error => {
+            console.error('快速接收失败:', error);
+            alert('网络错误，接收失败');
+            // 恢复按钮状态
+            button.innerHTML = originalHtml;
+            button.disabled = false;
+        });
+    }
+}
+
+// 查看货物详情
+function showCargoDetail(itemId) {
+    console.log('查看货物详情ID:', itemId);
+
+    // 调用后端API获取详情
+    fetch(`/api/backend/cargo-detail/${itemId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // 显示详情模态框
+                showCargoDetailModal(data.data);
+            } else {
+                alert('获取货物详情失败：' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('获取货物详情失败:', error);
+            alert('网络错误，无法获取货物详情');
+        });
+}
+
+// 显示货物详情模态框
+function showCargoDetailModal(cargoData) {
+    // 这里可以实现一个模态框来显示详细信息
+    // 暂时使用alert显示基本信息
+    const detailInfo = `
+货物详情：
+批次号：${cargoData.batch_no || '-'}
+客户名称：${cargoData.customer_name || '-'}
+发货仓库：${cargoData.source_warehouse || '-'}
+件数：${cargoData.package_count || 0}
+重量：${cargoData.weight || 0} kg
+体积：${cargoData.volume || 0} m³
+备注：${cargoData.remark1 || '-'}
+    `;
+    alert(detailInfo);
+}
+
+// 显示批次详情
+function showBatchDetail(batchNo) {
+    console.log('显示批次详情:', batchNo);
+    // 这里可以实现一个模态框来显示批次中所有货物的详细信息
+    alert(`批次 ${batchNo} 的详细信息功能待实现`);
+}
+
+// 接收批次
+function receiveBatch(batchNo) {
+    console.log('接收批次:', batchNo);
+
+    // 首先获取批次详细数据
+    fetch('/api/backend/pending-receive-batches')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const batch = data.data.find(b => b.batch_no === batchNo);
+                if (batch) {
+                    showBatchReceiveModal(batch);
+                } else {
+                    alert('未找到批次数据');
+                }
+            } else {
+                alert('获取批次数据失败: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('获取批次数据失败:', error);
+            alert('获取批次数据失败');
+        });
+}
+
+// 显示批次接收弹窗
+function showBatchReceiveModal(batch) {
+    console.log('显示批次接收弹窗:', batch);
+    console.log('批次中的货物数量:', batch.items.length);
+
+    // 设置批次号
+    $('#modalBatchNumber').text(batch.batch_no);
+
+    // 设置默认接收时间为当前时间
+    const now = new Date();
+    const timeString = now.toISOString().slice(0, 16); // YYYY-MM-DDTHH:MM
+    $('#receiveTime').val(timeString);
+
+    // 构建货物明细表格
+    let html = '';
+    batch.items.forEach((item, index) => {
+        const sequenceDisplay = item.batch_total > 0 ? `${item.batch_sequence}/${item.batch_total}` : item.batch_sequence || (index + 1);
+
+        html += `
+            <tr data-item-id="${item.id}">
+                <td class="text-left">${sequenceDisplay}</td>
+                <td class="text-left">${item.outbound_time || '-'}</td>
+                <td class="text-left">${item.plate_number || '-'}</td>
+                <td class="text-left">${item.inbound_plate || '-'}</td>
+                <td class="text-left">${item.customer_name || '-'}</td>
+                <td class="text-left">${item.identification_code || '-'}</td>
+                <td class="text-left">${item.order_type || '-'}</td>
+                <td class="text-left">${item.export_mode || '-'}</td>
+                <td class="text-left">${item.customs_broker || '-'}</td>
+                <td class="text-left original-value">${item.pallet_count}</td>
+                <td class="text-left original-value">${item.package_count}</td>
+                <td class="text-left">
+                    <button type="button" class="btn btn-sm btn-success full-receive-btn"
+                            onclick="fullReceive(this, ${item.pallet_count}, ${item.package_count})"
+                            title="点击全收">
+                        <i class="fas fa-check"></i> 全收
+                    </button>
+                </td>
+                <td class="text-left">
+                    <input type="number" class="form-control form-control-sm actual-pallet"
+                           value="" min="0" step="1" required
+                           placeholder="必填"
+                           data-original="${item.pallet_count}"
+                           onchange="checkRowDifference(this)"
+                           oninput="clearValidationError(this)">
+                </td>
+                <td class="text-left">
+                    <input type="number" class="form-control form-control-sm actual-package"
+                           value="" min="0" step="1" required
+                           placeholder="必填"
+                           data-original="${item.package_count}"
+                           onchange="checkRowDifference(this)"
+                           oninput="clearValidationError(this)">
+                </td>
+                <td class="text-left original-value">${item.weight}</td>
+                <td class="text-left original-value">${item.volume}</td>
+                <td class="text-left">${item.documents || '-'}</td>
+                <td class="text-left">${item.service_staff || '-'}</td>
+                <td class="text-left">${item.remark1 || '-'}</td>
+                <td class="text-left">
+                    <input type="text" class="form-control form-control-sm remark2-input"
+                           value="${item.remark2 || ''}" placeholder="备注2">
+                </td>
+                <td class="text-left">
+                    <span class="badge bg-secondary difference-status">待填写</span>
+                </td>
+                <td class="text-left">
+                    <input type="text" class="form-control form-control-sm storage-location"
+                           placeholder="库位">
+                </td>
+            </tr>
+        `;
+    });
+
+    $('#batchReceiveTableBody').html(html);
+
+    // 显示弹窗
+    $('#batchReceiveModal').modal('show');
+
+    // 延迟强制隐藏数字输入框箭头
+    setTimeout(() => {
+        const actualInputs = document.querySelectorAll('.actual-pallet, .actual-package');
+        actualInputs.forEach(input => {
+            input.style.setProperty('-webkit-appearance', 'none', 'important');
+            input.style.setProperty('-moz-appearance', 'textfield', 'important');
+        });
+    }, 300);
+}
+
+// 批量全收功能
+function batchFullReceive() {
+    if (!confirm('确定要将所有货物设置为全收吗？')) {
+        return;
+    }
+
+    $('#batchReceiveTableBody tr').each(function() {
+        const row = $(this);
+        const fullReceiveBtn = row.find('.full-receive-btn');
+
+        if (fullReceiveBtn.length > 0) {
+            // 触发单个全收按钮
+            fullReceiveBtn.click();
+        }
+
+        // 清除该行的验证错误状态
+        row.find('.actual-pallet, .actual-package').removeClass('is-invalid');
+    });
+
+    alert('批量全收设置完成！');
+}
+
+// 清除验证错误状态
+function clearValidationError(input) {
+    const $input = $(input);
+
+    // 如果输入框有值，移除错误状态
+    if ($input.val() && $input.val().trim() !== '') {
+        $input.removeClass('is-invalid');
+    }
+}
+
+// 全收功能
+function fullReceive(button, originalPallet, originalPackage) {
+    const row = $(button).closest('tr');
+    const palletInput = row.find('.actual-pallet');
+    const packageInput = row.find('.actual-package');
+
+    // 设置实收数量为原始数量
+    palletInput.val(originalPallet);
+    packageInput.val(originalPackage);
+
+    // 清除验证错误状态
+    clearValidationError(palletInput[0]);
+    clearValidationError(packageInput[0]);
+
+    // 触发差异检查
+    checkRowDifference(palletInput[0]);
+
+    // 显示操作反馈
+    $(button).removeClass('btn-success').addClass('btn-secondary');
+    $(button).find('i').removeClass('fa-check').addClass('fa-check-double');
+    setTimeout(() => {
+        $(button).removeClass('btn-secondary').addClass('btn-success');
+        $(button).find('i').removeClass('fa-check-double').addClass('fa-check');
+    }, 1000);
+}
+
+// 检查整行差异（综合板数和件数）
+function checkRowDifference(input) {
+    const row = $(input).closest('tr');
+    const statusBadge = row.find('.difference-status');
+
+    // 获取板数输入框和原始值
+    const palletInput = row.find('.actual-pallet');
+    const originalPallet = parseInt(palletInput.data('original')) || 0;
+    const actualPallet = parseInt(palletInput.val()) || 0;
+
+    // 获取件数输入框和原始值
+    const packageInput = row.find('.actual-package');
+    const originalPackage = parseInt(packageInput.data('original')) || 0;
+    const actualPackage = parseInt(packageInput.val()) || 0;
+
+    // 检查是否有空值
+    const palletEmpty = !palletInput.val() || palletInput.val().trim() === '';
+    const packageEmpty = !packageInput.val() || packageInput.val().trim() === '';
+
+    if (palletEmpty || packageEmpty) {
+        statusBadge.removeClass('bg-success bg-warning').addClass('bg-secondary').text('待填写');
+        row.removeClass('table-warning').addClass('table-secondary');
+        return;
+    }
+
+    // 计算差异
+    const palletDiff = actualPallet - originalPallet;
+    const packageDiff = actualPackage - originalPackage;
+
+    // 判断是否有差异
+    if (palletDiff !== 0 || packageDiff !== 0) {
+        let differenceText = '';
+        let parts = [];
+
+        if (palletDiff !== 0) {
+            if (palletDiff > 0) {
+                parts.push(`多${palletDiff}板`);
+            } else {
+                parts.push(`少${Math.abs(palletDiff)}板`);
+            }
+        }
+
+        if (packageDiff !== 0) {
+            if (packageDiff > 0) {
+                parts.push(`多${packageDiff}件`);
+            } else {
+                parts.push(`少${Math.abs(packageDiff)}件`);
+            }
+        }
+
+        differenceText = parts.join(' ');
+        statusBadge.removeClass('bg-success bg-secondary').addClass('bg-warning').text(differenceText);
+        row.removeClass('table-secondary').addClass('table-warning');
+    } else {
+        statusBadge.removeClass('bg-warning bg-secondary').addClass('bg-success').text('正常');
+        row.removeClass('table-warning table-secondary');
+    }
+}
+
+// 保留原有的单个字段差异检查函数（用于兼容性）
+function checkDifference(input, originalValue) {
+    checkRowDifference(input);
+}
+
+// 确认批次接收
+$(document).on('click', '#confirmBatchReceiveBtn', function() {
+    const batchNo = $('#modalBatchNumber').text();
+    const receiveTime = $('#receiveTime').val();
+
+    if (!receiveTime) {
+        alert('请选择接收时间');
+        return;
+    }
+
+    // 验证必填项
+    let hasEmptyRequired = false;
+    let emptyFields = [];
+
+    $('#batchReceiveTableBody tr').each(function(index) {
+        const row = $(this);
+        const palletInput = row.find('.actual-pallet');
+        const packageInput = row.find('.actual-package');
+
+        if (!palletInput.val() || palletInput.val().trim() === '') {
+            hasEmptyRequired = true;
+            emptyFields.push(`第${index + 1}行实收板数`);
+            palletInput.addClass('is-invalid');
+        } else {
+            palletInput.removeClass('is-invalid');
+        }
+
+        if (!packageInput.val() || packageInput.val().trim() === '') {
+            hasEmptyRequired = true;
+            emptyFields.push(`第${index + 1}行实收件数`);
+            packageInput.addClass('is-invalid');
+        } else {
+            packageInput.removeClass('is-invalid');
+        }
+    });
+
+    if (hasEmptyRequired) {
+        alert(`请填写以下必填项：\n${emptyFields.join('\n')}`);
+        return;
+    }
+
+    // 收集所有货物的接收数据
+    const items = [];
+    $('#batchReceiveTableBody tr').each(function() {
+        const row = $(this);
+        const itemId = row.data('item-id');
+        const actualPallet = parseFloat(row.find('.actual-pallet').val()) || 0;
+        const actualPackage = parseFloat(row.find('.actual-package').val()) || 0;
+        const actualWeight = parseFloat(row.find('.actual-weight').val()) || 0;
+        const actualVolume = parseFloat(row.find('.actual-volume').val()) || 0;
+        const remark2 = row.find('.remark2-input').val() || '';
+        const storageLocation = row.find('.storage-location').val() || '';
+
+        items.push({
+            id: itemId,
+            actual_pallet_count: actualPallet,
+            actual_package_count: actualPackage,
+            actual_weight: actualWeight,
+            actual_volume: actualVolume,
+            remark2: remark2,
+            storage_location: storageLocation
+        });
+    });
+
+    // 显示确认对话框
+    if (!confirm(`确定要接收批次 ${batchNo} 的所有货物吗？共 ${items.length} 个货物。`)) {
+        return;
+    }
+
+    // 禁用按钮，显示加载状态
+    const btn = $(this);
+    const originalText = btn.html();
+    btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-1"></i>处理中...');
+
+    // 调用批次接收API
+    fetch('/api/backend/batch-receive', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            batch_no: batchNo,
+            receive_time: receiveTime,
+            items: items
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            if (typeof showMessage === 'function') {
+                showMessage('批次接收成功！', 'success');
+            } else {
+                alert('批次接收成功！');
+            }
+            $('#batchReceiveModal').modal('hide');
+            loadPendingReceiveData(); // 重新加载数据
+        } else {
+            if (typeof showError === 'function') {
+                showError('批次接收失败: ' + data.message);
+            } else {
+                alert('批次接收失败: ' + data.message);
+            }
+        }
+    })
+    .catch(error => {
+        console.error('批次接收失败:', error);
+        alert('批次接收失败，请重试');
+    })
+    .finally(() => {
+        // 恢复按钮状态
+        btn.prop('disabled', false).html(originalText);
+    });
+
+    // 页面加载完成后立即初始化批量导入事件
+    bindBatchImportEvents();
+
+    // 创建最高优先级的样式覆盖
+    function createUltimateStyleOverride() {
+        // 移除之前的样式
+        const existingStyle = document.getElementById('ultimate-header-override');
+        if (existingStyle) {
+            existingStyle.remove();
+        }
+
+        const ultimateStyle = document.createElement('style');
+        ultimateStyle.id = 'ultimate-header-override';
+        ultimateStyle.textContent = `
+            /* 最高优先级表头样式 - 使用属性选择器 */
+            table[id="pendingReceiveTable"] thead th,
+            table[id="pendingReceiveTable"] thead tr,
+            table[id="pendingReceiveTable"] thead,
+            div[id="batchReceiveModal"] table thead th,
+            div[id="batchReceiveModal"] table thead tr,
+            div[id="batchReceiveModal"] table thead {
+                background-color: #f8f9fa !important;
+                background: #f8f9fa !important;
+                color: #212529 !important;
+                border-color: #dee2e6 !important;
+                background-image: none !important;
+            }
+
+            /* 覆盖任何可能的伪元素 */
+            #pendingReceiveTable thead th::before,
+            #pendingReceiveTable thead th::after {
+                display: none !important;
+            }
+
+            /* 强制覆盖Bootstrap的striped样式 */
+            .table-striped > thead > tr > th {
+                background-color: #212529 !important;
+                background: #212529 !important;
+                color: white !important;
+            }
+
+            /* 隐藏数字输入框的上下箭头 */
+            .actual-pallet::-webkit-outer-spin-button,
+            .actual-pallet::-webkit-inner-spin-button,
+            .actual-package::-webkit-outer-spin-button,
+            .actual-package::-webkit-inner-spin-button {
+                -webkit-appearance: none !important;
+                margin: 0 !important;
+            }
+
+            /* Firefox浏览器隐藏数字输入框的上下箭头 */
+            .actual-pallet[type=number],
+            .actual-package[type=number] {
+                -moz-appearance: textfield !important;
+            }
+
+            /* 使用伪元素创建无法覆盖的背景 */
+            #pendingReceiveTable thead th {
+                position: relative !important;
+            }
+
+            #pendingReceiveTable thead th::before {
+                content: '' !important;
+                position: absolute !important;
+                top: 0 !important;
+                left: 0 !important;
+                right: 0 !important;
+                bottom: 0 !important;
+                background-color: #212529 !important;
+                z-index: -1 !important;
+                pointer-events: none !important;
+            }
+        `;
+        document.head.appendChild(ultimateStyle);
+        console.log('🎨 已创建终极样式覆盖');
+    }
+
+    // 立即创建样式覆盖
+    createUltimateStyleOverride();
+
+    // 调试表头样式问题 - 定义为全局函数
+    window.debugTableHeaderStyles = function() {
+        console.log('🔍 ===== 开始调试表头样式问题 =====');
+
+        const table = document.querySelector('#pendingReceiveTable');
+        if (table) {
+            console.log('📋 表格信息:', {
+                id: table.id,
+                className: table.className,
+                style: table.style.cssText
+            });
+        }
+
+        const thead = document.querySelector('#pendingReceiveTable thead');
+        if (thead) {
+            const theadStyle = window.getComputedStyle(thead);
+            console.log('📋 表头容器信息:', {
+                className: thead.className,
+                style: thead.style.cssText,
+                computedBackgroundColor: theadStyle.backgroundColor,
+                computedBackground: theadStyle.background
+            });
+        }
+
+        const tableHeaders = document.querySelectorAll('#pendingReceiveTable thead th');
+        console.log(`🔍 找到 ${tableHeaders.length} 个表头单元格`);
+
+        tableHeaders.forEach((th, index) => {
+            const computedStyle = window.getComputedStyle(th);
+            console.log(`\n📋 表头单元格 ${index + 1}:`);
+            console.log('  - 元素:', th);
+            console.log('  - 标签:', th.tagName);
+            console.log('  - 类名:', th.className);
+            console.log('  - 内联样式:', th.style.cssText);
+            console.log('  - 计算后背景色:', computedStyle.backgroundColor);
+            console.log('  - 计算后背景:', computedStyle.background);
+            console.log('  - 计算后文字色:', computedStyle.color);
+            console.log('  - 所有背景相关属性:', {
+                backgroundColor: computedStyle.backgroundColor,
+                backgroundImage: computedStyle.backgroundImage,
+                backgroundAttachment: computedStyle.backgroundAttachment,
+                backgroundClip: computedStyle.backgroundClip,
+                backgroundOrigin: computedStyle.backgroundOrigin,
+                backgroundPosition: computedStyle.backgroundPosition,
+                backgroundRepeat: computedStyle.backgroundRepeat,
+                backgroundSize: computedStyle.backgroundSize
+            });
+        });
+
+        // 检查所有样式表
+        console.log('\n🎨 检查所有样式表:');
+        for (let i = 0; i < document.styleSheets.length; i++) {
+            const sheet = document.styleSheets[i];
+            console.log(`样式表 ${i + 1}:`, {
+                href: sheet.href || '内联样式',
+                disabled: sheet.disabled,
+                media: sheet.media.mediaText
+            });
+        }
+
+        console.log('🔍 ===== 表头样式调试完成 =====\n');
+    };
+
+    // 强制设置表头背景颜色，防止被其他脚本覆盖 - 定义为全局函数
+    window.forceTableHeaderBackground = function() {
+        console.log('\n🎨 ===== 开始强制设置表头背景颜色 =====');
+
+        // 先调试当前状态
+        debugTableHeaderStyles();
+
+        // 只处理表头单元格
+        const tableHeaders = document.querySelectorAll('#pendingReceiveTable thead th');
+        console.log(`🎯 找到 ${tableHeaders.length} 个表头单元格需要处理`);
+
+        tableHeaders.forEach((th, index) => {
+            console.log(`\n🔧 处理表头单元格 ${index + 1}:`);
+            console.log('  处理前样式:', th.style.cssText);
+            console.log('  处理前类名:', th.className);
+
+            // 强制设置样式
+            th.style.setProperty('background-color', '#212529', 'important');
+            th.style.setProperty('background', '#212529', 'important');
+            th.style.setProperty('color', 'white', 'important');
+
+            console.log('  处理后样式:', th.style.cssText);
+
+            // 验证设置是否生效
+            const computedStyle = window.getComputedStyle(th);
+            console.log('  计算后背景色:', computedStyle.backgroundColor);
+            console.log('  计算后文字色:', computedStyle.color);
+
+            if (computedStyle.backgroundColor !== 'rgb(33, 37, 41)') {
+                console.warn(`⚠️ 表头 ${index + 1} 背景色设置失败！期望: rgb(33, 37, 41), 实际: ${computedStyle.backgroundColor}`);
+            } else {
+                console.log(`✅ 表头 ${index + 1} 背景色设置成功`);
+            }
+        });
+
+        console.log('🎨 ===== 表头背景设置完成 =====\n');
+    };
+
+    // 定期检查和修复表头样式
+    setInterval(() => {
+        if (typeof window.forceTableHeaderBackground === 'function') {
+            window.forceTableHeaderBackground();
+        }
+    }, 30000);
+
+    // 监听DOM变化，确保表头样式不被覆盖
+    const observer = new MutationObserver(function(mutations) {
+        mutations.forEach(function(mutation) {
+            if (mutation.type === 'attributes' &&
+                (mutation.attributeName === 'style' || mutation.attributeName === 'class')) {
+                const target = mutation.target;
+                if (target.tagName === 'THEAD' || target.tagName === 'TH') {
+                    forceTableHeaderBackground();
+                }
+            }
+        });
+    });
+
+    // 开始观察表头元素
+    const tableHead = document.querySelector('#pendingReceiveTable thead');
+    if (tableHead) {
+        observer.observe(tableHead, {
+            attributes: true,
+            attributeFilter: ['style', 'class'],
+            subtree: true
+        });
+    }
+
+    // 监听模态框显示事件，确保模态框中的表头样式正确
+    $('#batchReceiveModal').on('shown.bs.modal', function() {
+        setTimeout(forceTableHeaderBackground, 100);
+
+        // 强制隐藏数字输入框的箭头
+        setTimeout(() => {
+            const numberInputs = document.querySelectorAll('#batchReceiveModal input[type="number"]');
+            numberInputs.forEach(input => {
+                input.style.setProperty('-webkit-appearance', 'none', 'important');
+                input.style.setProperty('-moz-appearance', 'textfield', 'important');
+            });
+        }, 200);
+    });
+
+    // 监听模态框内容变化
+    const modalObserver = new MutationObserver(function(mutations) {
+        mutations.forEach(function(mutation) {
+            if (mutation.type === 'childList' && mutation.target.id === 'batchReceiveTableBody') {
+                setTimeout(forceTableHeaderBackground, 50);
+            }
+        });
+    });
+
+    // 观察模态框表格内容变化
+    const modalTableBody = document.querySelector('#batchReceiveTableBody');
+    if (modalTableBody) {
+        modalObserver.observe(modalTableBody, {
+            childList: true,
+            subtree: true
+        });
+    }
+});
+
+</script>
+{% endblock %}

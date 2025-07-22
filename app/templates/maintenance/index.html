@@ -1,0 +1,429 @@
+{% extends "base.html" %}
+
+{% block title %}系统维护管理{% endblock %}
+
+{% block styles %}
+{{ super() }}
+<style>
+    .maintenance-card {
+        border-radius: 10px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        margin-bottom: 20px;
+    }
+    
+    .status-indicator {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        display: inline-block;
+        margin-right: 8px;
+    }
+    
+    .status-running { background-color: #28a745; }
+    .status-stopped { background-color: #dc3545; }
+    .status-warning { background-color: #ffc107; }
+    
+    .metric-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 10px;
+        padding: 20px;
+        margin-bottom: 15px;
+    }
+    
+    .metric-value {
+        font-size: 2rem;
+        font-weight: bold;
+        margin-bottom: 5px;
+    }
+    
+    .metric-label {
+        font-size: 0.9rem;
+        opacity: 0.9;
+    }
+    
+    .job-item {
+        border-left: 4px solid #007bff;
+        padding: 15px;
+        margin-bottom: 10px;
+        background-color: #f8f9fa;
+        border-radius: 0 5px 5px 0;
+    }
+    
+    .recommendation-item {
+        padding: 10px 15px;
+        margin-bottom: 8px;
+        border-radius: 5px;
+        border-left: 4px solid #17a2b8;
+        background-color: #e7f3ff;
+    }
+    
+    .btn-maintenance {
+        background: linear-gradient(45deg, #007bff, #0056b3);
+        border: none;
+        color: white;
+        padding: 10px 20px;
+        border-radius: 25px;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-maintenance:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(0,123,255,0.3);
+        color: white;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- 页面标题 -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h2 class="text-primary">
+                <i class="fas fa-tools me-2"></i>系统维护管理
+            </h2>
+            <p class="text-muted">监控系统状态，执行维护任务，确保系统稳定运行</p>
+        </div>
+    </div>
+
+    <!-- 系统状态概览 -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="metric-card">
+                <div class="metric-value">{{ health_info.get('database_size', 0)|round(1) }}MB</div>
+                <div class="metric-label">数据库大小</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="metric-card" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+                <div class="metric-value">{{ health_info.get('log_files_count', 0) }}</div>
+                <div class="metric-label">日志文件数</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="metric-card" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+                <div class="metric-value">{{ health_info.get('table_stats', {}).values()|sum }}</div>
+                <div class="metric-label">总记录数</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="metric-card" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);">
+                <div class="metric-value">{{ scheduler_status.get('total_jobs', 0) }}</div>
+                <div class="metric-label">定时任务数</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- 快速操作 -->
+        <div class="col-md-6">
+            <div class="card maintenance-card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-play-circle me-2"></i>快速操作
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <button class="btn btn-maintenance" onclick="runMaintenance()">
+                            <i class="fas fa-cogs me-2"></i>执行完整维护
+                        </button>
+                        <button class="btn btn-outline-primary" onclick="cleanLogs()">
+                            <i class="fas fa-broom me-2"></i>清理日志文件
+                        </button>
+                        <button class="btn btn-outline-success" onclick="optimizeDatabase()">
+                            <i class="fas fa-database me-2"></i>优化数据库
+                        </button>
+                        <button class="btn btn-outline-info" onclick="checkHealth()">
+                            <i class="fas fa-heartbeat me-2"></i>系统健康检查
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 调度器状态 -->
+        <div class="col-md-6">
+            <div class="card maintenance-card">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-clock me-2"></i>定时任务状态
+                        <span class="status-indicator {{ 'status-running' if scheduler_status.get('scheduler_running') else 'status-stopped' }}"></span>
+                        {{ '运行中' if scheduler_status.get('scheduler_running') else '已停止' }}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if scheduler_status.get('jobs') %}
+                        {% for job in scheduler_status.get('jobs', []) %}
+                        <div class="job-item">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <strong>{{ job.name }}</strong>
+                                    <br>
+                                    <small class="text-muted">
+                                        下次执行: {{ job.next_run_time or '未安排' }}
+                                    </small>
+                                </div>
+                                <div class="btn-group btn-group-sm">
+                                    <button class="btn btn-outline-primary btn-sm" 
+                                            onclick="runJobNow('{{ job.id }}')" title="立即执行">
+                                        <i class="fas fa-play"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <p class="text-muted">暂无定时任务</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 系统建议 -->
+    {% if health_info.get('recommendations') %}
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card maintenance-card">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0">
+                        <i class="fas fa-lightbulb me-2"></i>系统建议
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% for recommendation in health_info.get('recommendations', []) %}
+                    <div class="recommendation-item">
+                        <i class="fas fa-info-circle me-2"></i>{{ recommendation }}
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- 大日志文件警告 -->
+    {% if health_info.get('large_log_files') %}
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card maintenance-card border-warning">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0">
+                        <i class="fas fa-exclamation-triangle me-2"></i>大日志文件警告
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p>发现以下大日志文件，建议清理：</p>
+                    <ul class="list-unstyled">
+                        {% for file in health_info.get('large_log_files', []) %}
+                        <li class="mb-2">
+                            <i class="fas fa-file-alt me-2 text-warning"></i>
+                            <strong>{{ file.filename }}</strong> - {{ file.size_mb }}MB
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- 操作结果模态框 -->
+<div class="modal fade" id="resultModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">操作结果</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="resultContent"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+// 执行完整维护
+function runMaintenance() {
+    showLoading('正在执行维护任务...');
+    
+    fetch('/maintenance/run_maintenance', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        hideLoading();
+        showResult('完整维护', data);
+        if (data.success) {
+            setTimeout(() => location.reload(), 2000);
+        }
+    })
+    .catch(error => {
+        hideLoading();
+        showError('维护任务执行失败: ' + error);
+    });
+}
+
+// 清理日志
+function cleanLogs() {
+    showLoading('正在清理日志...');
+    
+    fetch('/maintenance/clean_logs', {
+        method: 'POST'
+    })
+    .then(response => response.json())
+    .then(data => {
+        hideLoading();
+        showResult('日志清理', data);
+        if (data.success) {
+            setTimeout(() => location.reload(), 1500);
+        }
+    })
+    .catch(error => {
+        hideLoading();
+        showError('日志清理失败: ' + error);
+    });
+}
+
+// 优化数据库
+function optimizeDatabase() {
+    showLoading('正在优化数据库...');
+    
+    fetch('/maintenance/optimize_database', {
+        method: 'POST'
+    })
+    .then(response => response.json())
+    .then(data => {
+        hideLoading();
+        showResult('数据库优化', data);
+    })
+    .catch(error => {
+        hideLoading();
+        showError('数据库优化失败: ' + error);
+    });
+}
+
+// 系统健康检查
+function checkHealth() {
+    showLoading('正在检查系统健康状态...');
+    
+    fetch('/maintenance/health_check')
+    .then(response => response.json())
+    .then(data => {
+        hideLoading();
+        showResult('健康检查', data);
+        if (data.success) {
+            setTimeout(() => location.reload(), 2000);
+        }
+    })
+    .catch(error => {
+        hideLoading();
+        showError('健康检查失败: ' + error);
+    });
+}
+
+// 立即执行任务
+function runJobNow(jobId) {
+    showLoading('正在执行任务...');
+    
+    fetch(`/maintenance/scheduler/run_job/${jobId}`, {
+        method: 'POST'
+    })
+    .then(response => response.json())
+    .then(data => {
+        hideLoading();
+        if (data.success) {
+            showSuccess(data.message);
+        } else {
+            showError(data.message);
+        }
+    })
+    .catch(error => {
+        hideLoading();
+        showError('执行任务失败: ' + error);
+    });
+}
+
+// 显示结果
+function showResult(title, data) {
+    const content = document.getElementById('resultContent');
+    const modal = new bootstrap.Modal(document.getElementById('resultModal'));
+    
+    let html = `<h6>${title}结果</h6>`;
+    
+    if (data.success) {
+        html += `<div class="alert alert-success"><i class="fas fa-check-circle me-2"></i>${data.message}</div>`;
+    } else {
+        html += `<div class="alert alert-danger"><i class="fas fa-exclamation-circle me-2"></i>${data.message}</div>`;
+    }
+    
+    if (data.result) {
+        html += '<h6>详细信息:</h6>';
+        html += `<pre class="bg-light p-3 rounded">${JSON.stringify(data.result, null, 2)}</pre>`;
+    }
+    
+    content.innerHTML = html;
+    modal.show();
+}
+
+// 显示加载状态
+function showLoading(message) {
+    // 可以使用现有的消息系统
+    if (window.showOperationMessage) {
+        window.showOperationMessage(message, 'info');
+    }
+}
+
+// 隐藏加载状态
+function hideLoading() {
+    // 清除加载消息
+}
+
+// 显示成功消息
+function showSuccess(message) {
+    if (window.showOperationMessage) {
+        window.showOperationMessage(message, 'success');
+    } else {
+        alert(message);
+    }
+}
+
+// 显示错误消息
+function showError(message) {
+    if (window.showOperationMessage) {
+        window.showOperationMessage(message, 'error');
+    } else {
+        alert(message);
+    }
+}
+
+// 页面加载完成后刷新状态
+document.addEventListener('DOMContentLoaded', function() {
+    // 每30秒刷新一次状态
+    setInterval(() => {
+        fetch('/maintenance/scheduler/status')
+        .then(response => response.json())
+        .then(data => {
+            // 更新调度器状态显示
+            console.log('调度器状态更新:', data);
+        })
+        .catch(error => {
+            console.error('获取调度器状态失败:', error);
+        });
+    }, 30000);
+});
+</script>
+{% endblock %}

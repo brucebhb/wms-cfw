@@ -1,0 +1,463 @@
+{% extends "base.html" %}
+
+{% block title %}调度器监控 - 仓储管理系统{% endblock %}
+
+{% block styles %}
+<style>
+    .scheduler-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 10px;
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+    
+    .status-badge {
+        font-size: 0.9rem;
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+    }
+    
+    .status-running {
+        background-color: #28a745;
+        color: white;
+    }
+    
+    .status-stopped {
+        background-color: #dc3545;
+        color: white;
+    }
+    
+    .job-card {
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        padding: 15px;
+        margin-bottom: 15px;
+        transition: all 0.3s ease;
+    }
+    
+    .job-card:hover {
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        transform: translateY(-2px);
+    }
+    
+    .job-stats {
+        display: flex;
+        gap: 15px;
+        margin-top: 10px;
+    }
+    
+    .stat-item {
+        text-align: center;
+        padding: 8px 12px;
+        background: #f8f9fa;
+        border-radius: 6px;
+        min-width: 60px;
+    }
+    
+    .stat-value {
+        font-size: 1.2rem;
+        font-weight: bold;
+        color: #007bff;
+    }
+    
+    .stat-label {
+        font-size: 0.8rem;
+        color: #6c757d;
+        margin-top: 2px;
+    }
+    
+    .refresh-btn {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        z-index: 1000;
+    }
+    
+    .job-actions {
+        display: flex;
+        gap: 5px;
+        margin-top: 10px;
+    }
+    
+    .next-run {
+        color: #28a745;
+        font-weight: 500;
+    }
+    
+    .last-run {
+        color: #6c757d;
+        font-size: 0.9rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="fas fa-clock"></i> 调度器监控</h2>
+                <div>
+                    <button class="btn btn-outline-primary" onclick="refreshData()">
+                        <i class="fas fa-sync-alt"></i> 刷新
+                    </button>
+                    <button class="btn btn-outline-success" onclick="exportStats()">
+                        <i class="fas fa-download"></i> 导出统计
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 调度器状态卡片 -->
+    <div class="row">
+        <div class="col-12">
+            <div class="scheduler-card">
+                <div class="row align-items-center">
+                    <div class="col-md-3">
+                        <h4><i class="fas fa-server"></i> 调度器状态</h4>
+                        <span class="status-badge" id="schedulerStatus">
+                            <i class="fas fa-spinner fa-spin"></i> 检查中...
+                        </span>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="text-center">
+                            <div class="h3 mb-1" id="totalJobs">-</div>
+                            <div class="small">总任务数</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="text-center">
+                            <div class="h3 mb-1" id="runningJobs">-</div>
+                            <div class="small">运行中任务</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="text-center">
+                            <div class="h3 mb-1" id="startupTime">-</div>
+                            <div class="small">启动时间</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 任务列表 -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-tasks"></i> 定时任务列表</h5>
+                </div>
+                <div class="card-body">
+                    <div id="jobsList">
+                        <div class="text-center py-4">
+                            <i class="fas fa-spinner fa-spin fa-2x text-muted"></i>
+                            <p class="mt-2 text-muted">正在加载任务信息...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 系统信息 -->
+    <div class="row mt-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h6><i class="fas fa-chart-line"></i> 执行统计</h6>
+                </div>
+                <div class="card-body">
+                    <canvas id="executionChart" width="400" height="200"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h6><i class="fas fa-exclamation-triangle"></i> 错误统计</h6>
+                </div>
+                <div class="card-body">
+                    <canvas id="errorChart" width="400" height="200"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 刷新按钮 -->
+<button class="btn btn-primary btn-lg refresh-btn" onclick="refreshData()" title="刷新数据">
+    <i class="fas fa-sync-alt"></i>
+</button>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+let executionChart, errorChart;
+
+$(document).ready(function() {
+    initCharts();
+    loadSchedulerData();
+    
+    // 每30秒自动刷新
+    setInterval(loadSchedulerData, 30000);
+});
+
+function initCharts() {
+    // 执行统计图表
+    const execCtx = document.getElementById('executionChart').getContext('2d');
+    executionChart = new Chart(execCtx, {
+        type: 'bar',
+        data: {
+            labels: [],
+            datasets: [{
+                label: '执行次数',
+                data: [],
+                backgroundColor: 'rgba(54, 162, 235, 0.6)',
+                borderColor: 'rgba(54, 162, 235, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+
+    // 错误统计图表
+    const errorCtx = document.getElementById('errorChart').getContext('2d');
+    errorChart = new Chart(errorCtx, {
+        type: 'doughnut',
+        data: {
+            labels: ['成功', '错误', '错过'],
+            datasets: [{
+                data: [0, 0, 0],
+                backgroundColor: [
+                    'rgba(75, 192, 192, 0.6)',
+                    'rgba(255, 99, 132, 0.6)',
+                    'rgba(255, 205, 86, 0.6)'
+                ]
+            }]
+        },
+        options: {
+            responsive: true
+        }
+    });
+}
+
+function loadSchedulerData() {
+    $.ajax({
+        url: '/admin/scheduler/status',
+        method: 'GET',
+        success: function(response) {
+            if (response.success) {
+                updateSchedulerStatus(response.data);
+                updateJobsList(response.data.jobs || []);
+                updateCharts(response.data);
+            } else {
+                showMessage('获取调度器状态失败: ' + response.message, 'error');
+            }
+        },
+        error: function(xhr, status, error) {
+            showMessage('请求失败: ' + error, 'error');
+        }
+    });
+}
+
+function updateSchedulerStatus(data) {
+    const statusElement = $('#schedulerStatus');
+    const isRunning = data.scheduler_running;
+    
+    if (isRunning) {
+        statusElement.removeClass('status-stopped').addClass('status-running');
+        statusElement.html('<i class="fas fa-check-circle"></i> 运行中');
+    } else {
+        statusElement.removeClass('status-running').addClass('status-stopped');
+        statusElement.html('<i class="fas fa-times-circle"></i> 已停止');
+    }
+    
+    $('#totalJobs').text(data.total_jobs || 0);
+    $('#runningJobs').text(isRunning ? data.total_jobs || 0 : 0);
+    
+    if (data.startup_time) {
+        const startupTime = new Date(data.startup_time);
+        $('#startupTime').text(startupTime.toLocaleString());
+    }
+}
+
+function updateJobsList(jobs) {
+    const jobsContainer = $('#jobsList');
+    
+    if (jobs.length === 0) {
+        jobsContainer.html(`
+            <div class="text-center py-4">
+                <i class="fas fa-inbox fa-2x text-muted"></i>
+                <p class="mt-2 text-muted">暂无定时任务</p>
+            </div>
+        `);
+        return;
+    }
+    
+    let html = '';
+    jobs.forEach(job => {
+        const nextRun = job.next_run_time ? new Date(job.next_run_time).toLocaleString() : '未安排';
+        const lastRun = job.last_run ? new Date(job.last_run).toLocaleString() : '从未执行';
+        
+        html += `
+            <div class="job-card">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div class="flex-grow-1">
+                        <h6 class="mb-1">${job.name}</h6>
+                        <small class="text-muted">ID: ${job.id}</small>
+                        <div class="mt-2">
+                            <div class="next-run">下次执行: ${nextRun}</div>
+                            <div class="last-run">上次执行: ${lastRun}</div>
+                        </div>
+                    </div>
+                    <div class="job-stats">
+                        <div class="stat-item">
+                            <div class="stat-value">${job.executed || 0}</div>
+                            <div class="stat-label">已执行</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value text-danger">${job.errors || 0}</div>
+                            <div class="stat-label">错误</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value text-warning">${job.missed || 0}</div>
+                            <div class="stat-label">错过</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="job-actions">
+                    <button class="btn btn-sm btn-outline-primary" onclick="runJobNow('${job.id}')">
+                        <i class="fas fa-play"></i> 立即执行
+                    </button>
+                    <button class="btn btn-sm btn-outline-secondary" onclick="pauseJob('${job.id}')">
+                        <i class="fas fa-pause"></i> 暂停
+                    </button>
+                    <button class="btn btn-sm btn-outline-success" onclick="resumeJob('${job.id}')">
+                        <i class="fas fa-play"></i> 恢复
+                    </button>
+                </div>
+            </div>
+        `;
+    });
+    
+    jobsContainer.html(html);
+}
+
+function updateCharts(data) {
+    if (!data.jobs) return;
+    
+    // 更新执行统计图表
+    const jobNames = data.jobs.map(job => job.name);
+    const executionCounts = data.jobs.map(job => job.executed || 0);
+    
+    executionChart.data.labels = jobNames;
+    executionChart.data.datasets[0].data = executionCounts;
+    executionChart.update();
+    
+    // 更新错误统计图表
+    const totalExecuted = executionCounts.reduce((a, b) => a + b, 0);
+    const totalErrors = data.jobs.reduce((sum, job) => sum + (job.errors || 0), 0);
+    const totalMissed = data.jobs.reduce((sum, job) => sum + (job.missed || 0), 0);
+    const totalSuccess = totalExecuted - totalErrors;
+    
+    errorChart.data.datasets[0].data = [totalSuccess, totalErrors, totalMissed];
+    errorChart.update();
+}
+
+function refreshData() {
+    const btn = event.target.closest('button');
+    const icon = btn.querySelector('i');
+    
+    icon.classList.add('fa-spin');
+    loadSchedulerData();
+    
+    setTimeout(() => {
+        icon.classList.remove('fa-spin');
+    }, 1000);
+}
+
+function runJobNow(jobId) {
+    if (!confirm('确定要立即执行此任务吗？')) return;
+    
+    $.ajax({
+        url: '/admin/scheduler/run_job',
+        method: 'POST',
+        data: { job_id: jobId },
+        success: function(response) {
+            if (response.success) {
+                showMessage('任务已执行', 'success');
+                setTimeout(loadSchedulerData, 2000);
+            } else {
+                showMessage('执行失败: ' + response.message, 'error');
+            }
+        },
+        error: function() {
+            showMessage('请求失败', 'error');
+        }
+    });
+}
+
+function pauseJob(jobId) {
+    $.ajax({
+        url: '/admin/scheduler/pause_job',
+        method: 'POST',
+        data: { job_id: jobId },
+        success: function(response) {
+            if (response.success) {
+                showMessage('任务已暂停', 'success');
+                loadSchedulerData();
+            } else {
+                showMessage('暂停失败: ' + response.message, 'error');
+            }
+        }
+    });
+}
+
+function resumeJob(jobId) {
+    $.ajax({
+        url: '/admin/scheduler/resume_job',
+        method: 'POST',
+        data: { job_id: jobId },
+        success: function(response) {
+            if (response.success) {
+                showMessage('任务已恢复', 'success');
+                loadSchedulerData();
+            } else {
+                showMessage('恢复失败: ' + response.message, 'error');
+            }
+        }
+    });
+}
+
+function exportStats() {
+    window.open('/admin/scheduler/export_stats', '_blank');
+}
+
+function showMessage(message, type) {
+    // 实现消息提示
+    const alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
+    const alert = $(`
+        <div class="alert ${alertClass} alert-dismissible fade show" role="alert">
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    `);
+    
+    $('.container-fluid').prepend(alert);
+    
+    setTimeout(() => {
+        alert.alert('close');
+    }, 3000);
+}
+</script>
+{% endblock %}

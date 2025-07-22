@@ -1,0 +1,447 @@
+{% extends "base.html" %}
+
+{% block styles %}
+{{ super() }}
+<style>
+    /* 页面标题和搜索区域固定样式 */
+    .page-header-fixed {
+        position: sticky;
+        top: 56px; /* 顶部导航栏的高度，确保在导航栏下方固定 */
+        z-index: 1020;
+        background-color: #fff;
+        padding: 15px 0;
+        border-bottom: 1px solid #dee2e6;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+    
+    /* 批次标题样式 */
+    .batch-header {
+        background-color: #28a745;
+        color: white;
+    }
+    
+    /* 批次卡片样式 */
+    .batch-card {
+        margin-bottom: 1.5rem;
+        border: none;
+        border-radius: 0.5rem;
+        overflow: hidden;
+    }
+    
+    /* 加载指示器样式 */
+    .loading-overlay {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background-color: rgba(255, 255, 255, 0.9);
+        padding: 20px;
+        border-radius: 5px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+        z-index: 1000;
+        text-align: center;
+    }
+    
+    /* 表格样式优化 */
+    .table th, .table td {
+        font-size: 12px;
+        padding: 0.3rem 0.2rem;
+        vertical-align: middle;
+        word-wrap: break-word;
+        text-align: center; /* 内容居中显示 */
+    }
+
+    /* 识别编码列左对齐 */
+    .identification-code {
+        text-align: left !important;
+    }
+
+    /* 备注列左对齐 */
+    .remarks-column {
+        text-align: left !important;
+    }
+    
+    /* 识别编码列特殊样式 */
+    .identification-code {
+        font-size: 13px;
+        font-weight: 500;
+        white-space: normal;
+        word-wrap: break-word;
+        line-height: 1.3;
+        max-width: 200px;
+    }
+    
+    /* 批次信息样式 */
+    .batch-info {
+        background-color: #f8f9fa;
+        border-left: 4px solid #28a745;
+        padding: 10px;
+        margin-bottom: 10px;
+    }
+    
+    /* 统计信息样式 */
+    .stats-row {
+        background-color: #e9ecef;
+        font-weight: bold;
+    }
+    
+    /* 搜索表单样式 */
+    .search-form {
+        background-color: #f8f9fa;
+        padding: 15px;
+        border-radius: 0.375rem;
+        margin-bottom: 20px;
+    }
+    
+    /* 按钮样式 */
+    .btn-print {
+        background-color: #28a745;
+        border-color: #28a745;
+    }
+    
+    .btn-print:hover {
+        background-color: #218838;
+        border-color: #1e7e34;
+    }
+    
+    /* 分页样式 */
+    .pagination {
+        justify-content: center;
+        margin-top: 20px;
+    }
+    
+    /* 空数据提示样式 */
+    .empty-data {
+        text-align: center;
+        padding: 40px;
+        color: #6c757d;
+    }
+    
+    /* 标题样式 */
+    .page-title {
+        color: #28a745;
+        font-weight: bold;
+        margin-bottom: 20px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- 固定的页面标题和搜索区域 -->
+    <div class="page-header-fixed">
+        <div class="row">
+            <div class="col-12">
+                <h2 class="page-title">
+                    <i class="fas fa-truck-loading me-2"></i>后端仓出库单
+                </h2>
+                
+                <!-- 搜索表单 -->
+                <form method="GET" class="search-form">
+                    <div class="row g-3">
+                        <div class="col-md-2">
+                            <label for="date_start" class="form-label">开始日期</label>
+                            <input type="date" class="form-control" id="date_start" name="date_start" 
+                                   value="{{ search_params.date_start }}">
+                        </div>
+                        <div class="col-md-2">
+                            <label for="date_end" class="form-label">结束日期</label>
+                            <input type="date" class="form-control" id="date_end" name="date_end" 
+                                   value="{{ search_params.date_end }}">
+                        </div>
+                        <div class="col-md-2">
+                            <label for="plate_number" class="form-label">车牌号</label>
+                            <input type="text" class="form-control" id="plate_number" name="plate_number" 
+                                   placeholder="输入车牌号" value="{{ search_params.plate_number }}">
+                        </div>
+                        <div class="col-md-2">
+                            <label for="batch_no" class="form-label">批次号</label>
+                            <input type="text" class="form-control" id="batch_no" name="batch_no" 
+                                   placeholder="输入批次号" value="{{ search_params.batch_no }}">
+                        </div>
+                        <div class="col-md-2">
+                            <label for="customer_name" class="form-label">客户名称</label>
+                            <input type="text" class="form-control" id="customer_name" name="customer_name" 
+                                   placeholder="输入客户名称" value="{{ search_params.customer_name }}">
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">&nbsp;</label>
+                            <div class="d-grid gap-2">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-search"></i> 搜索
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- 数据显示区域 -->
+    <div class="row">
+        <div class="col-12">
+            {% if batch_groups %}
+                <!-- 批次数据显示 -->
+                {% for batch in batch_groups %}
+                <div class="card batch-card">
+                    <div class="card-header batch-header">
+                        <div class="row align-items-center">
+                            <div class="col-md-1">
+                                <input type="checkbox" class="form-check-input batch-select-all"
+                                       data-batch="{{ batch.batch_no }}"
+                                       title="选择/取消选择该批次所有记录">
+                                <label class="form-check-label ms-1">全选</label>
+                            </div>
+                            <div class="col-md-7">
+                                <h5 class="mb-0">
+                                    <i class="fas fa-boxes me-2"></i>
+                                    批次号: {{ batch.batch_no }} |
+                                    车牌: {{ batch.plate_number }} |
+                                    目的地: {{ batch.destination }}
+                                </h5>
+                                <small>出库时间: {{ batch.outbound_time.strftime('%Y-%m-%d %H:%M') }}</small>
+                            </div>
+                            <div class="col-md-4 text-end">
+                                <span class="badge bg-light text-dark me-2">
+                                    板数: {{ batch.total_pallet_count }}
+                                </span>
+                                <span class="badge bg-light text-dark me-2">
+                                    件数: {{ batch.total_package_count }}
+                                </span>
+                                <span class="badge bg-light text-dark">
+                                    重量: {{ "%.1f"|format(batch.total_weight) }}kg
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-striped table-hover mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th width="5%">选择</th>
+                                        <th width="12%">客户名称</th>
+                                        <th width="20%">识别编码</th>
+                                        <th width="8%">板数</th>
+                                        <th width="8%">件数</th>
+                                        <th width="10%">重量(kg)</th>
+                                        <th width="10%">体积(m³)</th>
+                                        <th width="8%">单据</th>
+                                        <th width="12%">跟单客服</th>
+                                        <th width="7%">备注</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for record in batch.records %}
+                                    <tr data-batch="{{ batch.batch_no }}">
+                                        <td>
+                                            <input type="checkbox" class="form-check-input record-checkbox"
+                                                   value="{{ record.id }}" name="record_ids[]"
+                                                   data-batch="{{ batch.batch_no }}">
+                                        </td>
+                                        <td title="{{ record.customer_name }}">
+                                            {{ record.customer_name }}
+                                        </td>
+                                        <td class="identification-code" title="{{ record.identification_code }}">
+                                            {{ record.identification_code }}
+                                        </td>
+                                        <td>{{ record.pallet_count or '' }}</td>
+                                        <td>{{ record.package_count or '' }}</td>
+                                        <td>{{ record.weight or '' }}</td>
+                                        <td>{{ record.volume or '' }}</td>
+                                        <td>{{ record.documents or '' }}</td>
+                                        <td title="{{ record.service_staff or (record.operated_by_user.username if record.operated_by_user else '') }}">
+                                            {{ record.service_staff or (record.operated_by_user.username if record.operated_by_user else '') }}
+                                        </td>
+                                        <td class="remarks-column" title="{{ record.remarks }}">
+                                            {{ record.remarks or '' }}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+
+                <!-- 分页 -->
+                {% if batch_pagination and batch_pagination.pages > 1 %}
+                <nav aria-label="批次分页">
+                    <ul class="pagination">
+                        {% if batch_pagination.has_prev %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('main.backend_outbound_print', page=batch_pagination.prev_num, **search_params) }}">
+                                <i class="fas fa-chevron-left"></i> 上一页
+                            </a>
+                        </li>
+                        {% endif %}
+                        
+                        {% for page_num in range(1, batch_pagination.pages + 1) %}
+                        {% if page_num == batch_pagination.page %}
+                        <li class="page-item active">
+                            <span class="page-link">{{ page_num }}</span>
+                        </li>
+                        {% else %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('main.backend_outbound_print', page=page_num, **search_params) }}">
+                                {{ page_num }}
+                            </a>
+                        </li>
+                        {% endif %}
+                        {% endfor %}
+                        
+                        {% if batch_pagination.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('main.backend_outbound_print', page=batch_pagination.next_num, **search_params) }}">
+                                下一页 <i class="fas fa-chevron-right"></i>
+                            </a>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+                {% endif %}
+
+            {% else %}
+                <!-- 空数据提示 -->
+                <div class="empty-data">
+                    <i class="fas fa-inbox fa-3x mb-3"></i>
+                    <h4>暂无数据</h4>
+                    <p class="text-muted">没有找到符合条件的后端仓出库记录</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- 打印按钮 -->
+{% if batch_groups %}
+<div class="fixed-bottom bg-white border-top p-3">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-12 text-center">
+                <button type="button" class="btn btn-print btn-lg me-3" onclick="printSelected()">
+                    <i class="fas fa-print me-2"></i>打印选中记录
+                </button>
+                <button type="button" class="btn btn-outline-secondary btn-lg" onclick="selectAll()">
+                    <i class="fas fa-check-square me-2"></i>全选
+                </button>
+                <button type="button" class="btn btn-outline-secondary btn-lg ms-2" onclick="clearAll()">
+                    <i class="fas fa-square me-2"></i>清空
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+// 全选功能
+function selectAll() {
+    const checkboxes = document.querySelectorAll('.record-checkbox');
+    checkboxes.forEach(checkbox => {
+        checkbox.checked = true;
+    });
+}
+
+// 清空选择
+function clearAll() {
+    const checkboxes = document.querySelectorAll('.record-checkbox');
+    checkboxes.forEach(checkbox => {
+        checkbox.checked = false;
+    });
+}
+
+// 打印选中记录
+function printSelected() {
+    const selectedCheckboxes = document.querySelectorAll('.record-checkbox:checked');
+    
+    if (selectedCheckboxes.length === 0) {
+        alert('请至少选择一条记录进行打印');
+        return;
+    }
+    
+    const recordIds = Array.from(selectedCheckboxes).map(cb => cb.value);
+    
+    // 创建表单并提交
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = '{{ url_for("main.backend_outbound_print_document") }}';
+    form.target = '_blank';
+    
+    recordIds.forEach(id => {
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = 'record_ids[]';
+        input.value = id;
+        form.appendChild(input);
+    });
+    
+    // 添加CSRF token
+    const csrfToken = document.querySelector('meta[name=csrf-token]');
+    if (csrfToken) {
+        const csrfInput = document.createElement('input');
+        csrfInput.type = 'hidden';
+        csrfInput.name = 'csrf_token';
+        csrfInput.value = csrfToken.getAttribute('content');
+        form.appendChild(csrfInput);
+    }
+    
+    document.body.appendChild(form);
+    form.submit();
+    document.body.removeChild(form);
+}
+
+// 页面加载完成后的初始化
+document.addEventListener('DOMContentLoaded', function() {
+    // 设置默认日期范围
+    const dateStart = document.getElementById('date_start');
+    const dateEnd = document.getElementById('date_end');
+
+    if (!dateStart.value) {
+        const yesterday = new Date();
+        yesterday.setDate(yesterday.getDate() - 1);
+        dateStart.value = yesterday.toISOString().split('T')[0];
+    }
+
+    if (!dateEnd.value) {
+        const today = new Date();
+        dateEnd.value = today.toISOString().split('T')[0];
+    }
+
+    // 批次父级选取按钮功能
+    const batchSelectAllButtons = document.querySelectorAll('.batch-select-all');
+    batchSelectAllButtons.forEach(button => {
+        button.addEventListener('change', function() {
+            const batchNo = this.getAttribute('data-batch');
+            const recordCheckboxes = document.querySelectorAll(`.record-checkbox[data-batch="${batchNo}"]`);
+
+            recordCheckboxes.forEach(checkbox => {
+                checkbox.checked = this.checked;
+            });
+        });
+    });
+
+    // 监听单个记录选择变化，更新批次全选状态
+    const recordCheckboxes = document.querySelectorAll('.record-checkbox');
+    recordCheckboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            const batchNo = this.getAttribute('data-batch');
+            const batchSelectAll = document.querySelector(`.batch-select-all[data-batch="${batchNo}"]`);
+            const batchRecords = document.querySelectorAll(`.record-checkbox[data-batch="${batchNo}"]`);
+            const checkedRecords = document.querySelectorAll(`.record-checkbox[data-batch="${batchNo}"]:checked`);
+
+            if (batchSelectAll) {
+                batchSelectAll.checked = batchRecords.length === checkedRecords.length;
+                batchSelectAll.indeterminate = checkedRecords.length > 0 && checkedRecords.length < batchRecords.length;
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

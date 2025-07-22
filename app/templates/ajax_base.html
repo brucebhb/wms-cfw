@@ -1,0 +1,56 @@
+<!-- AJAX请求专用的基础模板，只包含内容部分，不包含侧边栏和顶部导航 -->
+<div class="ajax-page-content">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    {% block content %}{% endblock %}
+</div>
+
+<style>
+/* AJAX页面样式 */
+.ajax-page-content {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+    padding: 0;
+    margin: 0;
+}
+
+/* 确保表格不会溢出 */
+.ajax-page-content .table-responsive {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* 确保容器不会影响布局 */
+.ajax-page-content .container-fluid {
+    padding-left: 15px;
+    padding-right: 15px;
+}
+
+{% block styles %}{% endblock %}
+</style>
+
+<script>
+// AJAX页面脚本
+$(document).ready(function() {
+    // 确保Bootstrap组件正常工作
+    if (typeof bootstrap !== 'undefined') {
+        // 重新初始化Bootstrap组件
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+    }
+});
+
+{% block scripts %}{% endblock %}
+</script>

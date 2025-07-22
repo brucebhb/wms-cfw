@@ -1,0 +1,1526 @@
+{% extends "base.html" %}
+
+{% block title %}后端仓返回前端仓{% endblock %}
+
+{% block styles %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/handsontable@12.4.0/dist/handsontable.full.min.css">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/simple-table.css') }}" type="text/css" />
+<style>
+    .batch-options {
+        margin-bottom: 1rem;
+    }
+    #hot-container {
+        height: 600px;
+        overflow: visible;
+        margin-bottom: 20px;
+        margin-left: auto;
+        margin-right: auto;
+        position: relative;
+    }
+    .handsontable td {
+        height: 32px !important;
+        line-height: 28px !important;
+        padding: 4px 6px !important;
+        font-size: 14px !important;
+        text-align: center !important;
+        vertical-align: middle !important;
+    }
+    .handsontable th {
+        height: 36px !important;
+        padding: 6px 6px !important;
+        font-size: 14px !important;
+        font-weight: bold !important;
+        text-align: center !important;
+        vertical-align: middle !important;
+    }
+    .handsontable .required {
+        color: #ff0000;
+    }
+    .required {
+        color: #dc3545 !important;
+        font-weight: bold;
+    }
+    .btn-action {
+        margin-right: 8px;
+    }
+    .card-body {
+        text-align: center;
+    }
+    .destination-info {
+        background-color: #fff3cd;
+    }
+
+    /* 库存模态框识别编码列特殊样式 */
+    #inventoryTable .identification-code {
+        font-size: 15px !important;
+        font-weight: 600 !important;
+        white-space: normal !important;
+        word-wrap: break-word !important;
+        line-height: 1.3 !important;
+        max-width: 200px !important;
+        min-width: 180px !important;
+    }
+
+    /* 全出按钮样式 */
+    #inventoryTable .full-out-btn {
+        font-size: 12px !important;
+        padding: 0.25rem 0.5rem !important;
+        white-space: nowrap !important;
+    }
+    .return-reason {
+        margin-bottom: 20px;
+    }
+
+    /* 强制模态框全屏样式 */
+    #inventoryModal .modal-dialog {
+        max-width: none !important;
+        width: 95vw !important;
+        height: 95vh !important;
+        margin: 2.5vh auto !important;
+    }
+
+    #inventoryModal .modal-content {
+        height: 95vh !important;
+        max-height: 95vh !important;
+        width: 100% !important;
+        max-width: none !important;
+    }
+
+    #inventoryModal .modal-body {
+        height: calc(95vh - 120px) !important;
+        max-height: calc(95vh - 120px) !important;
+        overflow: hidden !important;
+        display: flex !important;
+        flex-direction: column !important;
+    }
+
+    #inventoryModal .table-responsive {
+        flex: 1 !important;
+        overflow-y: auto !important;
+        min-height: 0 !important;
+    }
+
+    #inventoryModal table {
+        min-width: 1520px !important;
+        font-size: 12px !important;
+    }
+
+    #inventoryModal th, #inventoryModal td {
+        padding: 4px 6px !important;
+        white-space: nowrap !important;
+    }
+
+    #inventoryModal .identification-code {
+        font-size: 15px !important;
+        font-weight: 600 !important;
+        max-width: 200px !important;
+        word-break: break-all !important;
+        white-space: normal !important;
+        word-wrap: break-word !important;
+        line-height: 1.3 !important;
+    }
+
+    /* 备注输入框样式 */
+    #inventoryModal .inventory-remarks {
+        border: 1px solid #ddd !important;
+        border-radius: 3px !important;
+        padding: 2px 4px !important;
+        font-size: 11px !important;
+        line-height: 1.2 !important;
+        height: 24px !important;
+    }
+
+    #inventoryModal .inventory-remarks:focus {
+        border-color: #007bff !important;
+        box-shadow: 0 0 0 0.1rem rgba(0, 123, 255, 0.25) !important;
+        outline: none !important;
+    }
+
+    /* 更强力的样式覆盖 */
+    .modal#inventoryModal .modal-dialog {
+        max-width: none !important;
+        width: 95vw !important;
+        height: 95vh !important;
+        margin: 2.5vh auto !important;
+    }
+
+    .modal#inventoryModal .modal-content {
+        height: 95vh !important;
+        max-height: 95vh !important;
+        width: 100% !important;
+        max-width: none !important;
+    }
+
+    .modal#inventoryModal .modal-body {
+        height: calc(95vh - 120px) !important;
+        max-height: calc(95vh - 120px) !important;
+        overflow: hidden !important;
+        display: flex !important;
+        flex-direction: column !important;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- 页面标题 -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-warning">
+                <div class="card-header bg-warning text-dark">
+                    <h3 class="card-title mb-0">
+                        <i class="fas fa-undo me-2"></i>后端仓返回前端仓
+                        <span class="badge bg-dark text-warning ms-2">Return to Frontend</span>
+                    </h3>
+                    <div class="mt-2">
+                        <a href="{{ url_for('main.backend_outbound') }}" class="btn btn-sm btn-outline-dark">
+                            <i class="fas fa-arrow-left me-1"></i>返回选择页面
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 公共数据区域 -->
+    <div class="row mb-3">
+        <div class="col-12">
+            <div class="card border-primary">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-info-circle me-2"></i>公共信息
+                        <small class="ms-2">（适用于本次返回的所有货物）</small>
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <!-- 第一行：出库车牌、司机姓名、司机联系方式 -->
+                    <div class="row">
+                        <!-- 运输车牌 -->
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="commonPlateNumber" class="form-label">
+                                    <span class="required">出库车牌 *</span>
+                                </label>
+                                <input type="text" class="form-control" id="commonPlateNumber"
+                                       placeholder="请输入出库车牌号" required>
+                                <div class="form-text">货物出库返回使用的车牌号</div>
+                            </div>
+                        </div>
+
+                        <!-- 司机姓名 -->
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="driverName" class="form-label">
+                                    <span class="required">司机姓名 *</span>
+                                </label>
+                                <input type="text" class="form-control" id="driverName"
+                                       placeholder="请输入司机姓名" required>
+                                <div class="form-text">负责运输的司机姓名</div>
+                            </div>
+                        </div>
+
+                        <!-- 司机联系方式 -->
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="driverContact" class="form-label">
+                                    <span class="required">司机联系方式 *</span>
+                                </label>
+                                <input type="tel" class="form-control" id="driverContact"
+                                       placeholder="请输入司机手机号" required
+                                       pattern="^1[3-9]\d{9}$" maxlength="11">
+                                <div class="form-text">司机的联系电话（11位手机号）</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 第二行：目的仓、目的仓地址、目的仓联系人 -->
+                    <div class="row">
+                        <!-- 目的仓选择 -->
+                        <div class="col-md-3">
+                            <div class="mb-3">
+                                <label for="targetWarehouse" class="form-label">
+                                    <span class="required">目的仓 *</span>
+                                </label>
+                                <select class="form-select" id="targetWarehouse" required>
+                                    <option value="">请选择目的仓</option>
+                                    <option value="平湖仓">平湖仓</option>
+                                    <option value="昆山仓">昆山仓</option>
+                                    <option value="成都仓">成都仓</option>
+                                </select>
+                                <div class="form-text">选择货物返回的前端仓</div>
+                            </div>
+                        </div>
+
+                        <!-- 返回时间 -->
+                        <div class="col-md-3">
+                            <div class="mb-3">
+                                <label for="returnTime" class="form-label">
+                                    <span class="required">返回时间 *</span>
+                                </label>
+                                <input type="date" class="form-control" id="returnTime" required>
+                                <div class="form-text">货物返回的具体时间</div>
+                            </div>
+                        </div>
+
+                        <!-- 目的仓地址 -->
+                        <div class="col-md-3">
+                            <div class="mb-3">
+                                <label for="warehouseAddress" class="form-label">目的仓地址</label>
+                                <input type="text" class="form-control" id="warehouseAddress"
+                                       placeholder="自动获取地址" readonly>
+                                <div class="form-text">根据选择的仓库自动填充</div>
+                            </div>
+                        </div>
+
+                        <!-- 目的仓联系人 -->
+                        <div class="col-md-3">
+                            <div class="mb-3">
+                                <label for="warehouseContact" class="form-label">目的仓联系人</label>
+                                <input type="text" class="form-control" id="warehouseContact"
+                                       placeholder="自动获取联系人" readonly>
+                                <div class="form-text">根据选择的仓库自动填充</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 批量操作工具栏 -->
+    <div class="row mb-3">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <div class="batch-options d-flex flex-wrap align-items-center justify-content-between">
+                        <div class="d-flex flex-wrap align-items-center">
+                            <button type="button" class="btn btn-success btn-action" id="addRowBtn">
+                                <i class="fas fa-plus"></i> 添加行
+                            </button>
+                            <button type="button" class="btn btn-danger btn-action" id="deleteRowBtn">
+                                <i class="fas fa-trash"></i> 删除行
+                            </button>
+                            <button type="button" class="btn btn-info btn-action" id="loadInventoryBtn">
+                                <i class="fas fa-download"></i> 加载库存
+                            </button>
+
+                        </div>
+                        <div class="d-flex flex-wrap align-items-center">
+                            <button type="button" class="btn btn-primary btn-action" id="saveAllBtn">
+                                <i class="fas fa-save"></i> 保存全部
+                            </button>
+                            <button type="button" class="btn btn-secondary btn-action" id="clearAllBtn">
+                                <i class="fas fa-eraser"></i> 清空
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 数据录入区域 -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title">
+                        <i class="fas fa-table me-2"></i>货物明细录入
+                        <small class="text-muted">（标有 <span class="required">*</span> 的字段为必填项，字段与入库记录保持一致）</small>
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div id="hot-container"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 操作说明 -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card border-info">
+                <div class="card-header bg-info text-white">
+                    <h6 class="card-title mb-0">
+                        <i class="fas fa-question-circle me-1"></i>操作说明
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6 class="text-primary">公共信息说明</h6>
+                            <ul class="small">
+                                <li><span class="required">出库车牌*</span>：货物出库返回使用的车牌号，适用于所有货物</li>
+                                <li><span class="required">司机姓名*</span>：负责运输的司机姓名</li>
+                                <li><span class="required">司机联系方式*</span>：司机的联系电话</li>
+                                <li><span class="required">目的仓*</span>：选择货物返回的前端仓库</li>
+                                <li><span class="required">返回时间*</span>：货物返回的具体时间，适用于所有货物</li>
+                                <li><span class="text-muted">目的仓地址</span>：根据选择的仓库自动填充</li>
+                                <li><span class="text-muted">目的仓联系人</span>：根据选择的仓库自动填充</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="text-success">货物明细说明</h6>
+                            <ul class="small">
+                                <li><span class="required">客户名称*</span>：货物所属客户，与入库记录一致</li>
+                                <li><span class="text-muted">识别编码</span>：系统自动生成，保持唯一性</li>
+                                <li><span class="text-muted">板数/件数</span>：至少填写一项，与入库字段一致</li>
+                                <li><span class="text-muted">重量/体积</span>：货物的物理属性</li>
+                                <li><span class="text-muted">入库车牌</span>：货物原入库时的车牌号</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="row mt-3">
+                        <div class="col-12">
+                            <div class="alert alert-warning mb-0">
+                                <i class="fas fa-exclamation-triangle me-1"></i>
+                                <strong>注意：</strong>
+                                公共信息区域的出库车牌、司机信息、目的仓信息和返回时间将自动应用到所有货物明细中，货物明细字段与入库记录保持一致，确保数据的完整性和准确性。
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 库存选择模态框 -->
+<div class="modal fade" id="inventoryModal" tabindex="-1" aria-labelledby="inventoryModalLabel" aria-hidden="true">
+    <div class="modal-dialog" style="max-width: none !important; width: 95vw !important; height: 95vh !important; margin: 2.5vh auto !important;">
+        <div class="modal-content" style="height: 95vh !important; max-height: 95vh !important; width: 100% !important; max-width: none !important;">
+            <div class="modal-header">
+                <h5 class="modal-title" id="inventoryModalLabel">
+                    <i class="fas fa-warehouse me-2"></i>选择库存记录
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" style="height: calc(95vh - 120px) !important; max-height: calc(95vh - 120px) !important; overflow: hidden !important; display: flex !important; flex-direction: column !important;">
+                <!-- 搜索区域 -->
+                <div class="row mb-3 flex-shrink-0">
+                    <div class="col-md-6">
+                        <label for="searchCustomer" class="form-label">客户名称</label>
+                        <input type="text" class="form-control" id="searchCustomer" placeholder="输入客户名称搜索">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">&nbsp;</label>
+                        <div>
+                            <button type="button" class="btn btn-primary" onclick="searchInventory()">
+                                <i class="fas fa-search"></i> 搜索
+                            </button>
+                            <button type="button" class="btn btn-secondary" onclick="resetInventorySearch()">
+                                <i class="fas fa-refresh"></i> 重置
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 库存列表 -->
+                <div class="table-responsive flex-grow-1" style="flex: 1 !important; overflow-y: auto !important; min-height: 0 !important;">
+                    <table class="table table-striped table-hover" id="inventoryTable" style="min-width: 1400px !important; font-size: 14px !important;">
+                        <thead class="table-light sticky-top">
+                            <tr>
+                                <th width="50">选择</th>
+                                <th width="120">客户名称</th>
+                                <th width="200">识别编码</th>
+                                <th width="100">入库车牌</th>
+                                <th width="60">板数</th>
+                                <th width="60">件数</th>
+                                <th width="60">全出</th>
+                                <th width="80">出库板数</th>
+                                <th width="80">出库件数</th>
+                                <th width="80">重量(kg)</th>
+                                <th width="80">体积(m³)</th>
+                                <th width="60">单据</th>
+                                <th width="100">跟单客服</th>
+                                <th width="120">备注</th>
+                            </tr>
+                        </thead>
+                        <tbody id="inventoryTableBody">
+                            <tr>
+                                <td colspan="14" class="text-center">
+                                    <div class="spinner-border text-primary" role="status">
+                                        <span class="visually-hidden">加载中...</span>
+                                    </div>
+                                    <div class="mt-2">正在加载库存数据...</div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- 选中的库存信息 -->
+                <div id="selectedInventoryInfo" class="mt-3" style="display: none;">
+                    <div class="alert alert-info">
+                        <h6><i class="fas fa-info-circle me-2"></i>已选择的库存</h6>
+                        <div id="selectedInventoryDetails"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary" onclick="confirmInventorySelection()">
+                    <i class="fas fa-check"></i> 确认选择
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/handsontable@12.4.0/dist/handsontable.full.min.js"></script>
+<script>
+// 等待Handsontable库加载完成
+function waitForHandsontable(callback, maxAttempts = 50) {
+    let attempts = 0;
+
+    function check() {
+        attempts++;
+        if (typeof Handsontable !== 'undefined') {
+            console.log('✅ Handsontable库已加载');
+            callback();
+        } else if (attempts < maxAttempts) {
+            console.log(`⏳ 等待Handsontable加载... (${attempts}/${maxAttempts})`);
+            setTimeout(check, 100);
+        } else {
+            console.error('❌ Handsontable库加载失败');
+            if (typeof showMessage !== 'undefined') {
+                showMessage('error', 'Handsontable库加载失败，请刷新页面重试');
+            }
+        }
+    }
+
+    check();
+}
+
+$(document).ready(function() {
+    console.log('后端仓返回前端仓页面已加载');
+
+    // 页面环境调试信息
+    console.log('🔍 页面环境调试信息:');
+    console.log('- 视窗尺寸:', window.innerWidth + 'x' + window.innerHeight);
+    console.log('- 设备像素比:', window.devicePixelRatio);
+    console.log('- 用户代理:', navigator.userAgent.substring(0, 100) + '...');
+    console.log('- jQuery版本:', $.fn.jquery);
+    console.log('- Bootstrap可用:', typeof bootstrap !== 'undefined');
+
+    // 检查模态框元素是否存在
+    const modalElement = document.getElementById('inventoryModal');
+    console.log('- 模态框元素存在:', !!modalElement);
+    if (modalElement) {
+        console.log('- 模态框初始display:', window.getComputedStyle(modalElement).display);
+    }
+
+    // 简单的消息显示函数（备用）
+    if (typeof showMessage === 'undefined') {
+        window.showMessage = function(type, message) {
+            console.log(`[${type.toUpperCase()}] ${message}`);
+            // 使用更轻量的提示方式
+            const toast = document.createElement('div');
+            toast.className = 'alert alert-' + (type === 'error' ? 'danger' : type === 'success' ? 'success' : 'warning');
+            toast.style.cssText = 'position:fixed;top:20px;right:20px;z-index:9999;min-width:300px;';
+            toast.innerHTML = `<strong>${type.toUpperCase()}:</strong> ${message}`;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 3000);
+        };
+    }
+
+    // 先绑定基本的按钮事件，不依赖Handsontable
+    bindBasicEvents();
+
+    // 添加CSS样式检查
+    checkModalStyles();
+
+    // 等待Handsontable加载完成后再初始化表格
+    waitForHandsontable(function() {
+        initializePage();
+    });
+});
+
+// CSS样式检查函数
+function checkModalStyles() {
+    console.log('🔍 检查模态框CSS样式:');
+
+    // 检查自定义样式是否生效
+    const testElement = document.createElement('div');
+    testElement.id = 'inventoryModal';
+    testElement.innerHTML = '<div class="modal-dialog"><div class="modal-content"><div class="modal-body"></div></div></div>';
+    testElement.style.display = 'none';
+    document.body.appendChild(testElement);
+
+    const dialog = testElement.querySelector('.modal-dialog');
+    const content = testElement.querySelector('.modal-content');
+    const body = testElement.querySelector('.modal-body');
+
+    if (dialog) {
+        const styles = window.getComputedStyle(dialog);
+        console.log('- 测试modal-dialog样式:');
+        console.log('  - width:', styles.width);
+        console.log('  - max-width:', styles.maxWidth);
+        console.log('  - height:', styles.height);
+    }
+
+    // 清理测试元素
+    document.body.removeChild(testElement);
+
+    // 检查页面中的样式表
+    const styleSheets = Array.from(document.styleSheets);
+    console.log('- 样式表数量:', styleSheets.length);
+
+    styleSheets.forEach((sheet, index) => {
+        try {
+            console.log(`- 样式表${index}:`, sheet.href || '内联样式');
+        } catch (e) {
+            console.log(`- 样式表${index}: 无法访问 (CORS限制)`);
+        }
+    });
+}
+
+// 加载库存数据（全局函数）
+function loadInventoryData() {
+    console.log('🔄 开始加载后端仓库存数据...');
+    showMessage('info', '正在加载库存数据...');
+
+    $.ajax({
+        url: '/api/inventory/backend',
+        method: 'GET',
+        timeout: 10000, // 10秒超时
+        success: function(response) {
+            console.log('✅ 库存数据加载成功:', response);
+            if (response.success) {
+                if (response.data && response.data.length > 0) {
+                    showMessage('success', `加载到 ${response.data.length} 条库存记录`);
+                    showInventorySelector(response.data);
+                } else if (response.inventory && response.inventory.length > 0) {
+                    showMessage('success', `加载到 ${response.inventory.length} 条库存记录`);
+                    showInventorySelector(response.inventory);
+                } else {
+                    showMessage('warning', '当前没有可用的库存数据');
+                }
+            } else {
+                showMessage('error', '加载库存数据失败: ' + (response.message || '未知错误'));
+            }
+        },
+        error: function(xhr, status, error) {
+            console.error('❌ 库存数据加载失败:', {xhr, status, error});
+            let errorMsg = '加载库存数据失败';
+            if (status === 'timeout') {
+                errorMsg = '请求超时，请检查网络连接';
+            } else if (xhr.status === 404) {
+                errorMsg = 'API端点不存在';
+            } else if (xhr.status === 500) {
+                errorMsg = '服务器内部错误';
+            }
+            showMessage('error', errorMsg);
+        }
+    });
+}
+
+// 显示库存选择器（全局函数）
+function showInventorySelector(inventoryData) {
+    console.log('显示库存选择器:', inventoryData);
+
+    // 存储原始数据
+    window.currentInventoryData = inventoryData;
+    window.selectedInventoryItems = [];
+
+    // 渲染库存表格
+    renderInventoryTable(inventoryData);
+
+    // 绑定模态框事件
+    bindInventoryModalEvents();
+
+    // 显示模态框前的调试信息
+    const modalElement = document.getElementById('inventoryModal');
+    const modalDialog = modalElement.querySelector('.modal-dialog');
+    const modalContent = modalElement.querySelector('.modal-content');
+    const modalBody = modalElement.querySelector('.modal-body');
+
+    console.log('🔍 模态框元素调试信息:');
+    console.log('- 视窗尺寸:', window.innerWidth + 'x' + window.innerHeight);
+    console.log('- modalElement存在:', !!modalElement);
+    console.log('- modalDialog存在:', !!modalDialog);
+    console.log('- modalContent存在:', !!modalContent);
+    console.log('- modalBody存在:', !!modalBody);
+
+    if (modalDialog) {
+        const dialogStyles = window.getComputedStyle(modalDialog);
+        console.log('- modalDialog当前样式:');
+        console.log('  - width:', dialogStyles.width);
+        console.log('  - height:', dialogStyles.height);
+        console.log('  - max-width:', dialogStyles.maxWidth);
+        console.log('  - margin:', dialogStyles.margin);
+    }
+
+    if (modalContent) {
+        const contentStyles = window.getComputedStyle(modalContent);
+        console.log('- modalContent当前样式:');
+        console.log('  - width:', contentStyles.width);
+        console.log('  - height:', contentStyles.height);
+        console.log('  - max-height:', contentStyles.maxHeight);
+    }
+
+    // 显示模态框
+    const modal = new bootstrap.Modal(document.getElementById('inventoryModal'));
+    modal.show();
+
+    // 模态框显示后的调试信息
+    setTimeout(() => {
+        console.log('🔍 模态框显示后的尺寸:');
+        if (modalDialog) {
+            const rect = modalDialog.getBoundingClientRect();
+            console.log('- modalDialog实际尺寸:', rect.width + 'x' + rect.height);
+            console.log('- modalDialog位置:', 'left:' + rect.left + ', top:' + rect.top);
+        }
+
+        if (modalContent) {
+            const rect = modalContent.getBoundingClientRect();
+            console.log('- modalContent实际尺寸:', rect.width + 'x' + rect.height);
+        }
+
+        if (modalBody) {
+            const rect = modalBody.getBoundingClientRect();
+            console.log('- modalBody实际尺寸:', rect.width + 'x' + rect.height);
+        }
+
+        // 检查是否有CSS冲突
+        const allStyles = document.querySelectorAll('style, link[rel="stylesheet"]');
+        console.log('- 页面中的样式表数量:', allStyles.length);
+
+        // 检查Bootstrap版本
+        if (typeof bootstrap !== 'undefined') {
+            console.log('- Bootstrap版本可用');
+        } else {
+            console.log('- ⚠️ Bootstrap未加载');
+        }
+    }, 500);
+}
+
+// 渲染库存表格
+function renderInventoryTable(data) {
+    const tbody = document.getElementById('inventoryTableBody');
+    tbody.innerHTML = '';
+
+    if (!data || data.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="14" class="text-center text-muted">暂无库存数据</td></tr>';
+        return;
+    }
+
+    // 调试：打印所有数据的关键字段
+    if (data.length > 0) {
+        console.log('🔍 所有库存数据的关键字段:');
+        data.forEach((item, index) => {
+            console.log(`记录 ${index + 1}:`);
+            console.log(`  - ID: ${item.id}`);
+            console.log(`  - 客户: ${item.customer_name}`);
+            console.log(`  - 板数: ${item.pallet_count} (类型: ${typeof item.pallet_count})`);
+            console.log(`  - 件数: ${item.package_count} (类型: ${typeof item.package_count})`);
+            console.log(`  - 重量: ${item.weight} (类型: ${typeof item.weight})`);
+            console.log(`  - 体积: ${item.volume} (类型: ${typeof item.volume})`);
+            console.log(`  - 库位: ${item.location} (类型: ${typeof item.location})`);
+            console.log(`  - 单据: ${item.documents} (类型: ${typeof item.documents})`);
+            console.log('---');
+        });
+    }
+
+    data.forEach((item, index) => {
+        const row = document.createElement('tr');
+        row.style.cursor = 'pointer';
+        row.innerHTML = `
+            <td class="text-center">
+                <input type="checkbox" class="form-check-input inventory-checkbox"
+                       value="${item.id}" data-index="${index}">
+            </td>
+            <td class="text-truncate" title="${item.customer_name || ''}">
+                ${item.customer_name || ''}
+            </td>
+            <td class="text-truncate identification-code" title="${item.identification_code || ''}">
+                ${item.identification_code || ''}
+            </td>
+            <td>${item.plate_number || ''}</td>
+            <td class="text-center">${item.pallet_count || ''}</td>
+            <td class="text-center">${item.package_count || ''}</td>
+            <td class="text-center">
+                <button type="button" class="btn btn-sm btn-outline-primary full-out-btn"
+                        onclick="setFullOut(this)" data-pallets="${item.pallet_count || 0}"
+                        data-packages="${item.package_count || 0}">全出</button>
+            </td>
+            <td class="text-center">
+                <input type="number" class="form-control form-control-sm outbound-pallets"
+                       min="0" max="${item.pallet_count || 0}" value="0" style="width:70px;"
+                       onchange="validateOutboundQuantity(this, ${item.pallet_count || 0})">
+            </td>
+            <td class="text-center">
+                <input type="number" class="form-control form-control-sm outbound-packages"
+                       min="0" max="${item.package_count || 0}" value="0" style="width:70px;"
+                       onchange="validateOutboundQuantity(this, ${item.package_count || 0})">
+            </td>
+            <td class="text-end">${item.weight || ''}</td>
+            <td class="text-end">${item.volume || ''}</td>
+            <td class="text-center">${item.documents || ''}</td>
+            <td class="text-truncate" title="${item.service_staff || ''}">
+                ${item.service_staff || ''}
+            </td>
+            <td>
+                <input type="text" class="form-control form-control-sm inventory-remarks"
+                       value="${item.remarks || ''}"
+                       placeholder="输入备注"
+                       style="width: 110px; font-size: 11px;"
+                       data-inventory-id="${item.id}">
+            </td>
+        `;
+
+        // 双击行选择
+        row.addEventListener('dblclick', function() {
+            const checkbox = row.querySelector('.inventory-checkbox');
+            checkbox.checked = !checkbox.checked;
+            updateSelectedCount();
+        });
+
+        tbody.appendChild(row);
+    });
+
+    updateSelectedCount();
+}
+
+// 绑定模态框事件
+function bindInventoryModalEvents() {
+    // 避免重复绑定
+    $('#inventoryModal').off('click.inventory');
+
+    // 单个复选框变化
+    $('#inventoryModal').on('click.inventory', '.inventory-checkbox', function() {
+        updateSelectedCount();
+    });
+
+    // 全选
+    $('#selectAllInventory').off('click').on('click', function() {
+        $('.inventory-checkbox').prop('checked', true);
+        updateSelectedCount();
+    });
+
+    // 清空选择
+    $('#clearAllSelection').off('click').on('click', function() {
+        $('.inventory-checkbox').prop('checked', false);
+        updateSelectedCount();
+    });
+
+    // 确认选择
+    $('#confirmSelection').off('click').on('click', function() {
+        confirmInventorySelection();
+    });
+
+    // 搜索功能
+    $('#searchInventory').off('click').on('click', function() {
+        const customerName = $('#searchCustomer').val().trim();
+
+        let filteredData = window.currentInventoryData;
+
+        if (customerName) {
+            filteredData = filteredData.filter(item =>
+                item.customer_name && item.customer_name.includes(customerName)
+            );
+        }
+
+        renderInventoryTable(filteredData);
+    });
+
+    // 清空搜索
+    $('#clearSearch').off('click').on('click', function() {
+        $('#searchCustomer').val('');
+        renderInventoryTable(window.currentInventoryData);
+    });
+}
+
+// 更新选中数量
+function updateSelectedCount() {
+    const count = $('.inventory-checkbox:checked').length;
+    // 由于模态框中没有selectedCount元素，这里只记录日志
+    console.log(`已选择 ${count} 条库存记录`);
+}
+
+// 将选中的库存数据填充到表格
+function fillInventoryToTable(selectedItems) {
+    console.log('🔍 fillInventoryToTable 调用，window.hot 状态:', !!window.hot);
+    console.log('🔍 selectedItems 数量:', selectedItems.length);
+
+    if (!window.hot) {
+        console.error('❌ 表格未初始化，window.hot 为:', window.hot);
+        showMessage('error', '表格未初始化');
+        return;
+    }
+
+    // 清空现有数据
+    window.hot.loadData([]);
+
+    // 填充选中的库存数据
+    const tableData = selectedItems.map(item => ({
+        plate_number: item.plate_number || '',
+        customer_name: item.customer_name || '',
+        identification_code: item.identification_code || '',
+        pallet_count: item.outbound_pallet_count || item.pallet_count || '',
+        package_count: item.outbound_package_count || item.package_count || '',
+        weight: item.weight || '',
+        volume: item.volume || '',
+        documents: item.documents || '',
+        service_staff: item.service_staff || '',
+        remarks: item.remarks || '' // 使用从模态框获取的备注
+    }));
+
+    window.hot.loadData(tableData);
+    console.log('✅ 库存数据已填充到表格');
+}
+
+// 保存数据（全局函数）
+function saveAllData() {
+    // 验证公共信息
+    const commonPlateNumber = $('#commonPlateNumber').val();
+    const driverName = $('#driverName').val();
+    const driverContact = $('#driverContact').val();
+    const targetWarehouse = $('#targetWarehouse').val();
+    const returnTime = $('#returnTime').val();
+
+    if (!commonPlateNumber) {
+        showMessage('error', '请填写出库车牌');
+        return;
+    }
+
+    if (!driverName) {
+        showMessage('error', '请填写司机姓名');
+        return;
+    }
+
+    if (!driverContact) {
+        showMessage('error', '请填写司机联系方式');
+        return;
+    }
+
+    // 验证手机号格式
+    const phoneRegex = /^1[3-9]\d{9}$/;
+    if (!phoneRegex.test(driverContact)) {
+        showMessage('error', '请输入正确的手机号格式');
+        return;
+    }
+
+    if (!targetWarehouse) {
+        showMessage('error', '请选择目的仓');
+        return;
+    }
+
+    if (!returnTime) {
+        showMessage('error', '请选择返回时间');
+        return;
+    }
+
+    if (!window.hot) {
+        showMessage('error', '表格未初始化');
+        return;
+    }
+
+    const data = window.hot.getData();
+    const warehouseAddress = $('#warehouseAddress').val();
+    const warehouseContact = $('#warehouseContact').val();
+
+    console.log('保存后端仓返回前端仓数据:', data);
+    console.log('🔍 发送的数据结构详情:');
+    console.log('- records数量:', data.length);
+    console.log('- 第一条记录示例:', data[0]);
+
+    // 发送到专门的API端点
+    $.ajax({
+        url: '/api/backend/outbound/return_frontend',
+        method: 'POST',
+        data: JSON.stringify({
+            records: data,
+            common_data: {
+                plate_number: commonPlateNumber,
+                driver_name: driverName,
+                driver_contact: driverContact,
+                target_warehouse: targetWarehouse,
+                warehouse_address: warehouseAddress,
+                warehouse_contact: warehouseContact,
+                return_time: returnTime
+            },
+            destination: 'return_frontend',
+            warehouse_type: 'backend'
+        }),
+        contentType: 'application/json',
+        success: function(response) {
+            console.log('✅ API响应:', response);
+            console.log('🔍 响应详情:');
+            console.log('- success:', response.success);
+            console.log('- message:', response.message);
+            console.log('- success_count:', response.success_count);
+            console.log('- total_count:', response.total_count);
+            console.log('- errors:', response.errors);
+            if (response.success) {
+                showMessage('success', `保存成功！共处理 ${response.total_count} 条记录，成功 ${response.success_count} 条`);
+
+                // 显示错误信息（如果有）
+                if (response.errors && response.errors.length > 0) {
+                    console.warn('⚠️ 部分记录处理失败:', response.errors);
+                    showMessage('warning', `部分记录处理失败：${response.errors.slice(0, 3).join('; ')}`);
+                }
+
+                // 清空表格
+                if (window.hot) {
+                    window.hot.loadData([{}]);
+                }
+
+                // 清空公共信息
+                $('#commonPlateNumber').val('');
+                $('#driverName').val('');
+                $('#driverContact').val('');
+                $('#targetWarehouse').val('');
+                $('#returnTime').val('');
+                $('#warehouseAddress').val('');
+                $('#warehouseContact').val('');
+            } else {
+                console.error('❌ 保存失败:', response.message);
+                showMessage('error', '保存失败：' + response.message);
+            }
+        },
+        error: function(xhr, status, error) {
+            console.error('❌ 网络请求失败:', {xhr, status, error});
+            let errorMsg = '保存失败，请检查网络连接';
+
+            if (xhr.responseJSON && xhr.responseJSON.message) {
+                errorMsg = '保存失败：' + xhr.responseJSON.message;
+            } else if (xhr.status === 403) {
+                errorMsg = '权限不足，无法执行此操作';
+            } else if (xhr.status === 500) {
+                errorMsg = '服务器内部错误，请联系管理员';
+            }
+
+            showMessage('error', errorMsg);
+        }
+    });
+}
+
+// 绑定基本事件（不依赖Handsontable）
+function bindBasicEvents() {
+    // 加载库存
+    $('#loadInventoryBtn').click(function() {
+        console.log('加载库存按钮被点击');
+        loadInventoryData();
+    });
+
+    // 清空表格
+    $('#clearAllBtn').click(function() {
+        if (confirm('确定要清空所有数据吗？')) {
+            if (window.hot) {
+                window.hot.loadData([{}]);
+            } else {
+                console.log('表格未初始化，无法清空');
+            }
+        }
+    });
+
+    // 保存全部
+    $('#saveAllBtn').click(function() {
+        saveAllData();
+    });
+
+    console.log('✅ 基本事件已绑定');
+}
+
+function initializePage() {
+    console.log('🚀 开始初始化页面...');
+
+    // 初始化Handsontable
+    const container = document.getElementById('hot-container');
+    console.log('🔍 容器元素:', !!container);
+    let hot;
+    
+    // 表格列定义 - 与入库字段保持一致
+    const columns = [
+        {
+            data: 'plate_number',
+            title: '<span class="required">入库车牌*</span>',
+            type: 'text',
+            width: 120
+        },
+        {
+            data: 'customer_name',
+            title: '<span class="required">客户名称*</span>',
+            type: 'text',
+            width: 150
+        },
+        {
+            data: 'identification_code',
+            title: '识别编码',
+            type: 'text',
+            readOnly: true,
+            width: 180
+        },
+        {
+            data: 'pallet_count',
+            title: '板数',
+            type: 'numeric',
+            numericFormat: {
+                pattern: '0'
+            },
+            width: 80
+        },
+        {
+            data: 'package_count',
+            title: '件数',
+            type: 'numeric',
+            numericFormat: {
+                pattern: '0'
+            },
+            width: 80
+        },
+        {
+            data: 'weight',
+            title: '重量(kg)',
+            type: 'numeric',
+            numericFormat: {
+                pattern: '0.00'
+            },
+            width: 100
+        },
+        {
+            data: 'volume',
+            title: '体积(m³)',
+            type: 'numeric',
+            numericFormat: {
+                pattern: '0.00'
+            },
+            width: 100
+        },
+
+        {
+            data: 'documents',
+            title: '单据',
+            type: 'text',
+            width: 80
+        },
+        {
+            data: 'service_staff',
+            title: '跟单客服',
+            type: 'text',
+            width: 100
+        },
+
+        {
+            data: 'remarks',
+            title: '备注',
+            type: 'text',
+            width: 200
+        }
+    ];
+    
+    // 初始化表格
+    hot = new Handsontable(container, {
+        data: [{}], // 初始一行空数据
+        columns: columns,
+        rowHeaders: true,
+        colHeaders: true,
+        contextMenu: true,
+        manualRowResize: true,
+        manualColumnResize: true,
+        stretchH: 'all',
+        autoWrapRow: true,
+        autoWrapCol: true,
+        licenseKey: 'non-commercial-and-evaluation',
+        afterChange: function(changes, source) {
+            // 避免在程序化更新时触发循环调用
+            if (source === 'edit' && changes) {
+                // 只在用户手动编辑时进行处理，避免循环调用
+                console.log('用户编辑了数据:', changes);
+            }
+        }
+    });
+
+    // 将表格实例设置为全局变量，供其他函数使用
+    window.hot = hot;
+    console.log('✅ Handsontable 已初始化并设置为 window.hot:', !!window.hot);
+    
+    // 仓库信息映射（从API动态加载）
+    let warehouseInfo = {};
+
+    // 从服务器端数据加载收货人信息
+    function loadWarehouseData() {
+        console.log('🔄 开始加载收货人信息...');
+
+        // 使用服务器端传递的数据
+        const receiversData = {{ receivers_data | tojson | safe }};
+        console.log('📋 服务器端收货人数据:', receiversData);
+
+        // 转换为前端需要的格式
+        warehouseInfo = {};
+        if (receiversData && Array.isArray(receiversData)) {
+            receiversData.forEach(receiver => {
+                warehouseInfo[receiver.warehouse_name] = {
+                    contact: receiver.contact,
+                    address: receiver.address
+                };
+                console.log(`✅ 加载收货人: ${receiver.warehouse_name}`);
+            });
+            console.log('🎉 收货人数据加载成功:', Object.keys(warehouseInfo));
+
+            // 如果当前已选择目的仓，立即更新地址和联系人
+            const selectedWarehouse = $('#targetWarehouse').val();
+            if (selectedWarehouse && warehouseInfo[selectedWarehouse]) {
+                $('#warehouseAddress').val(warehouseInfo[selectedWarehouse].address);
+                $('#warehouseContact').val(warehouseInfo[selectedWarehouse].contact);
+                console.log(`🔄 自动更新 ${selectedWarehouse} 的信息`);
+            }
+        } else {
+            console.error('❌ 收货人数据格式错误:', receiversData);
+            showMessage('error', '收货人信息格式错误');
+        }
+    }
+
+    // 监听目的仓选择变化
+    $('#targetWarehouse').change(function() {
+        const selectedWarehouse = $(this).val();
+        console.log('🏭 目的仓选择变化:', selectedWarehouse);
+        console.log('📋 当前收货人数据:', warehouseInfo);
+
+        if (selectedWarehouse && warehouseInfo[selectedWarehouse]) {
+            const receiverInfo = warehouseInfo[selectedWarehouse];
+            $('#warehouseAddress').val(receiverInfo.address);
+            $('#warehouseContact').val(receiverInfo.contact);
+            console.log(`✅ 已更新 ${selectedWarehouse} 的信息:`);
+            console.log(`   地址: ${receiverInfo.address}`);
+            console.log(`   联系人: ${receiverInfo.contact}`);
+        } else {
+            $('#warehouseAddress').val('');
+            $('#warehouseContact').val('');
+            if (selectedWarehouse) {
+                console.warn(`⚠️ 未找到 ${selectedWarehouse} 的收货人信息`);
+                console.log('可用的收货人:', Object.keys(warehouseInfo));
+            } else {
+                console.log('🔄 清空地址和联系人字段');
+            }
+        }
+    });
+
+    // 监听公共车牌号变化
+    $('#commonPlateNumber').on('input', function() {
+        updateCommonDataInTable();
+    });
+
+
+
+    // 添加行
+    $('#addRowBtn').click(function() {
+        window.hot.alter('insert_row_above', window.hot.countRows());
+        updateCommonDataInTable();
+    });
+
+    // 删除行
+    $('#deleteRowBtn').click(function() {
+        const selected = window.hot.getSelected();
+        if (selected && selected.length > 0) {
+            window.hot.alter('remove_row', selected[0][0]);
+        }
+    });
+
+
+
+    // 注意：基本事件已在bindBasicEvents()中绑定，这里不需要重复绑定
+    
+    // 更新表格中的公共数据
+    function updateCommonDataInTable() {
+        if (!window.hot) return; // 确保表格已初始化
+
+        // 注意：入库车牌来自库存记录，不应该被公共区域的出库车牌覆盖
+        // 这里暂时不需要更新任何表格数据，因为：
+        // 1. 入库车牌应该从库存数据加载
+        // 2. 出库车牌在公共区域单独管理
+        // 3. 其他字段用户手动填写或从库存加载
+
+        console.log('公共数据区域已更新，入库车牌保持不变');
+    }
+
+
+
+
+
+    // 保存数据
+    function saveAllData() {
+        // 验证公共信息
+        const commonPlateNumber = $('#commonPlateNumber').val();
+        const driverName = $('#driverName').val();
+        const driverContact = $('#driverContact').val();
+        const targetWarehouse = $('#targetWarehouse').val();
+        const returnTime = $('#returnTime').val();
+
+        if (!commonPlateNumber) {
+            showMessage('error', '请填写出库车牌');
+            return;
+        }
+
+        if (!driverName) {
+            showMessage('error', '请填写司机姓名');
+            return;
+        }
+
+        if (!driverContact) {
+            showMessage('error', '请填写司机联系方式');
+            return;
+        }
+
+        // 验证手机号格式
+        const phoneRegex = /^1[3-9]\d{9}$/;
+        if (!phoneRegex.test(driverContact)) {
+            showMessage('error', '请输入正确的手机号格式');
+            return;
+        }
+
+        if (!targetWarehouse) {
+            showMessage('error', '请选择目的仓');
+            return;
+        }
+
+        if (!returnTime) {
+            showMessage('error', '请选择返回时间');
+            return;
+        }
+
+        const data = window.hot.getData();
+        const warehouseAddress = $('#warehouseAddress').val();
+        const warehouseContact = $('#warehouseContact').val();
+
+        console.log('保存后端仓返回前端仓数据:', data);
+        console.log('🔍 发送的数据结构详情:');
+        console.log('- records数量:', data.length);
+        console.log('- 第一条记录示例:', data[0]);
+
+        // 发送到专门的API端点
+        $.ajax({
+            url: '/api/backend/outbound/return_frontend',
+            method: 'POST',
+            data: JSON.stringify({
+                records: data,
+                common_data: {
+                    plate_number: commonPlateNumber,
+                    driver_name: driverName,
+                    driver_contact: driverContact,
+                    target_warehouse: targetWarehouse,
+                    warehouse_address: warehouseAddress,
+                    warehouse_contact: warehouseContact,
+                    return_time: returnTime
+                },
+                destination: 'return_frontend',
+                warehouse_type: 'backend'
+            }),
+            contentType: 'application/json',
+            success: function(response) {
+                console.log('✅ API响应:', response);
+                if (response.success) {
+                    showMessage('success', `保存成功！共处理 ${response.total_count} 条记录，成功 ${response.success_count} 条`);
+
+                    // 显示错误信息（如果有）
+                    if (response.errors && response.errors.length > 0) {
+                        console.warn('⚠️ 部分记录处理失败:', response.errors);
+                        showMessage('warning', `部分记录处理失败：${response.errors.slice(0, 3).join('; ')}`);
+                    }
+
+                    // 清空表格
+                    if (window.hot) {
+                        window.hot.loadData([{}]);
+                    }
+
+                    // 清空公共信息
+                    $('#commonPlateNumber').val('');
+                    $('#driverName').val('');
+                    $('#driverContact').val('');
+                    $('#targetWarehouse').val('');
+                    $('#returnTime').val('');
+                    $('#warehouseAddress').val('');
+                    $('#warehouseContact').val('');
+                } else {
+                    console.error('❌ 保存失败:', response.message);
+                    showMessage('error', '保存失败：' + response.message);
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('❌ 网络请求失败:', {xhr, status, error});
+                let errorMsg = '保存失败，请检查网络连接';
+
+                if (xhr.responseJSON && xhr.responseJSON.message) {
+                    errorMsg = '保存失败：' + xhr.responseJSON.message;
+                } else if (xhr.status === 403) {
+                    errorMsg = '权限不足，无法执行此操作';
+                } else if (xhr.status === 500) {
+                    errorMsg = '服务器内部错误，请联系管理员';
+                }
+
+                showMessage('error', errorMsg);
+            }
+        });
+    }
+    
+
+
+    // 页面初始化
+    loadWarehouseData(); // 加载仓库数据
+    updateCommonDataInTable(); // 初始化时设置默认数据（只执行一次）
+
+    // 设置返回时间默认值为今天
+    $('#returnTime').val(new Date().toISOString().split('T')[0]);
+
+    console.log('✅ 页面初始化完成，window.hot 状态:', !!window.hot);
+
+    // 确保模态框事件绑定
+    bindInventoryModalEvents();
+}
+
+// 绑定模态框事件
+function bindInventoryModalEvents() {
+    // 避免重复绑定
+    $('#inventoryModal').off('click.inventory');
+
+    // 单个复选框变化
+    $('#inventoryModal').on('click.inventory', '.inventory-checkbox', function() {
+        updateSelectedCount();
+    });
+
+    // 全选
+    $('#selectAllInventory').off('click').on('click', function() {
+        $('.inventory-checkbox').prop('checked', true);
+        updateSelectedCount();
+    });
+
+    // 清空选择
+    $('#clearAllSelection').off('click').on('click', function() {
+        $('.inventory-checkbox').prop('checked', false);
+        updateSelectedCount();
+    });
+
+    // 确认选择
+    $('#confirmSelection').off('click').on('click', function() {
+        confirmInventorySelection();
+    });
+
+
+}
+
+
+
+
+
+// 搜索库存
+function searchInventory() {
+    const customerName = document.getElementById('searchCustomer').value.trim();
+
+    if (!window.currentInventoryData) {
+        return;
+    }
+
+    let filteredData = window.currentInventoryData;
+
+    if (customerName) {
+        filteredData = filteredData.filter(item =>
+            item.customer_name && item.customer_name.includes(customerName)
+        );
+    }
+
+    renderInventoryTable(filteredData);
+}
+
+// 重置搜索
+function resetInventorySearch() {
+    document.getElementById('searchCustomer').value = '';
+
+    if (window.currentInventoryData) {
+        renderInventoryTable(window.currentInventoryData);
+    }
+}
+
+// 确认选择库存
+function confirmInventorySelection() {
+    const selectedCheckboxes = document.querySelectorAll('.inventory-checkbox:checked');
+    const selectedItems = [];
+
+    selectedCheckboxes.forEach(checkbox => {
+        const index = parseInt(checkbox.dataset.index);
+        if (window.currentInventoryData && window.currentInventoryData[index]) {
+            const item = { ...window.currentInventoryData[index] };
+
+            // 获取该行的出库数量和备注
+            const row = checkbox.closest('tr');
+            const outboundPallets = row.querySelector('.outbound-pallets');
+            const outboundPackages = row.querySelector('.outbound-packages');
+            const remarksInput = row.querySelector('.inventory-remarks');
+
+            if (outboundPallets && outboundPackages) {
+                item.outbound_pallet_count = parseInt(outboundPallets.value) || 0;
+                item.outbound_package_count = parseInt(outboundPackages.value) || 0;
+            }
+
+            // 获取用户输入的备注
+            if (remarksInput) {
+                item.remarks = remarksInput.value.trim();
+            }
+
+            selectedItems.push(item);
+        }
+    });
+
+    if (selectedItems.length === 0) {
+        showMessage('warning', '请选择至少一条库存记录');
+        return;
+    }
+
+    // 验证所有选中项目都有出库数量
+    for (let item of selectedItems) {
+        if ((item.outbound_pallet_count === 0 || !item.outbound_pallet_count) &&
+            (item.outbound_package_count === 0 || !item.outbound_package_count)) {
+            showMessage('warning', `请为 ${item.customer_name} 设置出库数量`);
+            return;
+        }
+    }
+
+    console.log('选中的库存项目:', selectedItems);
+
+    // 将选中的库存数据填充到表格
+    fillInventoryToTable(selectedItems);
+
+    // 关闭模态框
+    bootstrap.Modal.getInstance(document.getElementById('inventoryModal')).hide();
+
+    showMessage('success', `已选择 ${selectedItems.length} 条库存记录`);
+}
+
+// 全出按钮功能
+function setFullOut(button) {
+    var row = button.closest('tr');
+    var palletsInput = row.querySelector('.outbound-pallets');
+    var packagesInput = row.querySelector('.outbound-packages');
+    var maxPallets = parseInt(button.getAttribute('data-pallets'));
+    var maxPackages = parseInt(button.getAttribute('data-packages'));
+
+    palletsInput.value = maxPallets;
+    packagesInput.value = maxPackages;
+
+    // 自动勾选该行
+    var checkbox = row.querySelector('.inventory-checkbox');
+    if (!checkbox.checked) {
+        checkbox.checked = true;
+    }
+
+    console.log('设置全出:', maxPallets + '板', maxPackages + '件');
+}
+
+// 验证出库数量
+function validateOutboundQuantity(input, maxValue) {
+    var value = parseInt(input.value);
+    if (isNaN(value) || value < 0) {
+        input.value = 0;
+        return;
+    }
+    if (value > maxValue) {
+        input.value = maxValue;
+        showMessage('warning', `出库数量不能超过库存数量 ${maxValue}`);
+    }
+}
+
+</script>
+{% endblock %}

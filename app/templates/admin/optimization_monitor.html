@@ -1,0 +1,406 @@
+{% extends "base.html" %}
+{% set title = "系统优化监控" %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- 系统状态概览 -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h6 class="card-title">缓存系统</h6>
+                            <h4 id="cache-status">检查中...</h4>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-database fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h6 class="card-title">CPU使用率</h6>
+                            <h4 id="cpu-usage">检查中...</h4>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-microchip fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h6 class="card-title">内存使用率</h6>
+                            <h4 id="memory-usage">检查中...</h4>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-memory fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card bg-warning text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h6 class="card-title">优化服务</h6>
+                            <h4 id="optimization-status">检查中...</h4>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-cogs fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 操作按钮 -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title">
+                        <i class="fas fa-tools"></i> 系统优化操作
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="btn-group" role="group">
+                        <button type="button" class="btn btn-primary" onclick="triggerOptimization()">
+                            <i class="fas fa-play"></i> 立即优化
+                        </button>
+                        <button type="button" class="btn btn-info" onclick="clearCache()">
+                            <i class="fas fa-trash"></i> 清空缓存
+                        </button>
+                        <button type="button" class="btn btn-success" onclick="warmupCache()">
+                            <i class="fas fa-fire"></i> 预热缓存
+                        </button>
+                        <button type="button" class="btn btn-secondary" onclick="refreshStatus()">
+                            <i class="fas fa-sync"></i> 刷新状态
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 详细信息 -->
+    <div class="row">
+        <!-- 缓存详情 -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title">
+                        <i class="fas fa-database"></i> 缓存系统详情
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <tbody id="cache-details">
+                                <tr><td colspan="2" class="text-center">加载中...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 系统资源详情 -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title">
+                        <i class="fas fa-server"></i> 系统资源详情
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <tbody id="system-details">
+                                <tr><td colspan="2" class="text-center">加载中...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 优化日志 -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title">
+                        <i class="fas fa-list"></i> 最近优化日志
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>时间</th>
+                                    <th>类型</th>
+                                    <th>消息</th>
+                                </tr>
+                            </thead>
+                            <tbody id="optimization-logs">
+                                <tr><td colspan="3" class="text-center">加载中...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let refreshInterval;
+
+$(document).ready(function() {
+    // 初始加载
+    refreshStatus();
+    
+    // 设置自动刷新（每30秒）
+    refreshInterval = setInterval(refreshStatus, 30000);
+});
+
+function refreshStatus() {
+    loadOptimizationStatus();
+    loadCacheDetails();
+    loadOptimizationLogs();
+}
+
+function loadOptimizationStatus() {
+    $.get('/api/optimization/status')
+        .done(function(response) {
+            if (response.success) {
+                const data = response.data;
+                
+                // 更新状态卡片
+                updateStatusCard('cache-status', data.cache_system.available ? '正常' : '异常', 
+                                data.cache_system.available ? 'success' : 'danger');
+                
+                updateStatusCard('cpu-usage', data.system_resources.cpu.percent + '%', 
+                                data.system_resources.cpu.status === 'normal' ? 'success' : 'warning');
+                
+                updateStatusCard('memory-usage', data.system_resources.memory.percent + '%', 
+                                data.system_resources.memory.status === 'normal' ? 'success' : 'warning');
+                
+                updateStatusCard('optimization-status', 
+                                data.optimization_service.is_running ? '运行中' : '已停止',
+                                data.optimization_service.is_running ? 'success' : 'danger');
+                
+                // 更新系统详情
+                updateSystemDetails(data.system_resources);
+            }
+        })
+        .fail(function() {
+            updateStatusCard('cache-status', '错误', 'danger');
+            updateStatusCard('cpu-usage', '错误', 'danger');
+            updateStatusCard('memory-usage', '错误', 'danger');
+            updateStatusCard('optimization-status', '错误', 'danger');
+        });
+}
+
+function loadCacheDetails() {
+    $.get('/api/optimization/cache/status')
+        .done(function(response) {
+            if (response.success) {
+                const data = response.data;
+                updateCacheDetails(data);
+            }
+        })
+        .fail(function() {
+            $('#cache-details').html('<tr><td colspan="2" class="text-center text-danger">加载失败</td></tr>');
+        });
+}
+
+function loadOptimizationLogs() {
+    $.get('/api/optimization/logs?per_page=10')
+        .done(function(response) {
+            if (response.success) {
+                updateOptimizationLogs(response.data.logs);
+            }
+        })
+        .fail(function() {
+            $('#optimization-logs').html('<tr><td colspan="3" class="text-center text-danger">加载失败</td></tr>');
+        });
+}
+
+function updateStatusCard(elementId, value, status) {
+    const element = $('#' + elementId);
+    element.text(value);
+    
+    // 更新父卡片的颜色
+    const card = element.closest('.card');
+    card.removeClass('bg-primary bg-success bg-info bg-warning bg-danger');
+    
+    switch(status) {
+        case 'success':
+            card.addClass('bg-success');
+            break;
+        case 'warning':
+            card.addClass('bg-warning');
+            break;
+        case 'danger':
+            card.addClass('bg-danger');
+            break;
+        default:
+            card.addClass('bg-primary');
+    }
+}
+
+function updateCacheDetails(data) {
+    let html = '';
+    
+    if (data.status.available) {
+        html += `<tr><td>连接状态</td><td><span class="badge bg-success">已连接</span></td></tr>`;
+        html += `<tr><td>主机</td><td>${data.status.host}:${data.status.port}</td></tr>`;
+        html += `<tr><td>数据库</td><td>${data.status.db}</td></tr>`;
+        
+        if (data.statistics.memory_used) {
+            html += `<tr><td>内存使用</td><td>${data.statistics.memory_used}</td></tr>`;
+            html += `<tr><td>内存峰值</td><td>${data.statistics.memory_peak}</td></tr>`;
+            html += `<tr><td>连接数</td><td>${data.statistics.connected_clients}</td></tr>`;
+            html += `<tr><td>命中率</td><td>${data.statistics.hit_rate}%</td></tr>`;
+        }
+    } else {
+        html += `<tr><td>连接状态</td><td><span class="badge bg-danger">连接失败</span></td></tr>`;
+        html += `<tr><td>错误信息</td><td>${data.status.error || '未知错误'}</td></tr>`;
+    }
+    
+    $('#cache-details').html(html);
+}
+
+function updateSystemDetails(data) {
+    let html = '';
+    
+    html += `<tr><td>CPU使用率</td><td>${data.cpu.percent}% <span class="badge bg-${data.cpu.status === 'normal' ? 'success' : 'warning'}">${data.cpu.status === 'normal' ? '正常' : '偏高'}</span></td></tr>`;
+    html += `<tr><td>内存使用率</td><td>${data.memory.percent}% <span class="badge bg-${data.memory.status === 'normal' ? 'success' : 'warning'}">${data.memory.status === 'normal' ? '正常' : '偏高'}</span></td></tr>`;
+    html += `<tr><td>可用内存</td><td>${data.memory.available_mb} MB</td></tr>`;
+    html += `<tr><td>总内存</td><td>${data.memory.total_mb} MB</td></tr>`;
+    html += `<tr><td>磁盘使用率</td><td>${data.disk.percent}% <span class="badge bg-${data.disk.status === 'normal' ? 'success' : 'warning'}">${data.disk.status === 'normal' ? '正常' : '偏高'}</span></td></tr>`;
+    html += `<tr><td>可用磁盘</td><td>${data.disk.free_gb} GB</td></tr>`;
+    
+    $('#system-details').html(html);
+}
+
+function updateOptimizationLogs(logs) {
+    let html = '';
+    
+    if (logs.length === 0) {
+        html = '<tr><td colspan="3" class="text-center">暂无日志</td></tr>';
+    } else {
+        logs.forEach(function(log) {
+            const time = new Date(log.timestamp).toLocaleString();
+            const typeClass = getLogTypeClass(log.optimization_type);
+            
+            html += `<tr>
+                <td>${time}</td>
+                <td><span class="badge ${typeClass}">${getLogTypeName(log.optimization_type)}</span></td>
+                <td>${log.message}</td>
+            </tr>`;
+        });
+    }
+    
+    $('#optimization-logs').html(html);
+}
+
+function getLogTypeClass(type) {
+    switch(type) {
+        case 'startup': return 'bg-primary';
+        case 'periodic': return 'bg-info';
+        case 'manual_trigger': return 'bg-warning';
+        case 'manual_cache_clear': return 'bg-danger';
+        case 'manual_cache_warmup': return 'bg-success';
+        default: return 'bg-secondary';
+    }
+}
+
+function getLogTypeName(type) {
+    switch(type) {
+        case 'startup': return '启动优化';
+        case 'periodic': return '定期优化';
+        case 'manual_trigger': return '手动触发';
+        case 'manual_cache_clear': return '清空缓存';
+        case 'manual_cache_warmup': return '预热缓存';
+        default: return type;
+    }
+}
+
+function triggerOptimization() {
+    if (confirm('确定要立即执行系统优化吗？')) {
+        $.post('/api/optimization/optimization/trigger')
+            .done(function(response) {
+                if (response.success) {
+                    alert('系统优化已执行');
+                    refreshStatus();
+                } else {
+                    alert('优化失败: ' + response.message);
+                }
+            })
+            .fail(function() {
+                alert('优化请求失败');
+            });
+    }
+}
+
+function clearCache() {
+    if (confirm('确定要清空所有缓存吗？这将影响系统性能直到缓存重新建立。')) {
+        $.post('/api/optimization/cache/clear')
+            .done(function(response) {
+                if (response.success) {
+                    alert('缓存已清空');
+                    refreshStatus();
+                } else {
+                    alert('清空缓存失败: ' + response.message);
+                }
+            })
+            .fail(function() {
+                alert('清空缓存请求失败');
+            });
+    }
+}
+
+function warmupCache() {
+    $.post('/api/optimization/cache/warmup')
+        .done(function(response) {
+            if (response.success) {
+                alert('缓存预热完成');
+                refreshStatus();
+            } else {
+                alert('缓存预热失败: ' + response.message);
+            }
+        })
+        .fail(function() {
+            alert('缓存预热请求失败');
+        });
+}
+
+// 页面卸载时清除定时器
+$(window).on('beforeunload', function() {
+    if (refreshInterval) {
+        clearInterval(refreshInterval);
+    }
+});
+</script>
+{% endblock %}

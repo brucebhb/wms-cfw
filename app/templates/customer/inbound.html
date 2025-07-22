@@ -1,0 +1,250 @@
+{% extends "base.html" %}
+
+{% block title %}入库记录 - 客户中心{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h3 class="card-title">
+                        <i class="fas fa-truck-loading me-2"></i>我的入库记录
+                    </h3>
+                    <div class="d-flex gap-2">
+                        <button type="button" class="btn btn-outline-secondary" id="refreshBtn">
+                            <i class="fas fa-sync-alt me-1"></i>刷新
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="card-body">
+                    <!-- 搜索过滤器 -->
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <label class="form-label">日期范围</label>
+                            <input type="text" class="form-control" id="dateRange" placeholder="选择日期范围">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">识别编码</label>
+                            <input type="text" class="form-control" id="searchCode" placeholder="输入识别编码">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">车牌号</label>
+                            <input type="text" class="form-control" id="searchPlate" placeholder="输入车牌号">
+                        </div>
+                        <div class="col-md-2 d-flex align-items-end">
+                            <button type="button" class="btn btn-primary w-100" id="searchBtn">
+                                <i class="fas fa-search me-1"></i>搜索
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- 数据表格 -->
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover" id="inboundTable">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>入库时间</th>
+                                    <th>车牌号</th>
+                                    <th>识别编码</th>
+                                    <th>板数</th>
+                                    <th>件数</th>
+                                    <th>重量(kg)</th>
+                                    <th>体积(m³)</th>
+                                    <th>存放位置</th>
+                                    <th>跟单客服</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- 数据将通过JavaScript动态加载 -->
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <!-- 分页 -->
+                    <nav aria-label="入库记录分页">
+                        <ul class="pagination justify-content-center" id="pagination">
+                            <!-- 分页将通过JavaScript动态生成 -->
+                        </ul>
+                    </nav>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+$(document).ready(function() {
+    let currentPage = 1;
+    
+    // 初始化日期选择器
+    $('#dateRange').daterangepicker({
+        locale: {
+            format: 'YYYY-MM-DD',
+            separator: ' 至 ',
+            applyLabel: '确定',
+            cancelLabel: '取消',
+            fromLabel: '从',
+            toLabel: '到',
+            customRangeLabel: '自定义',
+            weekLabel: 'W',
+            daysOfWeek: ['日', '一', '二', '三', '四', '五', '六'],
+            monthNames: ['一月', '二月', '三月', '四月', '五月', '六月',
+                        '七月', '八月', '九月', '十月', '十一月', '十二月'],
+            firstDay: 1
+        },
+        startDate: moment().subtract(30, 'days'),
+        endDate: moment(),
+        ranges: {
+            '今天': [moment(), moment()],
+            '昨天': [moment().subtract(1, 'days'), moment().subtract(1, 'days')],
+            '最近7天': [moment().subtract(6, 'days'), moment()],
+            '最近30天': [moment().subtract(29, 'days'), moment()],
+            '本月': [moment().startOf('month'), moment().endOf('month')],
+            '上月': [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')]
+        }
+    });
+    
+    // 加载入库记录
+    function loadInboundRecords(page = 1) {
+        const dateRange = $('#dateRange').val().split(' 至 ');
+        const searchCode = $('#searchCode').val();
+        const searchPlate = $('#searchPlate').val();
+        
+        const params = {
+            page: page,
+            per_page: 20
+        };
+        
+        if (dateRange.length === 2) {
+            params.date_start = dateRange[0];
+            params.date_end = dateRange[1];
+        }
+        
+        if (searchCode) {
+            params.identification_code = searchCode;
+        }
+        
+        if (searchPlate) {
+            params.plate_number = searchPlate;
+        }
+        
+        $.ajax({
+            url: '/customer/api/customer/inbound-list',
+            method: 'GET',
+            data: params,
+            success: function(response) {
+                renderInboundTable(response.records);
+                renderPagination(response.current_page, response.pages, response.total);
+                currentPage = response.current_page;
+            },
+            error: function(xhr) {
+                console.error('加载入库记录失败:', xhr.responseText);
+                alert('加载入库记录失败');
+            }
+        });
+    }
+    
+    // 渲染入库记录表格
+    function renderInboundTable(records) {
+        const tbody = $('#inboundTable tbody');
+        tbody.empty();
+        
+        if (records.length === 0) {
+            tbody.append(`
+                <tr>
+                    <td colspan="9" class="text-center text-muted">暂无入库记录</td>
+                </tr>
+            `);
+            return;
+        }
+        
+        records.forEach(function(record) {
+            const row = `
+                <tr>
+                    <td>${record.inbound_time}</td>
+                    <td>${record.plate_number}</td>
+                    <td>${record.identification_code || '-'}</td>
+                    <td>${record.pallet_count}</td>
+                    <td>${record.package_count}</td>
+                    <td>${record.weight}</td>
+                    <td>${record.volume}</td>
+                    <td>${record.location || '-'}</td>
+                    <td>${record.service_staff || '-'}</td>
+                </tr>
+            `;
+            tbody.append(row);
+        });
+    }
+    
+    // 渲染分页
+    function renderPagination(current, total, totalCount) {
+        const pagination = $('#pagination');
+        pagination.empty();
+        
+        if (total <= 1) return;
+        
+        // 上一页
+        const prevDisabled = current === 1 ? 'disabled' : '';
+        pagination.append(`
+            <li class="page-item ${prevDisabled}">
+                <a class="page-link" href="#" onclick="loadInboundRecords(${current - 1})">上一页</a>
+            </li>
+        `);
+        
+        // 页码
+        for (let i = Math.max(1, current - 2); i <= Math.min(total, current + 2); i++) {
+            const active = i === current ? 'active' : '';
+            pagination.append(`
+                <li class="page-item ${active}">
+                    <a class="page-link" href="#" onclick="loadInboundRecords(${i})">${i}</a>
+                </li>
+            `);
+        }
+        
+        // 下一页
+        const nextDisabled = current === total ? 'disabled' : '';
+        pagination.append(`
+            <li class="page-item ${nextDisabled}">
+                <a class="page-link" href="#" onclick="loadInboundRecords(${current + 1})">下一页</a>
+            </li>
+        `);
+    }
+    
+    // 搜索按钮事件
+    $('#searchBtn').click(function() {
+        loadInboundRecords(1);
+    });
+    
+    // 刷新按钮事件
+    $('#refreshBtn').click(function() {
+        $('#searchCode').val('');
+        $('#searchPlate').val('');
+        $('#dateRange').data('daterangepicker').setStartDate(moment().subtract(30, 'days'));
+        $('#dateRange').data('daterangepicker').setEndDate(moment());
+        loadInboundRecords(1);
+    });
+    
+    // 回车搜索
+    $('#searchCode, #searchPlate').keypress(function(e) {
+        if (e.which === 13) {
+            loadInboundRecords(1);
+        }
+    });
+    
+    // 初始加载
+    loadInboundRecords(1);
+});
+
+// 全局函数供分页使用
+function loadInboundRecords(page) {
+    // 重新调用内部函数
+    $(document).ready(function() {
+        loadInboundRecords(page);
+    });
+}
+</script>
+{% endblock %}

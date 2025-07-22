@@ -1,0 +1,355 @@
+{% extends "base.html" %}
+{% set title = "用户权限配置" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-user-shield"></i> 用户权限配置
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <!-- 用户选择 -->
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <label for="userSelect" class="form-label">选择用户</label>
+                            <select class="form-select" id="userSelect" onchange="loadUserPermissions()">
+                                <option value="">请选择用户</option>
+                                {% for user in users %}
+                                <option value="{{ user.id }}">{{ user.username }} - {{ user.real_name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- 权限配置区域 -->
+                    <div id="permissionArea" style="display: none;">
+                        <div class="row">
+                            <div class="col-12">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h5 class="card-title">权限配置</h5>
+                                        <div class="card-tools">
+                                            <button type="button" class="btn btn-success btn-sm" onclick="savePermissions()">
+                                                <i class="fas fa-save"></i> 保存权限配置
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="card-body">
+                                        <!-- 权限标签页 -->
+                                        <ul class="nav nav-tabs" id="permissionTabs" role="tablist">
+                                            <li class="nav-item" role="presentation">
+                                                <button class="nav-link active" id="menu-tab" data-bs-toggle="tab" data-bs-target="#menu-permissions" type="button" role="tab">
+                                                    菜单权限
+                                                </button>
+                                            </li>
+                                            <li class="nav-item" role="presentation">
+                                                <button class="nav-link" id="page-tab" data-bs-toggle="tab" data-bs-target="#page-permissions" type="button" role="tab">
+                                                    页面权限
+                                                </button>
+                                            </li>
+                                            <li class="nav-item" role="presentation">
+                                                <button class="nav-link" id="operation-tab" data-bs-toggle="tab" data-bs-target="#operation-permissions" type="button" role="tab">
+                                                    操作权限
+                                                </button>
+                                            </li>
+                                            <li class="nav-item" role="presentation">
+                                                <button class="nav-link" id="warehouse-tab" data-bs-toggle="tab" data-bs-target="#warehouse-permissions" type="button" role="tab">
+                                                    仓库权限
+                                                </button>
+                                            </li>
+                                        </ul>
+
+                                        <div class="tab-content" id="permissionTabContent">
+                                            <!-- 菜单权限 -->
+                                            <div class="tab-pane fade show active" id="menu-permissions" role="tabpanel">
+                                                <div class="row mt-3">
+                                                    <div class="col-12">
+                                                        <h6>菜单权限</h6>
+                                                        <div id="menuPermissionsList">
+                                                            <!-- 菜单权限列表将通过JavaScript动态加载 -->
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <!-- 页面权限 -->
+                                            <div class="tab-pane fade" id="page-permissions" role="tabpanel">
+                                                <div class="row mt-3">
+                                                    <div class="col-12">
+                                                        <h6>页面访问权限</h6>
+                                                        <div class="row">
+                                                            <div class="col-md-6">
+                                                                <h7>入库管理</h7>
+                                                                <div id="inboundPagePermissions">
+                                                                    <!-- 入库页面权限 -->
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-md-6">
+                                                                <h7>出库管理</h7>
+                                                                <div id="outboundPagePermissions">
+                                                                    <!-- 出库页面权限 -->
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <!-- 操作权限 -->
+                                            <div class="tab-pane fade" id="operation-permissions" role="tabpanel">
+                                                <div class="row mt-3">
+                                                    <div class="col-12">
+                                                        <h6>操作权限</h6>
+                                                        <div id="operationPermissionsList">
+                                                            <!-- 操作权限列表 -->
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <!-- 仓库权限 -->
+                                            <div class="tab-pane fade" id="warehouse-permissions" role="tabpanel">
+                                                <div class="row mt-3">
+                                                    <div class="col-12">
+                                                        <h6>仓库权限</h6>
+                                                        <div id="warehousePermissionsList">
+                                                            <!-- 仓库权限列表 -->
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let currentUserId = null;
+let userPermissions = null;
+
+// 加载用户权限
+function loadUserPermissions() {
+    const userSelect = document.getElementById('userSelect');
+    const userId = userSelect.value;
+    
+    if (!userId) {
+        document.getElementById('permissionArea').style.display = 'none';
+        return;
+    }
+    
+    currentUserId = userId;
+    
+    // 显示加载状态
+    document.getElementById('permissionArea').style.display = 'block';
+    
+    // 获取用户权限数据
+    fetch(`/admin/api/user-permissions/${userId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                userPermissions = data.data;
+                renderPermissions();
+            } else {
+                alert('加载用户权限失败: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('加载用户权限失败');
+        });
+}
+
+// 渲染权限界面
+function renderPermissions() {
+    if (!userPermissions) return;
+    
+    renderMenuPermissions();
+    renderPagePermissions();
+    renderOperationPermissions();
+    renderWarehousePermissions();
+}
+
+// 渲染菜单权限
+function renderMenuPermissions() {
+    const container = document.getElementById('menuPermissionsList');
+    let html = '';
+    
+    userPermissions.menu_permissions.forEach(permission => {
+        const checked = permission.is_granted ? 'checked' : '';
+        html += `
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" ${checked} 
+                       id="menu_${permission.menu_code}" 
+                       data-type="menu" data-code="${permission.menu_code}">
+                <label class="form-check-label" for="menu_${permission.menu_code}">
+                    ${permission.menu_name}
+                </label>
+            </div>
+        `;
+    });
+    
+    container.innerHTML = html;
+}
+
+// 渲染页面权限
+function renderPagePermissions() {
+    const inboundContainer = document.getElementById('inboundPagePermissions');
+    const outboundContainer = document.getElementById('outboundPagePermissions');
+    
+    let inboundHtml = '';
+    let outboundHtml = '';
+    
+    userPermissions.page_permissions.forEach(permission => {
+        const checked = permission.is_granted ? 'checked' : '';
+        const checkboxHtml = `
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" ${checked} 
+                       id="page_${permission.page_code}" 
+                       data-type="page" data-code="${permission.page_code}">
+                <label class="form-check-label" for="page_${permission.page_code}">
+                    ${permission.page_name}
+                </label>
+            </div>
+        `;
+        
+        // 根据页面代码分类
+        if (permission.page_code.includes('INBOUND') || permission.page_code.includes('RECEIVE')) {
+            inboundHtml += checkboxHtml;
+        } else {
+            outboundHtml += checkboxHtml;
+        }
+    });
+    
+    inboundContainer.innerHTML = inboundHtml;
+    outboundContainer.innerHTML = outboundHtml;
+}
+
+// 渲染操作权限
+function renderOperationPermissions() {
+    const container = document.getElementById('operationPermissionsList');
+    let html = '';
+    
+    userPermissions.operation_permissions.forEach(permission => {
+        const checked = permission.is_granted ? 'checked' : '';
+        html += `
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" ${checked} 
+                       id="operation_${permission.operation_code}" 
+                       data-type="operation" data-code="${permission.operation_code}">
+                <label class="form-check-label" for="operation_${permission.operation_code}">
+                    ${permission.operation_name}
+                </label>
+            </div>
+        `;
+    });
+    
+    container.innerHTML = html;
+}
+
+// 渲染仓库权限
+function renderWarehousePermissions() {
+    const container = document.getElementById('warehousePermissionsList');
+    let html = '';
+    
+    userPermissions.warehouse_permissions.forEach(permission => {
+        const checked = permission.is_granted ? 'checked' : '';
+        html += `
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" ${checked} 
+                       id="warehouse_${permission.warehouse_id}_${permission.warehouse_permission_code}" 
+                       data-type="warehouse" 
+                       data-warehouse-id="${permission.warehouse_id}"
+                       data-code="${permission.warehouse_permission_code}">
+                <label class="form-check-label" for="warehouse_${permission.warehouse_id}_${permission.warehouse_permission_code}">
+                    ${permission.warehouse_name} - ${permission.warehouse_permission_name}
+                </label>
+            </div>
+        `;
+    });
+    
+    container.innerHTML = html;
+}
+
+// 保存权限配置
+function savePermissions() {
+    if (!currentUserId) {
+        alert('请先选择用户');
+        return;
+    }
+    
+    // 收集所有权限设置
+    const permissions = {
+        menu_permissions: [],
+        page_permissions: [],
+        operation_permissions: [],
+        warehouse_permissions: []
+    };
+    
+    // 收集菜单权限
+    document.querySelectorAll('input[data-type="menu"]').forEach(checkbox => {
+        permissions.menu_permissions.push({
+            menu_code: checkbox.dataset.code,
+            is_granted: checkbox.checked
+        });
+    });
+    
+    // 收集页面权限
+    document.querySelectorAll('input[data-type="page"]').forEach(checkbox => {
+        permissions.page_permissions.push({
+            page_code: checkbox.dataset.code,
+            is_granted: checkbox.checked
+        });
+    });
+    
+    // 收集操作权限
+    document.querySelectorAll('input[data-type="operation"]').forEach(checkbox => {
+        permissions.operation_permissions.push({
+            operation_code: checkbox.dataset.code,
+            is_granted: checkbox.checked
+        });
+    });
+    
+    // 收集仓库权限
+    document.querySelectorAll('input[data-type="warehouse"]').forEach(checkbox => {
+        permissions.warehouse_permissions.push({
+            warehouse_id: parseInt(checkbox.dataset.warehouseId),
+            warehouse_permission_code: checkbox.dataset.code,
+            is_granted: checkbox.checked
+        });
+    });
+    
+    // 发送保存请求
+    fetch(`/admin/api/user-permissions/${currentUserId}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('meta[name=csrf-token]').getAttribute('content')
+        },
+        body: JSON.stringify(permissions)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('权限配置保存成功');
+        } else {
+            alert('保存失败: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('保存权限配置失败');
+    });
+}
+</script>
+{% endblock %}

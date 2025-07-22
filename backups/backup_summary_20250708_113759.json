@@ -1,0 +1,19 @@
+{
+  "backup_time": "20250708_113759",
+  "backup_files": {
+    "users": "backups\\users_backup_20250708_113759.json",
+    "receivers": "backups\\receivers_backup_20250708_113759.json",
+    "warehouses": "backups\\warehouses_backup_20250708_113759.json",
+    "permissions": "backups\\permissions_backup_20250708_113759.json"
+  },
+  "record_counts": {
+    "users": 7,
+    "receivers": 6,
+    "warehouses": 4,
+    "total_permissions": 21,
+    "menu_permissions": 21,
+    "page_permissions": 0,
+    "operation_permissions": 0,
+    "warehouse_permissions": 0
+  }
+}

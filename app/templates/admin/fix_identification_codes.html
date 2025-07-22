@@ -1,0 +1,192 @@
+{% extends "base.html" %}
+
+{% block title %}修复识别编码{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-tools"></i>
+                        修复识别编码
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-warning">
+                        <h5><i class="fas fa-exclamation-triangle"></i> 注意事项</h5>
+                        <ul>
+                            <li>此功能用于修复识别编码中的错误后缀（如b2、_b2、.b2等）</li>
+                            <li>修复过程会自动移除这些后缀，恢复原始识别编码</li>
+                            <li>对于库存记录，如果修复后的识别编码已存在，会自动合并库存数量</li>
+                            <li>建议在非业务高峰期执行此操作</li>
+                            <li>操作前请确保已备份数据库</li>
+                        </ul>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5>检查错误的识别编码</h5>
+                                </div>
+                                <div class="card-body">
+                                    <button type="button" class="btn btn-info" onclick="checkErrorCodes()">
+                                        <i class="fas fa-search"></i> 检查错误编码
+                                    </button>
+                                    <div id="checkResult" class="mt-3"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5>执行修复操作</h5>
+                                </div>
+                                <div class="card-body">
+                                    <button type="button" class="btn btn-warning" onclick="fixIdentificationCodes()">
+                                        <i class="fas fa-wrench"></i> 执行修复
+                                    </button>
+                                    <div id="fixResult" class="mt-3"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row mt-4">
+                        <div class="col-12">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5>操作日志</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div id="operationLog" style="height: 300px; overflow-y: auto; background-color: #f8f9fa; padding: 10px; border: 1px solid #dee2e6;">
+                                        <p class="text-muted">操作日志将在这里显示...</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function addLog(message, type = 'info') {
+    const logDiv = document.getElementById('operationLog');
+    const timestamp = new Date().toLocaleString();
+    const colorClass = type === 'error' ? 'text-danger' : type === 'success' ? 'text-success' : 'text-info';
+    
+    logDiv.innerHTML += `<p class="${colorClass}">[${timestamp}] ${message}</p>`;
+    logDiv.scrollTop = logDiv.scrollHeight;
+}
+
+function checkErrorCodes() {
+    addLog('开始检查错误的识别编码...');
+    
+    fetch('/api/check/identification-codes', {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': $('meta[name=csrf-token]').attr('content')
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            const resultDiv = document.getElementById('checkResult');
+            resultDiv.innerHTML = `
+                <div class="alert alert-info">
+                    <h6>检查结果：</h6>
+                    <ul>
+                        <li>入库记录错误编码：${data.inbound_errors || 0} 条</li>
+                        <li>出库记录错误编码：${data.outbound_errors || 0} 条</li>
+                        <li>库存记录错误编码：${data.inventory_errors || 0} 条</li>
+                        <li>接收记录错误编码：${data.receive_errors || 0} 条</li>
+                    </ul>
+                    <p><strong>总计需要修复：${data.total_errors || 0} 条</strong></p>
+                </div>
+            `;
+            addLog(`检查完成，发现 ${data.total_errors || 0} 条错误编码`, 'info');
+        } else {
+            document.getElementById('checkResult').innerHTML = `
+                <div class="alert alert-danger">检查失败：${data.message}</div>
+            `;
+            addLog(`检查失败：${data.message}`, 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        document.getElementById('checkResult').innerHTML = `
+            <div class="alert alert-danger">检查时发生错误：${error.message}</div>
+        `;
+        addLog(`检查时发生错误：${error.message}`, 'error');
+    });
+}
+
+function fixIdentificationCodes() {
+    if (!confirm('确定要执行修复操作吗？此操作将修改数据库中的识别编码。')) {
+        return;
+    }
+    
+    addLog('开始执行识别编码修复...');
+    
+    fetch('/api/fix/identification-codes', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': $('meta[name=csrf-token]').attr('content')
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            const resultDiv = document.getElementById('fixResult');
+            let errorHtml = '';
+            if (data.errors && data.errors.length > 0) {
+                errorHtml = `
+                    <h6>修复过程中的警告：</h6>
+                    <ul>
+                        ${data.errors.map(error => `<li class="text-warning">${error}</li>`).join('')}
+                    </ul>
+                `;
+            }
+            
+            resultDiv.innerHTML = `
+                <div class="alert alert-success">
+                    <h6>修复完成！</h6>
+                    <p>成功修复 <strong>${data.fixed_count}</strong> 条记录的识别编码</p>
+                    ${errorHtml}
+                </div>
+            `;
+            addLog(`修复完成，成功修复 ${data.fixed_count} 条记录`, 'success');
+            
+            if (data.errors && data.errors.length > 0) {
+                data.errors.forEach(error => addLog(`警告：${error}`, 'error'));
+            }
+        } else {
+            document.getElementById('fixResult').innerHTML = `
+                <div class="alert alert-danger">修复失败：${data.message}</div>
+            `;
+            addLog(`修复失败：${data.message}`, 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        document.getElementById('fixResult').innerHTML = `
+            <div class="alert alert-danger">修复时发生错误：${error.message}</div>
+        `;
+        addLog(`修复时发生错误：${error.message}`, 'error');
+    });
+}
+
+// 页面加载时清空日志
+document.addEventListener('DOMContentLoaded', function() {
+    document.getElementById('operationLog').innerHTML = '<p class="text-muted">操作日志将在这里显示...</p>';
+});
+</script>
+{% endblock %}

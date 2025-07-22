@@ -1,0 +1,265 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- 搜索区域 -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">出库单打印</h3>
+                    <div class="card-tools">
+                        <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                            <i class="fas fa-minus"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <form action="{{ url_for('main.outbound_print') }}" method="get" id="searchForm">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                        <div class="row">
+                            <div class="col-md-3">
+                                <div class="form-group">
+                                    <label>日期范围</label>
+                                    <div class="input-group">
+                                        <div class="input-group-prepend">
+                                            <span class="input-group-text">
+                                                <i class="far fa-calendar-alt"></i>
+                                            </span>
+                                        </div>
+                                        <input type="text" class="form-control float-right" id="dateRange" name="date_range">
+                                        <input type="hidden" name="date_start" id="date_start" value="{{ search_params.date_start }}">
+                                        <input type="hidden" name="date_end" id="date_end" value="{{ search_params.date_end }}">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="form-group">
+                                    <label for="plate_number">车牌号</label>
+                                    <input type="text" class="form-control" id="plate_number" name="plate_number" value="{{ search_params.plate_number }}">
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="form-group">
+                                    <label for="batch_no">批次号</label>
+                                    <input type="text" class="form-control" id="batch_no" name="batch_no" value="{{ search_params.batch_no }}">
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="form-group">
+                                    <label for="customer_name">客户名称</label>
+                                    <input type="text" class="form-control" id="customer_name" name="customer_name" value="{{ search_params.customer_name }}">
+                                </div>
+                            </div>
+                            <div class="col-md-6 d-flex align-items-end">
+                                <div class="form-group mb-0 w-100 d-flex justify-content-end">
+                                    <button type="submit" class="btn btn-primary mr-2">
+                                        <i class="fas fa-search"></i> 搜索
+                                    </button>
+                                    <a href="{{ url_for('main.outbound_print') }}" class="btn btn-default mr-2">
+                                        <i class="fas fa-redo"></i> 重置
+                                    </a>
+                                    <button type="button" class="btn btn-success" onclick="printTable()">
+                                        <i class="fas fa-print"></i> 打印
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 数据展示区域 -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">出库单数据</h3>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive print-section">
+                        <table class="table table-bordered table-striped">
+                            <thead>
+                                <tr>
+                                    <th>出库日期</th>
+                                    <th>出库车牌</th>
+                                    <th>批次号</th>
+                                    <th>批次序号</th>
+                                    <th>客户名称</th>
+                                    <th>识别编码</th>
+                                    <th>入库车牌</th>
+                                    <th>订单类型</th>
+                                    <th>板数</th>
+                                    <th>件数</th>
+                                    <th>重量</th>
+                                    <th>体积</th>
+                                    <th>出境模式</th>
+                                    <th>报关行</th>
+                                    <th>单据份数</th>
+                                    <th>跟单客服</th>
+                                    <th>大层板</th>
+                                    <th>小层板</th>
+                                    <th>卡板</th>
+                                    <th>车型</th>
+                                    <th>司机姓名</th>
+                                    <th>电话</th>
+                                    <th>集拼车到仓时间</th>
+                                    <th>开始装车时间</th>
+                                    <th>结束装车时间</th>
+                                    <th>离仓发运时间</th>
+                                    <th>目的仓</th>
+                                    <th>详细地址</th>
+                                    <th>联络窗口</th>
+                                    <th>备注</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% if batch_records %}
+                                    {% for record in batch_records %}
+                                        <tr>
+                                            <td>{{ record.outbound_time.strftime('%Y-%m-%d') }}</td>
+                                            <td>{{ record.plate_number }}</td>
+                                            <td>{{ record.batch_no }}</td>
+                                            <td>{{ record.batch_sequence }}/{{ record.batch_total }}</td>
+                                            <td>{{ record.customer_name }}</td>
+                                            <td>{{ record.identification_code }}</td>
+                                            <td>{{ record.inbound_plate }}</td>
+                                            <td>{{ record.order_type }}</td>
+                                            <td>{{ record.pallet_count }}</td>
+                                            <td>{{ record.package_count }}</td>
+                                            <td>{{ record.weight }}</td>
+                                            <td>{{ record.volume }}</td>
+                                            <td>{{ record.export_mode }}</td>
+                                            <td>{{ record.customs_broker }}</td>
+                                            <td>{{ record.document_count if record.document_count else '' }}</td>
+                                            <td>{{ record.service_staff }}</td>
+                                            <td>{{ record.large_layer|default(0) }}</td>
+                                            <td>{{ record.small_layer|default(0) }}</td>
+                                            <td>{{ record.pallet_board|default(0) }}</td>
+                                            <td>{{ record.vehicle_type|default('') }}</td>
+                                            <td>{{ record.driver_name|default('') }}</td>
+                                            <td>{{ record.driver_phone|default('') }}</td>
+                                            <td>{{ record.arrival_time.strftime('%Y-%m-%d %H:%M') if record.arrival_time else '' }}</td>
+                                            <td>{{ record.loading_start_time.strftime('%Y-%m-%d %H:%M') if record.loading_start_time else '' }}</td>
+                                            <td>{{ record.loading_end_time.strftime('%Y-%m-%d %H:%M') if record.loading_end_time else '' }}</td>
+                                            <td>{{ record.departure_time.strftime('%Y-%m-%d %H:%M') if record.departure_time else '' }}</td>
+                                            <td>{{ record.destination|default('') }}</td>
+                                            <td>{{ record.detailed_address|default('') }}</td>
+                                            <td>{{ record.contact_window|default('') }}</td>
+                                            <td>
+                                                {% set combined_remarks = [] %}
+                                                {% if record.remarks %}
+                                                    {% set _ = combined_remarks.append(record.remarks) %}
+                                                {% endif %}
+                                                {% if record.remark1 %}
+                                                    {% set _ = combined_remarks.append(record.remark1) %}
+                                                {% endif %}
+                                                {% if record.remark2 %}
+                                                    {% set _ = combined_remarks.append(record.remark2) %}
+                                                {% endif %}
+                                                {{ '; '.join(combined_remarks) if combined_remarks else '' }}
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                {% else %}
+                                    <tr>
+                                        <td colspan="28" class="text-center">未找到记录</td>
+                                    </tr>
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    @media print {
+        body {
+            zoom: 110%;
+            transform: scale(1.1);
+            transform-origin: top left;
+        }
+        body * {
+            visibility: hidden;
+        }
+        .print-section, .print-section * {
+            visibility: visible;
+        }
+        .print-section {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+        }
+        .card-header, .card-footer, form {
+            display: none;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            border: 1px solid #000;
+            padding: 5px;
+            text-align: center;
+            font-size: 12px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // 日期范围选择器
+    $(function() {
+        $('#dateRange').daterangepicker({
+            locale: {
+                format: 'YYYY/MM/DD',
+                applyLabel: '确定',
+                cancelLabel: '取消',
+                fromLabel: '从',
+                toLabel: '到',
+                customRangeLabel: '自定义',
+                weekLabel: 'W',
+                daysOfWeek: ['日', '一', '二', '三', '四', '五', '六'],
+                monthNames: ['一月', '二月', '三月', '四月', '五月', '六月', '七月', '八月', '九月', '十月', '十一月', '十二月'],
+                firstDay: 1
+            },
+            ranges: {
+               '今天': [moment(), moment()],
+               '昨天': [moment().subtract(1, 'days'), moment().subtract(1, 'days')],
+               '最近7天': [moment().subtract(6, 'days'), moment()],
+               '最近30天': [moment().subtract(29, 'days'), moment()],
+               '本月': [moment().startOf('month'), moment().endOf('month')],
+               '上月': [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')]
+            },
+            startDate: '{{ search_params.date_start }}',
+            endDate: '{{ search_params.date_end }}',
+            autoUpdateInput: false
+        }, function(start, end) {
+            $('#dateRange').val(start.format('YYYY/MM/DD') + ' - ' + end.format('YYYY/MM/DD'));
+            $('#date_start').val(start.format('YYYY-MM-DD'));
+            $('#date_end').val(end.format('YYYY-MM-DD'));
+        });
+
+        // 初始化日期显示
+        if ('{{ search_params.date_start }}' && '{{ search_params.date_end }}') {
+            let startDate = moment('{{ search_params.date_start }}');
+            let endDate = moment('{{ search_params.date_end }}');
+            $('#dateRange').val(startDate.format('YYYY/MM/DD') + ' - ' + endDate.format('YYYY/MM/DD'));
+        }
+    });
+    
+    // 打印功能
+    function printTable() {
+        window.print();
+    }
+</script>
+{% endblock %} 

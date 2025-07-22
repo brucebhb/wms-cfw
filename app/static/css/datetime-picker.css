@@ -1,0 +1,82 @@
+/* 日期时间选择器组件样式 */
+.date-time-picker-container {
+  margin-bottom: 1rem;
+  position: relative; /* 确保相对定位 */
+}
+
+.date-time-picker {
+  display: flex;
+  width: 100%;
+  position: relative; /* 确保相对定位 */
+}
+
+.date-time-picker .date-input {
+  flex-grow: 1;
+  border-right: none;
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+  min-width: 60%;
+  cursor: pointer; /* 添加手型光标提示可点击 */
+}
+
+.date-time-picker .time-input {
+  width: 80px;
+  text-align: center;
+  border-radius: 0;
+  border-left: none;
+  border-right: none;
+}
+
+.date-time-picker .calendar-btn {
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+  background-color: #fff;
+  border-left: none;
+  cursor: pointer; /* 确保指针样式 */
+}
+
+.date-time-picker .calendar-btn:hover {
+  background-color: #f8f9fa;
+}
+
+/* 调整日期选择器的层级确保不会被覆盖 */
+.daterangepicker {
+  z-index: 9999 !important; /* 提高z-index值 */
+  position: absolute !important;
+}
+
+/* 确保日期选择器下拉菜单显示在前面 */
+.daterangepicker .calendar-table {
+  z-index: 10000 !important;
+}
+
+/* 确保日期选择器显示 */
+.daterangepicker.show-calendar {
+  display: block !important;
+  z-index: 10000 !important;
+}
+
+/* 当禁用时的样式 */
+.date-time-picker .date-input:disabled,
+.date-time-picker .time-input:disabled,
+.date-time-picker .calendar-btn:disabled {
+  background-color: #e9ecef;
+  opacity: 1;
+}
+
+/* 标记必填字段 */
+.required-field::after {
+  content: " *";
+  color: #ff0000;
+}
+
+/* 确保弹出的日历不透明 */
+.daterangepicker .calendar {
+  background-color: #fff !important;
+  box-shadow: 0 6px 12px rgba(0,0,0,.175) !important;
+}
+
+/* 防止鼠标事件穿透 */
+.daterangepicker * {
+  pointer-events: auto !important;
+} 

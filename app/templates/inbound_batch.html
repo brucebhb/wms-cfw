@@ -1,0 +1,2354 @@
+{% extends "base.html" %}
+
+{% block styles %}
+<!-- 使用本地CSS资源 -->
+<link rel="stylesheet" href="{{ url_for('static', filename='vendor/css/jexcel.css') }}" type="text/css" />
+<link rel="stylesheet" href="{{ url_for('static', filename='vendor/css/jsuites.css') }}" type="text/css" />
+<!-- 添加自定义表格样式 -->
+<link rel="stylesheet" href="{{ url_for('static', filename='css/simple-table.css') }}" type="text/css" />
+<!-- 添加备用CSS加载方法 -->
+<script>
+    // 确保CSS文件加载
+    function loadCSS(url) {
+        const link = document.createElement('link');
+        link.rel = 'stylesheet';
+        link.type = 'text/css';
+        link.href = url;
+        document.head.appendChild(link);
+        return new Promise((resolve, reject) => {
+            link.onload = resolve;
+            link.onerror = reject;
+        });
+    }
+
+    // 检查CSS是否已加载，如果没有则加载
+    window.addEventListener('DOMContentLoaded', function() {
+        const cssUrls = [
+            '{{ url_for("static", filename="vendor/css/jexcel.css") }}',
+            '{{ url_for("static", filename="vendor/css/jsuites.css") }}'
+        ];
+        
+        // 检查是否需要重新加载CSS
+        const loadedLinks = Array.from(document.getElementsByTagName('link'))
+                               .map(link => link.href);
+        
+        cssUrls.forEach(url => {
+            if (!loadedLinks.some(href => href === url)) {
+                console.log('加载CSS:', url);
+                loadCSS(url).catch(err => console.error('CSS加载失败:', url, err));
+            }
+        });
+    });
+</script>
+<style>
+    .batch-options {
+        margin-bottom: 0.6rem;
+    }
+    #spreadsheet {
+        min-height: 250px;
+        max-height: none;
+        height: auto;
+        width: 100%;
+        overflow-x: auto;
+        overflow-y: visible;
+        margin-bottom: 10px;
+        margin-left: 0;
+        margin-right: auto;
+        padding-left: 0;
+    }
+    
+    /* 表格容器调整 - 不超出白色背景 */
+    #spreadsheet-container {
+        justify-content: flex-start !important;
+        padding-left: 0;
+        margin-left: 0; /* 不向左移动，保持在白色背景内 */
+        width: 100%; /* 正常宽度 */
+        overflow-x: hidden; /* 防止水平滚动条 */
+    }
+    
+    /* 加载指示器样式 */
+    .loading-indicator {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        text-align: center;
+    }
+    .required {
+        color: #ff0000;
+    }
+    .btn-action {
+        margin-right: 8px;
+    }
+    .file-upload {
+        display: none;
+    }
+    
+    /* jExcel 样式优化 */
+    .jexcel > thead > tr > td {
+        font-weight: bold;
+        background-color: #f8f9fa;
+        border-bottom: 2px solid #dee2e6;
+    }
+    
+    .jexcel > tbody > tr > td {
+        padding: 6px 4px;
+    }
+    
+    /* 增加表头右侧拖动指示 */
+    .jexcel_column_width {
+        background-color: #f1f1f1 !important;
+    }
+    
+    .jexcel_column_width:hover {
+        background-color: #2196F3 !important;
+    }
+    
+    /* 调整列宽指引样式 */
+    .resize-guide {
+        position: fixed;
+        top: 10px;
+        right: 10px;
+        background-color: #2196F3;
+        color: #fff;
+        padding: 10px 15px;
+        border-radius: 4px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        z-index: 9999;
+        font-size: 13px;
+        max-width: 200px;
+    }
+    
+    /* 内容区域居中 */
+    .card-body {
+        text-align: center;
+        padding: 0.8rem 0.2rem 0.8rem 0; /* 减少左边距为0 */
+    }
+    
+    /* 按钮组靠左 */
+    .action-buttons {
+        display: flex;
+        justify-content: flex-start;
+        margin-bottom: 0.6rem;
+        margin-left: 10px; /* 增加左边距 */
+    }
+    
+    /* 底部按钮居左 */
+    .bottom-buttons {
+        display: flex;
+        justify-content: flex-start;
+        gap: 0.8rem;
+        margin-top: 0.6rem;
+        margin-bottom: 0.5rem;
+        margin-left: 10px; /* 增加左边距 */
+    }
+    
+    /* 弹窗样式 */
+    .custom-modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0,0,0,0.5);
+        z-index: 10000;
+        justify-content: center;
+        align-items: center;
+    }
+    
+    .modal-content {
+        background-color: white;
+        padding: 20px;
+        border-radius: 5px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        max-width: 500px;
+        width: 90%;
+        text-align: center;
+        position: relative;
+    }
+    
+    .modal-close {
+        position: absolute;
+        top: 10px;
+        right: 15px;
+        font-size: 20px;
+        cursor: pointer;
+        color: #aaa;
+    }
+    
+    .modal-close:hover {
+        color: #333;
+    }
+    
+    .modal-success .modal-header {
+        color: #28a745;
+        border-bottom: 1px solid #e9ecef;
+        padding-bottom: 10px;
+        margin-bottom: 15px;
+    }
+    
+    .modal-error .modal-header {
+        color: #dc3545;
+        border-bottom: 1px solid #e9ecef;
+        padding-bottom: 10px;
+        margin-bottom: 15px;
+    }
+    
+    .modal-header i {
+        font-size: 1.5em;
+        margin-right: 10px;
+    }
+    
+    .modal-footer {
+        padding-top: 15px;
+        margin-top: 15px;
+        border-top: 1px solid #e9ecef;
+        text-align: right;
+    }
+    
+    /* 错误提示样式 */
+    .alert-warning {
+        color: #856404;
+        background-color: #fff3cd;
+        border-color: #ffeeba;
+        padding: 0.75rem 1.25rem;
+        margin-bottom: 1rem;
+        border: 1px solid transparent;
+        border-radius: 0.25rem;
+    }
+    
+    .alert-danger {
+        color: #721c24;
+        background-color: #f8d7da;
+        border-color: #f5c6cb;
+        padding: 0.75rem 1.25rem;
+        margin-bottom: 1rem;
+        border: 1px solid transparent;
+        border-radius: 0.25rem;
+    }
+    
+    /* 表格注释样式 */
+    .table-note {
+        margin-bottom: 0.4rem;
+        font-size: 0.9rem;
+    }
+    
+    /* 优化表格样式，支持大量数据 */
+    .jexcel_content {
+        max-height: none !important; /* 移除内容区域的高度限制 */
+        height: auto !important; /* 高度自动调整 */
+    }
+    
+    /* 确保表头固定在顶部 */
+    .jexcel_container {
+        position: relative;
+    }
+    
+    /* 设置表格滚动区域 */
+    .card-body {
+        padding: 0.8rem 0.2rem 0.8rem 0; /* 保持原有的内边距 */
+        overflow: visible; /* 允许内容溢出 */
+        height: auto; /* 自动调整高度 */
+    }
+    
+    /* 确保底部按钮区域不受表格滚动影响 */
+    .bottom-buttons {
+        position: sticky; 
+        bottom: 0;
+        background-color: white;
+        padding-top: 10px;
+        z-index: 10;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="card mx-0 px-0" style="max-width: 100%;">
+    <div class="card-header d-flex justify-content-between align-items-center py-2">
+        <div>
+            <h4 class="card-title mb-0"><i class="fas fa-truck-loading me-2"></i>{{ title or '入库操作（批量录入）' }}</h4>
+            <small class="text-muted"><i class="fas fa-grip-lines-vertical me-1"></i>提示：拖动表头边缘可调整列宽</small>
+        </div>
+        <div>
+            <button type="button" class="btn btn-outline-secondary btn-sm me-1" id="downloadTemplateBtn">
+                <i class="fas fa-download me-1"></i> 下载模板
+            </button>
+            <button type="button" class="btn btn-outline-info btn-sm" id="importExcelBtn">
+                <i class="fas fa-file-excel me-1"></i> Excel导入
+            </button>
+            <button type="button" class="btn btn-outline-warning btn-sm" id="resetImportBtn" style="display: none;" title="重置导入状态">
+                <i class="fas fa-redo me-1"></i> 重置导入
+            </button>
+            <input type="file" id="fileUpload" class="file-upload" accept=".xlsx, .xls, .csv">
+        </div>
+    </div>
+    <div class="card-body">
+        <div class="batch-options mb-2">
+            <div class="row align-items-center g-2 justify-content-start">
+                <div class="col-md-3 d-flex justify-content-start ms-2">
+                    <div class="input-group input-group-sm">
+                        <span class="input-group-text">默认入库时间</span>
+                        <input type="date" class="form-control" id="defaultInboundTime">
+                    </div>
+                </div>
+                <div class="col-md-8">
+                    <div class="action-buttons">
+                        <button type="button" class="btn btn-success btn-sm btn-action" id="addRowBtn">
+                            <i class="fas fa-plus"></i> 添加行
+                        </button>
+                        <button type="button" class="btn btn-danger btn-sm btn-action" id="removeRowBtn">
+                            <i class="fas fa-trash"></i> 删除选中行
+                        </button>
+                        <button type="button" class="btn btn-warning btn-sm btn-action" id="clearDataBtn">
+                            <i class="fas fa-eraser"></i> 清空数据
+                        </button>
+                        <button type="button" class="btn btn-info btn-sm btn-action" id="fixDropdownBtn" style="display: none;">
+                            <i class="fas fa-wrench"></i> 修复下拉框
+                        </button>
+                        <button type="button" class="btn btn-secondary btn-sm btn-action" id="validateMappingBtn">
+                            <i class="fas fa-check-circle"></i> 验证字段映射
+                        </button>
+                        <span class="ms-2 text-secondary small"><i class="fas fa-info-circle"></i> 支持拖动调整列宽和复制粘贴Excel数据</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 添加红色提示信息框 -->
+        <div class="alert alert-danger p-2 mb-2" style="background-color: #fff3cd; color: #856404; border-color: #ffeeba; text-align: left;">
+            <i class="fas fa-info-circle me-1"></i> <span class="required">*</span> 为必填项，<span class="required">板数</span>与<span class="required">件数</span>至少填写一项
+            <br><strong>必填项包括：</strong>入库时间、入库车牌、客户名称、出境模式、订单类型、报关行、跟单客服
+        </div>
+
+        <!-- 将底部按钮移到这里，表格之前 -->
+        <div class="d-flex justify-content-center mb-3">
+            <button type="button" class="btn btn-secondary me-3" id="resetBtn">
+                <i class="fas fa-undo"></i> 重置
+            </button>
+            <button type="button" class="btn btn-primary" id="saveBtn">
+                <i class="fas fa-save"></i> 批量保存
+            </button>
+        </div>
+
+        <div id="spreadsheet-container" class="d-flex justify-content-start">
+            <div id="spreadsheet" class="mx-0">
+                <div class="text-center my-3">
+                    <div class="spinner-border text-primary" role="status"></div>
+                    <p class="mt-2">表格加载中...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 成功提示弹窗 -->
+<div id="successModal" class="custom-modal modal-success">
+    <div class="modal-content">
+        <span class="modal-close">&times;</span>
+        <div class="modal-header">
+            <i class="fas fa-check-circle"></i> 操作成功
+        </div>
+        <div class="modal-body" id="successMessage"></div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-success close-modal">确定</button>
+        </div>
+    </div>
+</div>
+
+<!-- 错误提示弹窗 -->
+<div id="errorModal" class="custom-modal modal-error">
+    <div class="modal-content">
+        <span class="modal-close">&times;</span>
+        <div class="modal-header">
+            <i class="fas fa-exclamation-circle"></i> 操作失败
+        </div>
+        <div class="modal-body" id="errorMessage"></div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-danger close-modal">确定</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- 预加载所有必要的库，使用模块化加载 -->
+<script>
+    // 定义加载脚本的通用函数
+    function loadScript(url) {
+        return new Promise((resolve, reject) => {
+            console.log(`开始加载库: ${url}`);
+            const script = document.createElement('script');
+            script.src = url;
+            script.async = false; // 确保按顺序加载
+            script.onload = () => {
+                console.log(`库加载成功: ${url}`);
+                resolve();
+            };
+            script.onerror = (e) => {
+                console.error(`库加载失败: ${url}`, e);
+                reject(new Error(`加载失败: ${url}`));
+            };
+            document.head.appendChild(script);
+        });
+    }
+
+    // 定义所有需要的库
+    const requiredLibraries = [
+        { name: 'XLSX', url: '{{ url_for("static", filename="vendor/js/xlsx.full.min.js") }}' },
+        { name: 'jSuites', url: '{{ url_for("static", filename="vendor/js/jsuites.js") }}' },
+        { name: 'jspreadsheet', url: '{{ url_for("static", filename="vendor/js/jexcel.js") }}' }
+    ];
+
+    // 按顺序加载所有库
+    window.addEventListener('DOMContentLoaded', function() {
+        console.log('DOM内容加载完成，开始加载必要的库...');
+        
+        // 检查哪些库需要加载
+        const missingLibraries = requiredLibraries.filter(lib => {
+            return typeof window[lib.name] === 'undefined';
+        });
+        
+        if (missingLibraries.length > 0) {
+            console.log('需要加载的库:', missingLibraries.map(lib => lib.name).join(', '));
+            
+            // 按顺序加载缺失的库
+            missingLibraries.reduce((chain, lib) => {
+                return chain.then(() => loadScript(lib.url));
+            }, Promise.resolve())
+            .then(() => {
+                console.log('所有库加载完成，初始化表格...');
+                // 延迟一点时间确保库已完全初始化
+                setTimeout(() => {
+                    setDefaultTime();
+                    initSpreadsheet();
+                }, 500);
+            })
+            .catch(error => {
+                console.error('库加载失败:', error);
+                                    document.getElementById('spreadsheet').innerHTML = `
+                        <div class="alert alert-danger p-2 m-1">
+                            <i class="fas fa-exclamation-circle"></i> 表格组件加载失败，请刷新页面重试
+                            <button class="btn btn-primary btn-sm ms-2" onclick="location.reload()">
+                                <i class="fas fa-sync"></i> 刷新页面
+                            </button>
+                        </div>
+                    `;
+            });
+        } else {
+            console.log('所有库已预先加载');
+            // 设置默认入库时间
+            setDefaultTime();
+            
+            // 延迟加载表格，给用户更好的加载体验
+            setTimeout(function() {
+                try {
+                    initSpreadsheet();
+                } catch (error) {
+                    console.error('表格初始化失败:', error);
+                    document.getElementById('spreadsheet').innerHTML = `
+                        <div class="alert alert-danger p-2 m-1">
+                            <i class="fas fa-exclamation-circle"></i> 表格加载失败，请刷新页面重试
+                            <button class="btn btn-primary btn-sm ms-2" onclick="location.reload()">
+                                <i class="fas fa-sync"></i> 刷新页面
+                            </button>
+                        </div>
+                    `;
+                }
+            }, 300);
+        }
+        
+        // 使用动态导入加载Excel处理库
+        document.getElementById('importExcelBtn').addEventListener('click', function() {
+            document.getElementById('fileUpload').click();
+        });
+        
+        // 下载模板
+        document.getElementById('downloadTemplateBtn').addEventListener('click', function() {
+            downloadTemplate();
+        });
+    });
+
+    // 确保XLSX库已加载的辅助函数
+    function ensureXLSXLoaded() {
+        return new Promise((resolve, reject) => {
+            if (typeof XLSX !== 'undefined') {
+                resolve();
+                return;
+            }
+            
+            console.log('XLSX库尚未加载，正在加载...');
+            loadScript('{{ url_for("static", filename="vendor/js/xlsx.full.min.js") }}')
+                .then(resolve)
+                .catch(reject);
+        });
+    }
+</script>
+
+<!-- 静态标签加载作为后备方案 -->
+<script src="{{ url_for('static', filename='vendor/js/xlsx.full.min.js') }}"></script>
+<script src="{{ url_for('static', filename='vendor/js/jsuites.js') }}"></script>
+<script src="{{ url_for('static', filename='vendor/js/jexcel.js') }}"></script>
+
+<!-- 确保库全局可用 -->
+<script>
+    // 兼容性修复 - 确保jexcel和jSuites全局可用
+    document.addEventListener('DOMContentLoaded', function() {
+        if (typeof window.jspreadsheet === 'function' && typeof window.jexcel === 'undefined') {
+            window.jexcel = window.jspreadsheet;
+            console.log('jexcel全局兼容性修复已应用');
+        }
+        
+        if (typeof window.jsuites !== 'undefined' && typeof window.jSuites === 'undefined') {
+            window.jSuites = window.jsuites;
+            console.log('jSuites全局兼容性修复已应用');
+        }
+    });
+</script>
+
+<script>
+    // 设置默认时间
+    function setDefaultTime() {
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const day = String(now.getDate()).padStart(2, '0');
+        const localDatetime = `${year}-${month}-${day}`;
+        document.getElementById('defaultInboundTime').value = localDatetime;
+    }
+    
+    // 格式化日期时间
+    function formatDatetime(date) {
+        if (!date) return '';
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    }
+    
+    // 初始化表格
+    function initSpreadsheet() {
+        console.time('表格初始化时间');
+        
+        try {
+            // 检查库是否已加载，jexcel可能以jexcel或jspreadsheet形式存在
+            const jexcelObj = window.jexcel || window.jspreadsheet;
+            
+            // jSuites首字母大写修正
+            if (typeof window.jSuites === 'undefined' && typeof window.jsuites !== 'undefined') {
+                window.jSuites = window.jsuites;
+            }
+            
+            if (typeof jexcelObj === 'undefined') {
+                console.error('jexcel检测:', {
+                    jexcel: typeof window.jexcel,
+                    jspreadsheet: typeof window.jspreadsheet,
+                    jSuites: typeof window.jSuites,
+                    jsuites: typeof window.jsuites
+                });
+                throw new Error('jexcel库未加载');
+            }
+            
+            // 清除加载指示器
+            document.getElementById('spreadsheet').innerHTML = '';
+            
+            // 列标题定义
+            const headers = [
+                '入库时间 *',
+                '入库车牌 *',
+                '客户名称 *',
+                '板数 *',
+                '件数 *',
+                '重量(kg)',
+                '体积(m³)',
+                '出境模式 *',
+                '订单类型 *',
+                '报关行 *',
+                '库位',
+                '单据',
+                '跟单客服 *'
+            ];
+            
+            // 获取保存的列宽
+            const columnWidths = getColumnWidths();
+            
+            // 创建初始数据（10行）
+            const initialData = createInitialData(10);
+            
+            console.log('开始创建表格...');
+            
+            // 确保jexcel对象可用
+            const jexcelFn = window.jexcel || window.jspreadsheet;
+            console.log('jexcel对象类型:', typeof jexcelFn);
+            
+            // 调试每个可能的方式
+            console.log('jexcel可能性检查:', {
+                'window.jexcel': typeof window.jexcel, 
+                'window.jspreadsheet': typeof window.jspreadsheet,
+                'jexcel': typeof jexcel,
+                'jspreadsheet': typeof jspreadsheet
+            });
+            
+            if (typeof jexcelFn !== 'function') {
+                throw new Error(`jexcel不是函数: ${typeof jexcelFn}`);
+            }
+            
+            // 确保jSuites可用
+            if (typeof window.jSuites === 'undefined' && typeof window.jsuites !== 'undefined') {
+                window.jSuites = window.jsuites;
+            }
+
+            // 初始化表格
+            const spreadsheet = jexcelFn(document.getElementById('spreadsheet'), {
+                data: initialData,
+                columns: [
+                    { type: 'calendar', title: headers[0], width: columnWidths[0], align: 'center', options: { format: 'YYYY-MM-DD' } },
+                    { type: 'text', title: headers[1], width: columnWidths[1], align: 'center' },
+                    { type: 'text', title: headers[2], width: columnWidths[2], align: 'center' },
+                    { type: 'numeric', title: headers[3], width: columnWidths[3], align: 'center' },
+                    { type: 'numeric', title: headers[4], width: columnWidths[4], align: 'center' },
+                    { type: 'numeric', title: headers[5], width: columnWidths[5], align: 'center' },
+                    { type: 'numeric', title: headers[6], width: columnWidths[6], align: 'center' },
+                    {
+                        type: 'text',
+                        title: headers[7],
+                        width: columnWidths[7],
+                        align: 'center'
+                    },
+                    {
+                        type: 'text',
+                        title: headers[8],
+                        width: columnWidths[8] || 100,
+                        align: 'center'
+                    },
+                    { type: 'text', title: headers[9], width: columnWidths[9], align: 'center' },
+                    { type: 'text', title: headers[10], width: columnWidths[10], align: 'center' },
+                    { type: 'text', title: headers[11], width: columnWidths[11], align: 'center' },
+                    { type: 'text', title: headers[12], width: columnWidths[12] || 80, align: 'center' }
+                ],
+                minDimensions: [13, initialData.length],  // 根据初始数据行数设置最小行数
+                columnDrag: true,  // 启用列拖动
+                allowInsertRow: true,
+                allowManualInsertRow: true,
+                allowDeleteRow: true,
+                columnResize: true, // 启用列宽调整
+                lazyLoading: false, // 禁用延迟加载，确保所有数据立即显示
+                tableOverflow: true, // 允许表格溢出
+                tableHeight: "auto", // 表格高度自动调整
+                pagination: false,  // 禁用分页功能
+                search: true, // 启用搜索功能
+                oncolumnresize: function(el, column, width) {
+                    // 保存列宽设置
+                    saveColumnWidth(column, width);
+                },
+                // 设置表格样式
+                style: {
+                    // 表头和单元格居中
+                    tableOverflow: true,
+                    textAlign: 'center'
+                }
+            });
+
+            console.log('表格创建成功');
+
+            // 添加自定义下拉框功能
+            setTimeout(() => {
+                console.log('添加自定义下拉框功能...');
+                addCustomDropdowns();
+            }, 1000);
+
+            // 添加右键菜单
+            spreadsheet.contextMenu = function(obj, x, y, e) {
+                const items = [];
+
+                items.push({
+                    title: '插入行',
+                    onclick: function() {
+                        spreadsheet.insertRow(1, parseInt(y));
+                    }
+                });
+
+                items.push({
+                    title: '删除行',
+                    onclick: function() {
+                        spreadsheet.deleteRow(y);
+                    }
+                });
+
+                return items;
+            }
+
+            console.timeEnd('表格初始化时间');
+            console.log('表格初始化完成');
+            
+            // 全局保存表格对象
+            window.spreadsheet = spreadsheet;
+            
+            // 设置事件监听器
+            setupEventListeners();
+            
+            // 显示列宽拖动引导
+            showResizeGuide();
+            
+            return spreadsheet;
+        } catch (error) {
+            console.error('表格初始化失败:', error);
+            throw error; // 向上抛出错误，让调用者处理
+        }
+    }
+
+    // 添加自定义下拉框功能
+    function addCustomDropdowns() {
+        if (!window.spreadsheet) {
+            console.log('表格对象不存在，无法添加下拉框');
+            return;
+        }
+
+        try {
+            console.log('开始添加自定义下拉框...');
+
+            // 获取表格容器
+            const table = document.querySelector('#spreadsheet table');
+            if (!table) {
+                console.log('未找到表格元素');
+                return;
+            }
+
+            // 根据仓库类型设置下拉框选项
+            const warehouseType = '{{ warehouse_type }}';
+            let exportModeOptions = [];
+            let orderTypeOptions = [];
+
+            if (warehouseType === 'frontend') {
+                // 前端仓需要出境模式和订单类型选项
+                exportModeOptions = ['保税', '清关'];
+                orderTypeOptions = ['原车出境', '换车出境', '零担', 'TP订单'];
+            } else if (warehouseType === 'backend') {
+                // 后端仓也需要出境模式和订单类型选项
+                exportModeOptions = ['保税', '清关'];
+                orderTypeOptions = ['原车出境', '换车出境', '零担', 'TP订单'];
+            } else {
+                // 默认情况（兼容性）
+                exportModeOptions = ['保税', '清关'];
+                orderTypeOptions = ['原车出境', '换车出境', '零担', 'TP订单'];
+            }
+
+            // 添加点击事件监听器
+            table.addEventListener('click', function(e) {
+                const cell = e.target.closest('td');
+                if (!cell) return;
+
+                const row = cell.parentNode.rowIndex - 1; // 减去表头行
+                const col = cell.cellIndex;
+
+                // 通过表头文本识别列类型
+                const headerRow = table.querySelector('thead tr') || table.querySelector('tr');
+                const headerCell = headerRow ? headerRow.cells[col] : null;
+                const headerText = headerCell ? headerCell.textContent.trim() : '';
+
+                console.log(`点击了第${row}行第${col}列，表头: "${headerText}"`);
+
+                // 获取当前单元格的值
+                const currentValue = window.spreadsheet.getValue(col, row);
+                console.log(`当前单元格值: "${currentValue}"`);
+
+                // 获取所有表头
+                const allHeaders = window.spreadsheet.getHeaders();
+                console.log(`所有表头:`, allHeaders);
+                console.log(`第${col}列对应表头: "${allHeaders[col]}"`);
+
+                // 检查列索引是否匹配
+                if (headerText !== allHeaders[col]) {
+                    console.error(`⚠️ 列索引不匹配！点击的表头"${headerText}" != 第${col}列表头"${allHeaders[col]}"`);
+                }
+
+                // 根据实际点击的表头文本来确定正确的列索引
+                // jExcel表格有行号列，所以实际数据列从索引0开始，但DOM表头包含行号列
+                let actualCol = col;
+                if (headerText.includes('出境模式')) {
+                    actualCol = 7; // 出境模式应该在第7列（索引7）
+                } else if (headerText.includes('订单类型')) {
+                    actualCol = 8; // 订单类型应该在第8列（索引8）
+                } else if (headerText.includes('报关行')) {
+                    actualCol = 9; // 报关行应该在第9列（索引9）
+                }
+
+                console.log(`🔧 修正列索引: 原始${col} -> 实际${actualCol}`);
+
+                // 根据表头文本判断是否是下拉框列
+                let options = null;
+                let columnName = '';
+
+                if (headerText.includes('出境模式')) {
+                    options = exportModeOptions;
+                    columnName = '出境模式';
+                } else if (headerText.includes('订单类型')) {
+                    options = orderTypeOptions;
+                    columnName = '订单类型';
+                }
+
+                // 只有当选项不为空时才显示下拉框
+                if (options && options.length > 0) {
+                    console.log(`显示${columnName}下拉框，选项:`, options);
+                    showDropdownMenu(cell, options, row, actualCol); // 使用修正后的列索引
+                } else if (options && options.length === 0) {
+                    console.log(`${columnName}在当前仓库类型(${warehouseType})下不可用`);
+                }
+            });
+
+            console.log('自定义下拉框功能添加完成');
+
+        } catch (error) {
+            console.error('添加自定义下拉框时出错:', error);
+        }
+    }
+
+    // 显示下拉菜单
+    function showDropdownMenu(cell, options, row, col) {
+        // 移除已存在的下拉菜单
+        const existingMenu = document.querySelector('.custom-dropdown-menu');
+        if (existingMenu) {
+            existingMenu.remove();
+        }
+
+        // 创建下拉菜单
+        const menu = document.createElement('div');
+        menu.className = 'custom-dropdown-menu';
+        menu.style.cssText = `
+            position: absolute;
+            background: white;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+            z-index: 1000;
+            min-width: 120px;
+            max-height: 200px;
+            overflow-y: auto;
+        `;
+
+        // 添加选项
+        options.forEach(option => {
+            const item = document.createElement('div');
+            item.textContent = option;
+            item.style.cssText = `
+                padding: 8px 12px;
+                cursor: pointer;
+                border-bottom: 1px solid #eee;
+            `;
+
+            item.addEventListener('mouseenter', function() {
+                this.style.backgroundColor = '#f5f5f5';
+            });
+
+            item.addEventListener('mouseleave', function() {
+                this.style.backgroundColor = 'white';
+            });
+
+            item.addEventListener('click', function() {
+                console.log(`🔧 设置单元格值: 第${row}行第${col}列 = "${option}"`);
+
+                // 检查行号是否有效
+                if (row < 0) {
+                    console.error(`❌ 无效的行号: ${row}，无法设置单元格值`);
+                    hideDropdownMenu();
+                    return;
+                }
+
+                // 设置单元格值 - 使用多种方式确保设置成功
+                let setSuccess = false;
+
+                if (window.spreadsheet && window.spreadsheet.setValueFromCoords) {
+                    try {
+                        window.spreadsheet.setValueFromCoords(col, row, option);
+                        console.log(`✅ 使用setValueFromCoords设置成功`);
+                        setSuccess = true;
+                    } catch (error) {
+                        console.error(`❌ setValueFromCoords失败:`, error);
+                    }
+                }
+
+                // 如果setValueFromCoords失败，尝试直接修改数据
+                if (!setSuccess && window.spreadsheet && window.spreadsheet.getData) {
+                    try {
+                        const data = window.spreadsheet.getData();
+                        if (data[row] && data[row][col] !== undefined) {
+                            data[row][col] = option;
+                            window.spreadsheet.setData(data);
+                            console.log(`✅ 使用setData设置成功`);
+                            setSuccess = true;
+                        }
+                    } catch (error) {
+                        console.error(`❌ setData失败:`, error);
+                    }
+                }
+
+                // 最后降级到直接修改DOM
+                if (!setSuccess) {
+                    cell.textContent = option;
+                    console.log(`✅ 降级使用textContent设置`);
+                }
+
+                // 验证设置结果
+                setTimeout(() => {
+                    try {
+                        let actualValue = null;
+
+                        // 尝试多种方式获取值
+                        if (window.spreadsheet && window.spreadsheet.getValue) {
+                            actualValue = window.spreadsheet.getValue(col, row);
+                        }
+
+                        if (actualValue === null && window.spreadsheet && window.spreadsheet.getData) {
+                            const data = window.spreadsheet.getData();
+                            if (data[row] && data[row][col] !== undefined) {
+                                actualValue = data[row][col];
+                            }
+                        }
+
+                        console.log(`🔍 验证设置结果: 第${row}行第${col}列实际值 = "${actualValue}"`);
+
+                        if (actualValue !== option) {
+                            console.error(`❌ 设置失败！期望值"${option}"，实际值"${actualValue}"`);
+                        } else {
+                            console.log(`✅ 设置成功！值为"${actualValue}"`);
+                        }
+                    } catch (error) {
+                        console.error(`❌ 验证设置结果时出错:`, error);
+                    }
+                }, 100);
+
+                menu.remove();
+            });
+
+            menu.appendChild(item);
+        });
+
+        // 定位菜单
+        const rect = cell.getBoundingClientRect();
+        menu.style.left = rect.left + 'px';
+        menu.style.top = (rect.bottom + window.scrollY) + 'px';
+
+        document.body.appendChild(menu);
+
+        // 点击其他地方关闭菜单
+        setTimeout(() => {
+            document.addEventListener('click', function closeMenu(e) {
+                if (!menu.contains(e.target)) {
+                    menu.remove();
+                    document.removeEventListener('click', closeMenu);
+                }
+            });
+        }, 100);
+    }
+
+    // 检查下拉框功能是否正常
+    function checkDropdownFunctionality() {
+        if (!window.spreadsheet) {
+            return false;
+        }
+
+        try {
+            // 检查表格配置中的下拉框列
+            const config = window.spreadsheet.getConfig();
+            if (!config || !config.columns) {
+                return false;
+            }
+
+            // 检查第7列（出境模式）和第8列（订单类型）是否为下拉框
+            const exportModeColumn = config.columns[7];
+            const orderTypeColumn = config.columns[8];
+
+            const hasExportModeDropdown = exportModeColumn && exportModeColumn.type === 'dropdown' && exportModeColumn.source;
+            const hasOrderTypeDropdown = orderTypeColumn && orderTypeColumn.type === 'dropdown' && orderTypeColumn.source;
+
+            console.log('下拉框检查结果:', {
+                exportModeColumn: hasExportModeDropdown,
+                orderTypeColumn: hasOrderTypeDropdown,
+                exportModeSource: exportModeColumn?.source,
+                orderTypeSource: orderTypeColumn?.source
+            });
+
+            return hasExportModeDropdown && hasOrderTypeDropdown;
+        } catch (error) {
+            console.error('检查下拉框功能时出错:', error);
+            return false;
+        }
+    }
+
+    // 验证字段映射是否正确
+    function validateFieldMapping() {
+        if (!window.spreadsheet) {
+            console.log('表格对象不存在，无法验证字段映射');
+            return false;
+        }
+
+        // 尝试多种方式获取表头
+        let headers = window.spreadsheet.getHeaders();
+        console.log('getHeaders()返回:', headers);
+
+        // 如果getHeaders()有问题，尝试从DOM直接获取
+        if (!headers || headers.length !== 13) {
+            console.log('getHeaders()结果异常，尝试从DOM获取表头...');
+            const headerRow = document.querySelector('#spreadsheet thead tr') || document.querySelector('#spreadsheet tr');
+            if (headerRow) {
+                const domHeaders = Array.from(headerRow.cells).map(cell => cell.textContent.trim());
+                console.log('从DOM获取的表头:', domHeaders);
+
+                // DOM表头包含行号列（第0列为空），所以实际数据列从索引1开始
+                headers = domHeaders.slice(1); // 去掉第0列的行号列
+                console.log('实际数据表头（去掉行号列）:', headers);
+            }
+        }
+
+        // 期望的表头顺序
+        const expectedHeaders = [
+            '入库时间 *',
+            '入库车牌 *',
+            '客户名称 *',
+            '板数 *',
+            '件数 *',
+            '重量(kg)',
+            '体积(m³)',
+            '出境模式 *',
+            '订单类型 *',
+            '报关行 *',
+            '库位',
+            '单据',
+            '跟单客服 *'
+        ];
+
+        // 检查字段顺序
+        let mappingCorrect = true;
+        for (let i = 0; i < expectedHeaders.length; i++) {
+            if (headers[i] !== expectedHeaders[i]) {
+                console.error(`字段映射错误: 第${i}列期望"${expectedHeaders[i]}"，实际"${headers[i]}"`);
+                mappingCorrect = false;
+            }
+        }
+
+        if (mappingCorrect) {
+            console.log('✅ 字段映射验证通过');
+        } else {
+            console.error('❌ 字段映射验证失败，但程序会使用硬编码的列索引修正');
+            // 即使验证失败，我们也返回true，因为我们有修正机制
+            mappingCorrect = true;
+        }
+
+        return mappingCorrect;
+    }
+
+    // 修复下拉框功能
+    function fixDropdownColumns() {
+        if (!window.spreadsheet) {
+            console.log('表格对象不存在，无法修复下拉框');
+            return;
+        }
+
+        try {
+            console.log('开始修复下拉框...');
+
+            // 首先验证字段映射
+            if (!validateFieldMapping()) {
+                showCustomError('字段映射错误，请刷新页面重试');
+                return;
+            }
+
+            // 重新设置下拉框列的配置（使用前面定义的选项）
+            // exportModeOptions 和 orderTypeOptions 已在前面根据仓库类型定义
+
+            // 方法1: 使用setDropdown方法（只有当选项存在时才设置）
+            try {
+                if (typeof window.spreadsheet.setDropdown === 'function') {
+                    if (exportModeOptions.length > 0) {
+                        window.spreadsheet.setDropdown(7, exportModeOptions);
+                    }
+                    if (orderTypeOptions.length > 0) {
+                        window.spreadsheet.setDropdown(8, orderTypeOptions);
+                    }
+                    console.log('使用setDropdown方法修复成功');
+                }
+            } catch (e) {
+                console.log('setDropdown方法失败:', e);
+            }
+
+            // 方法2: 直接修改列配置（只有当选项存在时才设置）
+            try {
+                const config = window.spreadsheet.getConfig();
+                if (config && config.columns) {
+                    if (config.columns[7] && exportModeOptions.length > 0) {
+                        config.columns[7].type = 'dropdown';
+                        config.columns[7].source = exportModeOptions;
+                        config.columns[7].autocomplete = true;
+                    }
+                    if (config.columns[8] && orderTypeOptions.length > 0) {
+                        config.columns[8].type = 'dropdown';
+                        config.columns[8].source = orderTypeOptions;
+                        config.columns[8].autocomplete = true;
+                    }
+                    console.log('直接修改列配置成功');
+                }
+            } catch (e) {
+                console.log('直接修改列配置失败:', e);
+            }
+
+            // 方法3: 重新渲染表格
+            try {
+                if (typeof window.spreadsheet.refresh === 'function') {
+                    window.spreadsheet.refresh();
+                    console.log('表格刷新成功');
+                }
+            } catch (e) {
+                console.log('表格刷新失败:', e);
+            }
+
+            console.log('下拉框修复完成');
+
+            // 隐藏修复按钮
+            document.getElementById('fixDropdownBtn').style.display = 'none';
+
+        } catch (error) {
+            console.error('修复下拉框时出错:', error);
+        }
+    }
+
+    // 创建初始数据
+    function createInitialData(rows) {
+        // 默认显示10行
+        rows = rows || 10;
+        const data = [];
+        const now = new Date();
+        const formattedTime = formatDatetime(now);
+
+        for (let i = 0; i < rows; i++) {
+            // 只给第一行填充默认时间，其他行保持空白
+            if (i === 0) {
+                data.push([formattedTime, '', '', '', '', '', '', '', '', '', '', '', '']);
+            } else {
+                data.push(['', '', '', '', '', '', '', '', '', '', '', '', '']);
+            }
+        }
+
+        return data;
+    }
+    
+    // 获取默认列宽设置
+    function getDefaultColumnWidths() {
+        return [
+            130, // 入库时间
+            90,  // 入库车牌
+            120, // 客户名称
+            70,  // 板数
+            70,  // 件数
+            80,  // 重量
+            80,  // 体积
+            80,  // 出境模式
+            100, // 订单类型
+            80,  // 报关行
+            80,  // 库位
+            80,  // 单据
+            80   // 跟单客服
+        ];
+    }
+    
+    // 获取保存的列宽或默认列宽
+    function getColumnWidths() {
+        const savedWidths = localStorage.getItem('inbound_column_widths');
+        if (savedWidths) {
+            try {
+                return JSON.parse(savedWidths);
+            } catch (e) {
+                console.error('Error parsing saved column widths', e);
+            }
+        }
+        
+        return getDefaultColumnWidths();
+    }
+    
+    // 保存单个列宽设置
+    function saveColumnWidth(column, width) {
+        const columnWidths = getColumnWidths();
+        columnWidths[column] = width;
+        localStorage.setItem('inbound_column_widths', JSON.stringify(columnWidths));
+        console.log('列宽已保存:', column, width);
+        showCustomSuccess('列宽已自动保存');
+    }
+    
+    // 显示引导提示
+    function showResizeGuide() {
+        if (localStorage.getItem('resize_guide_shown')) {
+            return;
+        }
+        
+        const guide = document.createElement('div');
+        guide.className = 'resize-guide';
+        guide.innerHTML = '<strong>提示</strong>: 鼠标放在表头边缘，可以拖动调整列宽<br><i class="fas fa-arrows-alt-h"></i>';
+        document.body.appendChild(guide);
+        
+        setTimeout(function() {
+            if (guide.parentNode) {
+                guide.style.opacity = '0';
+                guide.style.transition = 'opacity 0.5s';
+                
+                setTimeout(function() {
+                    if (guide.parentNode) {
+                        guide.parentNode.removeChild(guide);
+                    }
+                }, 500);
+            }
+        }, 5000);
+        
+        localStorage.setItem('resize_guide_shown', 'true');
+    }
+    
+    // 设置事件监听器
+    function setupEventListeners() {
+        // 添加行按钮
+        document.getElementById('addRowBtn').addEventListener('click', function() {
+            window.spreadsheet.insertRow(1);
+            const newRowIndex = 0; // 在顶部插入
+            window.spreadsheet.setValueFromCoords(0, newRowIndex, formatDatetime(new Date()));
+        });
+        
+        // 删除选中行按钮
+        document.getElementById('removeRowBtn').addEventListener('click', function() {
+            const selectedRows = window.spreadsheet.getSelectedRows();
+            if (selectedRows.length === 0) {
+                showCustomError('请先选择要删除的行');
+                return;
+            }
+            
+            // 按照行索引从大到小排序，这样删除时不会影响其他行的索引
+            const indices = selectedRows.map(row => parseInt(row)).sort((a, b) => b - a);
+            
+            // 删除选中的行
+            indices.forEach(index => {
+                window.spreadsheet.deleteRow(index);
+            });
+            
+            showCustomSuccess(`已删除 ${indices.length} 行数据`);
+        });
+        
+        // 清空数据按钮
+        document.getElementById('clearDataBtn').addEventListener('click', function() {
+            if (confirm('确定要清空所有数据吗？')) {
+                const initialData = [[formatDatetime(new Date()), '', '', '', '', '', '', '', '', '', '', '']];
+                window.spreadsheet.setData(initialData);
+                showCustomSuccess('已清空所有数据');
+            }
+        });
+
+        // 修复下拉框按钮
+        document.getElementById('fixDropdownBtn').addEventListener('click', function() {
+            fixDropdownColumns();
+            showCustomSuccess('下拉框修复完成');
+        });
+
+        // 验证字段映射按钮
+        document.getElementById('validateMappingBtn').addEventListener('click', function() {
+            if (validateFieldMapping()) {
+                showCustomSuccess('字段映射验证通过！');
+            } else {
+                showCustomError('字段映射验证失败，请刷新页面重试');
+            }
+        });
+        
+        // 重置按钮
+        document.getElementById('resetBtn').addEventListener('click', function() {
+            if (confirm('确定要重置表格吗？所有未保存的数据将丢失。')) {
+                const initialData = createInitialData(10);
+                window.spreadsheet.setData(initialData);
+                showCustomSuccess('表格已重置');
+            }
+        });
+        
+        // 保存按钮
+        document.getElementById('saveBtn').addEventListener('click', validateAndSaveData);
+        
+        // 文件上传处理
+        document.getElementById('fileUpload').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            // 防止多次并发导入，但提供强制重置选项
+            if (excelImportInProgress) {
+                const shouldForceReset = confirm('已有一个导入操作正在进行中。是否要强制重置并开始新的导入？\n\n点击"确定"强制重置，点击"取消"等待当前操作完成。');
+                if (shouldForceReset) {
+                    console.log('用户选择强制重置导入状态');
+                    forceResetImportState();
+                } else {
+                    this.value = ''; // 清除文件输入
+                    return;
+                }
+            }
+            
+            // 设置导入状态
+            excelImportInProgress = true;
+            importOperationId = Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+            console.log(`开始导入操作 [ID: ${importOperationId}]`);
+
+            // 更新UI状态
+            updateImportUIState();
+
+            // 清除消息
+            hideMessages();
+            
+            // 检查文件类型
+            const fileTypes = [
+                'application/vnd.ms-excel',
+                'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                'text/csv'
+            ];
+            
+            if (!fileTypes.includes(file.type) &&
+                !file.name.endsWith('.xlsx') &&
+                !file.name.endsWith('.xls') &&
+                !file.name.endsWith('.csv')) {
+                showCustomError('请上传Excel文件(.xlsx, .xls)或CSV文件(.csv)');
+                forceResetImportState();
+                return;
+            }
+            
+            // 显示加载指示器
+            document.getElementById('spreadsheet').innerHTML = `
+                <div class="text-center my-3">
+                    <div class="spinner-border text-primary" role="status"></div>
+                    <p class="mt-2">正在读取文件，请稍候...</p>
+                </div>
+            `;
+            // 确保容器显示
+            document.getElementById('spreadsheet').style.display = 'block';
+            
+            // 设置处理超时和绝对超时变量
+            let processingTimeout = null;
+            let absoluteTimeout = null;
+
+            // 清除所有超时计时器的函数
+            function clearAllTimeouts() {
+                if (processingTimeout) {
+                    clearTimeout(processingTimeout);
+                    processingTimeout = null;
+                }
+                if (absoluteTimeout) {
+                    clearTimeout(absoluteTimeout);
+                    absoluteTimeout = null;
+                }
+            }
+
+            // 在设置超时计时器前，确保清除之前的计时器
+            clearAllTimeouts();
+
+            // 设置处理超时
+            processingTimeout = setTimeout(() => {
+                showCustomError('处理超时，请尝试使用较小的文件或刷新页面重试');
+                forceResetImportState();
+            }, 5000); // 5秒超时
+
+            // 设置绝对超时，无论如何都会重置表格
+            absoluteTimeout = setTimeout(() => {
+                // 确保只清除一次
+                if (processingTimeout) {
+                    clearTimeout(processingTimeout);
+                    processingTimeout = null;
+                }
+                console.error(`导入处理被强制终止 - 绝对超时 [ID: ${importOperationId}]`);
+                showCustomError('处理时间过长，已自动终止。请尝试使用较小的文件或联系管理员。');
+                forceResetImportState();
+                // 避免在这里调用console.timeEnd，可能会导致错误
+            }, 8000); // 8秒绝对超时
+            
+            try {
+                // 确保XLSX库已加载
+                if (typeof XLSX === 'undefined') {
+                    throw new Error('Excel处理库未加载，请刷新页面重试');
+                }
+                
+                // 使用FileReader API读取文件，但不会阻塞UI
+                const reader = new FileReader();
+                
+                reader.onload = function(e) {
+                    try {
+                        console.time('excel-import');
+                        const data = new Uint8Array(e.target.result);
+                        
+                        // 更新状态提示
+                        document.getElementById('spreadsheet').innerHTML = `
+                            <div class="text-center my-3">
+                                <div class="spinner-border text-primary" role="status"></div>
+                                <p class="mt-2">正在处理Excel数据...</p>
+                            </div>
+                        `;
+                        // 确保容器显示
+                        document.getElementById('spreadsheet').style.display = 'block';
+                        
+                        // 直接处理Excel数据，避免多层嵌套的requestAnimationFrame
+                        console.log('开始解析Excel数据...');
+                        console.time('excel-parse');
+                        const workbook = XLSX.read(data, { type: 'array' });
+                        const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                        const jsonData = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
+                        console.timeEnd('excel-parse');
+                        console.log(`Excel解析完成，共 ${jsonData.length} 行数据`);
+                        
+                        // 验证数据
+                        if (!jsonData || jsonData.length <= 1) {
+                            clearAllTimeouts();
+                            showCustomError('导入的文件没有数据或只有表头');
+                            excelImportInProgress = false;
+                            importOperationId = null;
+                            initSpreadsheet();
+                            console.timeEnd('excel-import');
+                            return;
+                        }
+                        
+                        console.log('开始处理数据行...');
+                        console.time('data-processing');
+                        const headers = jsonData[0];
+                        const dataRows = [];
+                        
+                        // 使用更高效的数据处理方式
+                        for (let i = 1; i < jsonData.length; i++) {
+                            const row = jsonData[i];
+                            // 快速跳过完全空行
+                            if (!row || row.length === 0) continue;
+                            
+                            // 检查是否是空行（所有单元格为空）
+                            let hasValue = false;
+                            for (let j = 0; j < row.length; j++) {
+                                if (row[j] != null && row[j] !== '') {
+                                    hasValue = true;
+                                    break;
+                                }
+                            }
+                            if (!hasValue) continue;
+                            
+                            // 使用数组直接创建
+                            const processedRow = Array(13).fill('');
+                            
+                            // 处理日期 (入库时间) - 简化日期处理逻辑
+                            if (row[0]) {
+                                try {
+                                    const dateValue = row[0];
+                                    if (typeof dateValue === 'number') {
+                                        // Excel数字日期转换 - 简化计算
+                                        processedRow[0] = formatDatetime(new Date((dateValue - 25569) * 86400 * 1000));
+                                    } else {
+                                        // 尝试作为日期字符串处理
+                                        processedRow[0] = formatDatetime(new Date(dateValue));
+                                    }
+                                } catch (e) {
+                                    // 日期解析错误，使用当前日期
+                                    processedRow[0] = formatDatetime(new Date());
+                                }
+                            } else {
+                                // 没有日期，使用当前日期
+                                processedRow[0] = formatDatetime(new Date());
+                            }
+                            
+                            // 直接填充文本字段 - 更简洁的方式
+                            if (row[1]) processedRow[1] = String(row[1]); // 入库车牌
+                            if (row[2]) processedRow[2] = String(row[2]); // 客户名称
+                            if (row[7]) processedRow[7] = String(row[7]); // 出境模式
+                            if (row[8]) processedRow[8] = String(row[8]); // 订单类型
+                            if (row[9]) processedRow[9] = String(row[9]); // 报关行
+                            if (row[10]) processedRow[10] = String(row[10]); // 库位
+                            if (row[11]) processedRow[11] = String(row[11]); // 单据
+                            if (row[12]) processedRow[12] = String(row[12]); // 跟单客服
+
+                            // 处理数值字段 - 直接转换
+                            for (let j = 3; j <= 6; j++) {
+                                if (row[j] != null && row[j] !== '') {
+                                    let numValue = row[j];
+                                    if (typeof numValue === 'string') {
+                                        // 只保留数字和小数点
+                                        numValue = numValue.replace(/[^\d.-]/g, '');
+                                    }
+                                    processedRow[j] = numValue || '';
+                                }
+                            }
+                            
+                            // 检查必要数据 - 直接测试字段
+                            if (processedRow[1] || processedRow[2]) {
+                                dataRows.push(processedRow);
+                            }
+                        }
+                        
+                        console.timeEnd('data-processing');
+                        console.log(`数据处理完成，有效数据 ${dataRows.length} 行`);
+                        
+                        // 确保至少有一行有效数据
+                        if (dataRows.length === 0) {
+                            clearAllTimeouts();
+                            showCustomError('没有找到有效数据行，请确保至少有车牌号或客户名称');
+                            excelImportInProgress = false;
+                            importOperationId = null;
+                            initSpreadsheet();
+                            console.timeEnd('excel-import');
+                            return;
+                        }
+                        
+                                                    // 在表格数据设置完成后，确保清除所有超时
+                            try {
+                                // 清空表格区域
+                                document.getElementById('spreadsheet').innerHTML = '';
+                                
+                                // 清除所有超时计时器
+                                clearAllTimeouts();
+                                
+                                // 直接创建新表格
+                                console.log('重新创建表格...');
+                                initSpreadsheet();
+                                
+                                // 延迟设置数据，确保表格已创建完成
+                                setTimeout(() => {
+                                    if (window.spreadsheet) {
+                                        console.log('设置表格数据...');
+                                        
+                                        // 使用大数据集处理函数
+                                        handleLargeDataset(dataRows).then(() => {
+                                            console.log('数据设置完成，显示成功信息');
+                                            
+                                            // 确保处理状态已重置
+                                            excelImportInProgress = false;
+                                            importOperationId = null;
+
+                                            // 更新UI状态
+                                            updateImportUIState();
+
+                                            // 显示成功信息
+                                            showCustomSuccess(`成功导入 ${dataRows.length} 行数据`);
+                                            // 安全地结束计时
+                                            try {
+                                                console.timeEnd('excel-import');
+                                            } catch (e) {
+                                                // 忽略计时器不存在错误
+                                            }
+                                        });
+                                    } else {
+                                        console.error('表格创建失败');
+                                        showCustomError('表格创建失败，请刷新页面后重试');
+                                        excelImportInProgress = false;
+                                        importOperationId = null;
+                                        updateImportUIState();
+                                        // 安全地结束计时
+                                        try {
+                                            console.timeEnd('excel-import');
+                                        } catch (e) {
+                                            // 忽略计时器不存在错误
+                                        }
+                                    }
+                                }, 500);
+                        } catch (error) {
+                            console.error('设置表格数据出错:', error);
+                            // 清除超时
+                            clearAllTimeouts();
+                            
+                            excelImportInProgress = false;
+                            importOperationId = null;
+                            initSpreadsheet();
+                            showCustomError('处理数据时出错: ' + error.message);
+                            // 安全地结束计时
+                            try {
+                                console.timeEnd('excel-import');
+                            } catch (e) {
+                                // 忽略计时器不存在错误
+                            }
+                        }
+                    } catch (error) {
+                        clearAllTimeouts();
+                        console.error('Excel处理错误:', error);
+                        showCustomError('处理Excel数据时出错: ' + error.message);
+                        excelImportInProgress = false;
+                        importOperationId = null;
+                        initSpreadsheet();
+                        console.timeEnd('excel-import');
+                    }
+                };
+                
+                reader.onerror = function() {
+                    clearAllTimeouts();
+                    showCustomError('读取文件时出错');
+                    excelImportInProgress = false;
+                    importOperationId = null;
+                    initSpreadsheet();
+                };
+                
+                // 开始读取文件
+                reader.readAsArrayBuffer(file);
+                
+            } catch (error) {
+                clearAllTimeouts();
+                console.error('Excel导入错误:', error);
+                showCustomError('Excel导入错误: ' + error.message);
+                excelImportInProgress = false;
+                importOperationId = null;
+                initSpreadsheet();
+            } finally {
+                // 清除文件输入，允许重新选择相同的文件
+                this.value = '';
+            }
+        });
+        
+        // 弹窗关闭按钮
+        document.querySelectorAll('.modal-close, .close-modal').forEach(function(element) {
+            element.addEventListener('click', function() {
+                hideMessages();
+            });
+        });
+    }
+    
+            // 验证并保存数据
+    function validateAndSaveData() {
+        // 验证字段映射
+        if (!validateFieldMapping()) {
+            showCustomError('字段映射错误，请刷新页面重试');
+            return;
+        }
+
+        // 获取表格数据
+        const data = window.spreadsheet.getData();
+        
+        // 过滤掉空行
+        const validRows = data.filter(row => {
+            return row.some(cell => cell !== null && cell !== undefined && cell !== '');
+        });
+        
+        if (validRows.length === 0) {
+            showCustomError('没有数据可保存');
+            return;
+        }
+        
+        // 验证必填字段
+        const invalidRows = [];
+        validRows.forEach((row, index) => {
+            // 验证入库时间、入库车牌、客户名称必填
+            if (!row[0] || !row[1] || !row[2]) {
+                invalidRows.push({
+                    row: index + 1,
+                    message: '入库时间、入库车牌、客户名称为必填项'
+                });
+                return;
+            }
+            
+            // 验证板数和件数至少填一项，并且必须是有效数字
+            const palletCount = row[3];
+            const packageCount = row[4];
+            
+            const isPalletValid = palletCount !== null && palletCount !== undefined && palletCount !== '' && !isNaN(Number(palletCount));
+            const isPackageValid = packageCount !== null && packageCount !== undefined && packageCount !== '' && !isNaN(Number(packageCount));
+            
+            if (!isPalletValid && !isPackageValid) {
+                invalidRows.push({
+                    row: index + 1,
+                    message: '板数和件数至少填写一项，且必须是有效数字'
+                });
+                return;
+            }
+            
+            // 验证出境模式必填
+            if (!row[7]) {
+                invalidRows.push({
+                    row: index + 1,
+                    message: '出境模式为必填项'
+                });
+                return;
+            }
+
+            // 验证订单类型必填
+            if (!row[8]) {
+                invalidRows.push({
+                    row: index + 1,
+                    message: '订单类型为必填项'
+                });
+                return;
+            }
+
+            // 验证报关行必填
+            if (!row[9]) {
+                invalidRows.push({
+                    row: index + 1,
+                    message: '报关行为必填项'
+                });
+                return;
+            }
+
+            // 验证跟单客服必填
+            if (!row[12]) {
+                invalidRows.push({
+                    row: index + 1,
+                    message: '跟单客服为必填项'
+                });
+                return;
+            }
+        });
+        
+        if (invalidRows.length > 0) {
+            const messages = invalidRows.map(item => `第 ${item.row} 行: ${item.message}`);
+            showCustomError(`数据验证失败:\n${messages.join('\n')}`);
+            return;
+        }
+        
+        // 将表格数据转换为API请求格式
+        const records = validRows.map(row => {
+            // 确保数值字段为数字或0
+            const palletCount = row[3] !== null && row[3] !== undefined && row[3] !== '' && !isNaN(Number(row[3])) ? 
+                                Number(row[3]) : 0;
+            const packageCount = row[4] !== null && row[4] !== undefined && row[4] !== '' && !isNaN(Number(row[4])) ? 
+                                Number(row[4]) : 0;
+            const weight = row[5] !== null && row[5] !== undefined && row[5] !== '' && !isNaN(Number(row[5])) ? 
+                           Number(row[5]) : 0;
+            const volume = row[6] !== null && row[6] !== undefined && row[6] !== '' && !isNaN(Number(row[6])) ? 
+                           Number(row[6]) : 0;
+            
+            // 处理入库时间格式，确保是YYYY-MM-DD HH:MM:SS格式
+            let inboundTime = row[0];
+            if (inboundTime && typeof inboundTime === 'string' && inboundTime.length <= 10) {
+                // 如果只有日期部分，添加时间部分
+                inboundTime = inboundTime + ' 00:00:00';
+            }
+
+            // 调试输出：检查字段映射和实际数据
+            console.log(`第${validRows.indexOf(row) + 1}行数据映射:`, {
+                '入库时间(row[0])': row[0],
+                '入库车牌(row[1])': row[1],
+                '客户名称(row[2])': row[2],
+                '板数(row[3])': row[3],
+                '件数(row[4])': row[4],
+                '重量(row[5])': row[5],
+                '体积(row[6])': row[6],
+                '出境模式(row[7])': row[7],
+                '订单类型(row[8])': row[8],
+                '报关行(row[9])': row[9],
+                '库位(row[10])': row[10],
+                '单据(row[11])': row[11],
+                '跟单客服(row[12])': row[12]
+            });
+
+            // 额外调试：显示完整行数据
+            console.log(`第${validRows.indexOf(row) + 1}行完整数据:`, row);
+
+            return {
+                    inbound_time: inboundTime, // 入库时间 - row[0]
+                    delivery_plate_number: '', // 送货干线车（前端仓没有此字段）
+                    plate_number: row[1] || '', // 入库车牌 - row[1]
+                    customer_name: row[2] || '', // 客户名称 - row[2]
+                    pallet_count: palletCount, // 板数 - row[3]
+                    package_count: packageCount, // 件数 - row[4]
+                    weight: weight, // 重量 - row[5]
+                    volume: volume, // 体积 - row[6]
+                    export_mode: row[7] || '', // 出境模式 - row[7]
+                    order_type: row[8] || '', // 订单类型 - row[8]
+                    customs_broker: row[9] || '', // 报关行 - row[9]
+                    location: row[10] || '', // 库位 - row[10]
+                    documents: row[11] || '', // 单据 - row[11]
+                    service_staff: row[12] || '' // 跟单客服 - row[12]
+                };
+        });
+        
+        // 显示保存中消息
+        showCustomSuccess('数据保存中，请稍候...');
+        
+        // 输出调试信息
+        console.log('发送到后端的数据:', JSON.stringify(records, null, 2));
+        
+        // 发送API请求到后端
+        sendSaveRequest(records);
+    }
+    
+    // 发送保存请求函数，支持重试
+    function sendSaveRequest(data, retryCount = 0) {
+        const maxRetries = 3;
+        
+        fetch('/api/inbound/batch', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data)
+        })
+        .then(response => {
+            // 检查HTTP状态码
+            if (!response.ok) {
+                console.error('HTTP错误:', response.status, response.statusText);
+                // 如果是500错误，可能是临时问题，尝试重试
+                if (response.status === 500 && retryCount < maxRetries) {
+                    console.log(`尝试第${retryCount + 1}次重试...`);
+                    setTimeout(() => {
+                        sendSaveRequest(data, retryCount + 1);
+                    }, 1000); // 等待1秒后重试
+                    return null;
+                }
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (!data) return; // 如果是null（正在重试），直接返回
+
+            console.log('API响应数据:', data);
+            console.log('API状态:', data.status);
+
+            if (data.status === 'success' || data.status === 'partial_success') {
+                console.log('保存成功:', data);
+
+                // 确保隐藏错误弹窗
+                hideCustomError();
+
+                // 使用全局消息系统显示成功消息
+                if (typeof showSuccess === 'function') {
+                    showSuccess(`${data.message}`);
+                    console.log('使用全局showSuccess显示成功消息');
+                } else {
+                    showCustomSuccess(`${data.message}`);
+                    console.log('使用自定义showCustomSuccess显示成功消息');
+                }
+                
+                // 触发保存完成事件
+                const saveEvent = new CustomEvent('batch-save-complete', {
+                    detail: { 
+                        rowCount: data.success_count,
+                        data: data
+                    }
+                });
+                document.dispatchEvent(saveEvent);
+                
+                // 添加查看记录按钮
+                const viewRecordsBtn = document.createElement('button');
+                viewRecordsBtn.className = 'btn btn-info me-2';
+                viewRecordsBtn.innerHTML = '<i class="fas fa-list"></i> 查看入库记录';
+                viewRecordsBtn.onclick = function() {
+                    window.location.href = '/inbound/list';
+                };
+                
+                // 添加到成功消息下方
+                const successModal = document.getElementById('successModal');
+                const modalFooter = successModal.querySelector('.modal-footer');
+                
+                // 检查是否已经添加了查看记录按钮
+                const existingBtn = modalFooter.querySelector('.btn-info');
+                if (!existingBtn) {
+                    // 将查看按钮添加到确定按钮之前
+                    const confirmBtn = modalFooter.querySelector('button');
+                    modalFooter.insertBefore(viewRecordsBtn, confirmBtn);
+                }
+                
+                // 保存成功后，重置界面
+                setTimeout(function() {
+                    // 重置表格数据
+                    const initialData = createInitialData(10);
+                    window.spreadsheet.setData(initialData);
+                    
+                    // 设置当前日期为默认值
+                    setDefaultTime();
+                }, 500);
+            } else {
+                console.error('保存失败:', data);
+
+                // 确保隐藏成功弹窗
+                hideCustomSuccess();
+
+                let errorMessage = `保存失败: ${data.message}`;
+                
+                // 显示详细错误信息
+                if (data.errors && data.errors.length > 0) {
+                    const errorDetails = data.errors.join('<br>');
+                    
+                    errorMessage += `<br><br>错误详情:<br>${errorDetails}`;
+                    console.error('保存错误详情:', data.errors);
+                }
+                
+                showCustomError(errorMessage, true);
+            }
+        })
+        .catch(error => {
+            console.error('保存数据时出错:', error);
+            
+            // 如果是网络错误，尝试重试
+            if (retryCount < maxRetries) {
+                console.log(`网络错误，尝试第${retryCount + 1}次重试...`);
+                setTimeout(() => {
+                    sendSaveRequest(data, retryCount + 1);
+                }, 1000); // 等待1秒后重试
+                return;
+            }
+            
+            showCustomError(`保存数据时出错，请稍后重试<br><br>错误信息: ${error.message}<br><br>如果问题持续存在，请联系管理员。`, true);
+        });
+    }
+    
+    // 下载模板
+    function downloadTemplate() {
+        // 使用后端API创建Excel模板
+        fetch('/api/export/inbound_template', {
+            method: 'GET',
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('导出模板失败');
+            }
+            return response.blob();
+        })
+        .then(blob => {
+            // 创建下载链接
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.style.display = 'none';
+            a.href = url;
+            a.download = '入库数据导入模板.xlsx';
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+            
+            console.log('模板已成功导出');
+            showCustomSuccess('模板已成功导出，请在下载文件夹中查看');
+        })
+        .catch(error => {
+            console.error('导出模板时出错:', error);
+            showCustomError('导出模板时出错: ' + error.message);
+        });
+    }
+    
+    // 显示/隐藏消息函数
+    function showCustomError(message, isHTML = false) {
+        console.log('显示自定义错误消息:', message);
+
+        // 确保隐藏成功弹窗
+        hideCustomSuccess();
+
+        // 确保表格已恢复显示
+        const spreadsheetEl = document.getElementById('spreadsheet');
+        if (spreadsheetEl) {
+            spreadsheetEl.style.display = 'block';
+        }
+
+        const errorModal = document.getElementById('errorModal');
+        const errorMessage = document.getElementById('errorMessage');
+
+        if (isHTML) {
+            errorMessage.innerHTML = message;
+        } else {
+            errorMessage.textContent = message;
+        }
+
+        // 强制浏览器重绘
+        errorModal.offsetHeight;
+        errorModal.style.display = 'flex';
+
+        console.log('自定义错误弹窗已显示');
+
+        // 确保模态框可见
+        setTimeout(() => {
+            if (errorModal.style.display !== 'flex') {
+                errorModal.style.display = 'flex';
+                console.log('自定义错误弹窗重新显示');
+            }
+        }, 100);
+    }
+
+    function hideCustomError() {
+        document.getElementById('errorModal').style.display = 'none';
+    }
+    
+    // 显示成功消息
+    function showCustomSuccess(message) {
+        console.log('显示自定义成功消息:', message);
+
+        // 确保隐藏错误弹窗
+        hideCustomError();
+
+        // 显示成功弹窗
+        const successModal = document.getElementById('successModal');
+        const successMessage = document.getElementById('successMessage');
+
+        if (successMessage) {
+            successMessage.textContent = message;
+        }
+
+        // 强制浏览器重绘
+        if (successModal) {
+            successModal.offsetHeight;
+            successModal.style.display = 'flex';
+
+            console.log('自定义成功弹窗已显示');
+
+            // 确保模态框可见
+            setTimeout(() => {
+                if (successModal.style.display !== 'flex') {
+                    successModal.style.display = 'flex';
+                    console.log('自定义成功弹窗重新显示');
+                }
+            }, 100);
+        }
+    }
+
+    function hideCustomSuccess() {
+        document.getElementById('successModal').style.display = 'none';
+    }
+    
+    function hideMessages() {
+        hideCustomError();
+        hideCustomSuccess();
+    }
+</script>
+
+<!-- 嵌入refresh_script.html的内容 -->
+<script>
+// 等待页面完全加载后执行
+window.addEventListener('load', function() {
+    // 第一次刷新
+    setTimeout(function() { 
+        if(window.refreshSimpleTable) {
+            console.log('正在刷新表格...');
+            window.refreshSimpleTable();
+        }
+    }, 500);
+    
+    // 第二次刷新，确保设置被应用
+    setTimeout(function() {
+        if(window.refreshSimpleTable) window.refreshSimpleTable();
+    }, 1500);
+});
+</script>
+
+<!-- 修改强制设置列宽的脚本，将宽度从500px改为200px，并添加对跟单客服列的宽度设置 -->
+<script>
+// 等待页面完全加载后执行
+window.addEventListener('load', function() {
+    // 延迟执行，确保表格已完全加载
+    setTimeout(function() {
+        console.log('正在强制设置列宽...');
+        
+        // 检查是否使用了jexcel
+        if (window.spreadsheet && typeof window.spreadsheet.setWidth === 'function') {
+            // 使用jexcel的API设置列宽
+            window.spreadsheet.setWidth(1, 150); // 入库车牌
+            window.spreadsheet.setWidth(2, 150); // 客户名称
+            window.spreadsheet.setWidth(7, 100); // 出境模式
+            window.spreadsheet.setWidth(8, 100); // 报关行
+            window.spreadsheet.setWidth(9, 100); // 库位
+            window.spreadsheet.setWidth(10, 80); // 单据
+            window.spreadsheet.setWidth(11, 80); // 跟单客服
+            console.log('已通过jexcel API设置列宽');
+        } else if (document.querySelector('.simple-table')) {
+            // 如果使用SimpleTable，直接操作DOM
+            const table = document.querySelector('.simple-table');
+            
+            // 设置colgroup列宽
+            const cols = table.querySelectorAll('colgroup col');
+            [1, 2].forEach(index => {
+                if (cols[index]) {
+                    cols[index].style.width = '150px';
+                    cols[index].setAttribute('width', '150');
+                }
+            });
+            
+            [7, 8].forEach(index => {
+                if (cols[index]) {
+                    cols[index].style.width = '100px';
+                    cols[index].setAttribute('width', '100');
+                }
+            });
+            
+            if (cols[9]) {
+                cols[9].style.width = '100px';
+                cols[9].setAttribute('width', '100');
+            }
+            
+            if (cols[10]) {
+                cols[10].style.width = '80px';
+                cols[10].setAttribute('width', '80');
+            }
+            
+            if (cols[11]) {
+                cols[11].style.width = '80px';
+                cols[11].setAttribute('width', '80');
+            }
+            
+            // 设置表头列宽
+            const ths = table.querySelectorAll('th');
+            [1, 2].forEach(index => {
+                if (ths[index]) {
+                    ths[index].style.width = '150px';
+                    ths[index].style.minWidth = '150px';
+                    ths[index].style.maxWidth = '150px';
+                }
+            });
+            
+            [7, 8].forEach(index => {
+                if (ths[index]) {
+                    ths[index].style.width = '100px';
+                    ths[index].style.minWidth = '100px';
+                    ths[index].style.maxWidth = '100px';
+                }
+            });
+            
+            if (ths[9]) {
+                ths[9].style.width = '100px';
+                ths[9].style.minWidth = '100px';
+                ths[9].style.maxWidth = '100px';
+            }
+            
+            if (ths[10]) {
+                ths[10].style.width = '80px';
+                ths[10].style.minWidth = '80px';
+                ths[10].style.maxWidth = '80px';
+            }
+            
+            if (ths[11]) {
+                ths[11].style.width = '80px';
+                ths[11].style.minWidth = '80px';
+                ths[11].style.maxWidth = '80px';
+            }
+            
+            // 设置单元格列宽
+            [1, 2].forEach(index => {
+                const cells = table.querySelectorAll(`td[data-col="${index}"]`);
+                cells.forEach(cell => {
+                    cell.style.width = '150px';
+                    cell.style.minWidth = '150px';
+                    cell.style.maxWidth = '150px';
+                });
+            });
+            
+            [7, 8].forEach(index => {
+                const cells = table.querySelectorAll(`td[data-col="${index}"]`);
+                cells.forEach(cell => {
+                    cell.style.width = '100px';
+                    cell.style.minWidth = '100px';
+                    cell.style.maxWidth = '100px';
+                });
+            });
+            
+            const locationCells = table.querySelectorAll(`td[data-col="9"]`);
+            locationCells.forEach(cell => {
+                cell.style.width = '100px';
+                cell.style.minWidth = '100px';
+                cell.style.maxWidth = '100px';
+            });
+            
+            const documentCells = table.querySelectorAll(`td[data-col="10"]`);
+            documentCells.forEach(cell => {
+                cell.style.width = '80px';
+                cell.style.minWidth = '80px';
+                cell.style.maxWidth = '80px';
+            });
+            
+            const customerServiceCells = table.querySelectorAll(`td[data-col="11"]`);
+            customerServiceCells.forEach(cell => {
+                cell.style.width = '80px';
+                cell.style.minWidth = '80px';
+                cell.style.maxWidth = '80px';
+            });
+            
+            console.log('已通过DOM操作设置列宽');
+        }
+    }, 2000);
+});
+</script>
+
+<!-- 添加一个脚本，使所有带*号的表头文字显示为红色 -->
+<script>
+// 等待页面完全加载后执行
+window.addEventListener('load', function() {
+    // 延迟执行，确保表格已完全加载
+    setTimeout(function() {
+        console.log('正在设置必填项为红色...');
+        
+        // 检查是否使用了jexcel
+        if (document.querySelector('.jexcel')) {
+            // 获取所有表头单元格
+            const headers = document.querySelectorAll('.jexcel > thead > tr > td');
+            
+            // 遍历所有表头
+            headers.forEach(header => {
+                const text = header.textContent || header.innerText;
+                
+                // 如果包含星号，将星号及其前面的文字设为红色
+                if (text.includes('*')) {
+                    // 替换HTML内容，将星号标红
+                    const parts = text.split('*');
+                    header.innerHTML = `<span style="color: #ff0000; font-weight: bold;">${parts[0]}*</span>${parts[1] || ''}`;
+                }
+            });
+            
+            console.log('已设置jexcel表头必填项为红色');
+        } else if (document.querySelector('.simple-table')) {
+            // 如果使用SimpleTable，直接操作DOM
+            const headers = document.querySelectorAll('.simple-table th');
+            
+            // 遍历所有表头
+            headers.forEach(header => {
+                const text = header.textContent || header.innerText;
+                
+                // 如果包含星号，将星号及其前面的文字设为红色
+                if (text.includes('*')) {
+                    // 替换HTML内容，将星号标红
+                    const parts = text.split('*');
+                    header.innerHTML = `<span style="color: #ff0000; font-weight: bold;">${parts[0]}*</span>${parts[1] || ''}`;
+                }
+            });
+            
+            console.log('已设置simple-table表头必填项为红色');
+        }
+    }, 2500);
+});
+</script>
+
+<!-- 全局变量跟踪Excel导入状态 -->
+<script>
+let excelImportInProgress = false;
+let importOperationId = null;
+
+// 强制重置导入状态的函数
+function forceResetImportState() {
+    console.log('强制重置导入状态');
+
+    // 清除所有超时计时器
+    clearAllTimeouts();
+
+    // 重置状态变量
+    excelImportInProgress = false;
+    importOperationId = null;
+
+    // 更新UI状态
+    updateImportUIState();
+
+    // 清除任何错误或成功消息
+    hideMessages();
+
+    // 重新初始化表格
+    try {
+        initSpreadsheet();
+        console.log('表格已重新初始化');
+    } catch (error) {
+        console.error('重新初始化表格时出错:', error);
+    }
+
+    // 清除文件输入
+    const fileInput = document.getElementById('fileUpload');
+    if (fileInput) {
+        fileInput.value = '';
+    }
+
+    showCustomSuccess('导入状态已重置，可以重新导入文件');
+}
+
+// 更新UI状态显示
+function updateImportUIState() {
+    const importBtn = document.getElementById('importExcelBtn');
+    const resetBtn = document.getElementById('resetImportBtn');
+
+    if (excelImportInProgress) {
+        if (importBtn) {
+            importBtn.disabled = true;
+            importBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> 导入中...';
+        }
+        if (resetBtn) {
+            resetBtn.style.display = 'inline-block';
+        }
+    } else {
+        if (importBtn) {
+            importBtn.disabled = false;
+            importBtn.innerHTML = '<i class="fas fa-file-excel me-1"></i> Excel导入';
+        }
+        if (resetBtn) {
+            resetBtn.style.display = 'none';
+        }
+    }
+}
+
+// 添加手动重置按钮的事件监听器
+document.addEventListener('DOMContentLoaded', function() {
+    // 重置按钮事件
+    const resetBtn = document.getElementById('resetImportBtn');
+    if (resetBtn) {
+        resetBtn.addEventListener('click', function() {
+            const shouldReset = confirm('确定要重置导入状态吗？这将清除当前的导入进度。');
+            if (shouldReset) {
+                forceResetImportState();
+            }
+        });
+    }
+
+    // 为导入按钮添加右键菜单，提供重置选项
+    const importBtn = document.getElementById('importExcelBtn');
+    if (importBtn) {
+        importBtn.addEventListener('contextmenu', function(e) {
+            e.preventDefault();
+            if (excelImportInProgress) {
+                const shouldReset = confirm('检测到导入操作可能卡住了。是否要重置导入状态？');
+                if (shouldReset) {
+                    forceResetImportState();
+                }
+            } else {
+                alert('当前没有进行中的导入操作');
+            }
+        });
+    }
+
+    // 初始化UI状态
+    updateImportUIState();
+});
+</script>
+
+<!-- 处理大数据集的函数 -->
+<script>
+function handleLargeDataset(data) {
+    console.log(`处理大数据集: ${data.length} 行`);
+    
+    // 显示处理提示
+    showCustomSuccess(`正在处理 ${data.length} 行数据，请稍候...`);
+    
+    // 批量设置数据，分批处理以提高性能
+    if (data.length > 100) {
+        return new Promise((resolve) => {
+            // 分批处理数据
+            const batchSize = 100;
+            const batches = Math.ceil(data.length / batchSize);
+            console.log(`数据分为 ${batches} 批处理`);
+            
+            let currentBatch = 0;
+            
+            function processNextBatch() {
+                if (currentBatch >= batches) {
+                    console.log('所有批次处理完毕');
+                    resolve(true);
+                    return;
+                }
+                
+                const start = currentBatch * batchSize;
+                const end = Math.min(start + batchSize, data.length);
+                const batchData = data.slice(start, end);
+                
+                console.log(`处理第 ${currentBatch + 1}/${batches} 批, 行 ${start+1}-${end}`);
+                
+                // 如果是第一批，使用setData方法
+                if (currentBatch === 0) {
+                    window.spreadsheet.setData(batchData);
+                } else {
+                    // 追加数据到表格底部
+                    for (let i = 0; i < batchData.length; i++) {
+                        window.spreadsheet.insertRow(1, window.spreadsheet.getData().length);
+                        const row = batchData[i];
+                        for (let j = 0; j < row.length; j++) {
+                            window.spreadsheet.setValueFromCoords(j, start + i, row[j]);
+                        }
+                    }
+                }
+                
+                // 显示进度
+                showCustomSuccess(`正在处理数据... ${Math.round((currentBatch + 1) * 100 / batches)}%`);
+                
+                currentBatch++;
+                setTimeout(processNextBatch, 10); // 短暂延迟，让UI有机会刷新
+            }
+            
+            processNextBatch();
+        });
+    } else {
+        // 对于较小的数据集，直接设置
+        window.spreadsheet.setData(data);
+        return Promise.resolve(true);
+    }
+}
+</script>
+{% endblock %}

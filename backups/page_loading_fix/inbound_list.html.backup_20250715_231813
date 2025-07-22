@@ -1,0 +1,930 @@
+{% extends "base.html" %}
+
+{% block title %}前端仓入库记录{% endblock %}
+
+{% block styles %}
+{{ super() }}
+<!-- 使用jsuites日期选择器 -->
+<link rel="stylesheet" href="{{ url_for('static', filename='vendor/css/jsuites.css') }}">
+<style>
+    .search-box {
+        margin-bottom: 20px;
+        background-color: #f5f5f5;
+        padding: 15px 20px;
+        border-radius: 4px;
+    }
+    .search-form-row {
+        display: flex;
+        align-items: center;
+        margin-bottom: 15px;
+    }
+    .search-label {
+        min-width: 80px;
+        margin-right: 10px;
+        color: #333;
+        font-weight: normal;
+        text-align: right;
+    }
+    .search-control {
+        margin-right: 15px;
+    }
+    .search-buttons {
+        margin-left: auto;
+        display: flex;
+    }
+    .search-buttons .btn {
+        margin-left: 10px;
+        min-width: 90px;
+        height: 38px;
+    }
+    /* 接近截图中的蓝色按钮 */
+    .btn-primary, .btn-export {
+        background-color: #0d6efd;
+        border-color: #0d6efd;
+        color: white;
+    }
+    .btn-primary:hover, .btn-export:hover {
+        background-color: #0b5ed7;
+        border-color: #0a58ca;
+    }
+    /* 导出数据按钮样式 */
+    .btn-export {
+        min-width: 110px !important;
+        padding-left: 12px;
+        padding-right: 12px;
+        white-space: nowrap;
+    }
+
+    /* 表格内容居左显示 - 优化字体大小和间距 */
+    .table-center th, .table-center td,
+    .table th, .table td {
+        text-align: left !important;  /* 改为居左对齐 */
+        vertical-align: middle !important;
+        font-size: 14px !important;  /* 放大字体 */
+        padding: 8px 6px !important;  /* 增加内边距 */
+        line-height: 1.4 !important;  /* 适中的行高 */
+        white-space: normal !important;  /* 允许文字换行 */
+        word-wrap: break-word !important;  /* 自动换行 */
+        border: 1px solid #dee2e6 !important;  /* 添加边框 */
+    }
+
+    /* 表头样式优化 */
+    .table-center th {
+        font-size: 15px !important;  /* 表头字体稍大一点 */
+        font-weight: 600;
+        padding: 10px 6px !important;  /* 增加表头内边距 */
+        background-color: #198754 !important;
+        color: white !important;
+        border: 1px solid #155724 !important;
+        text-align: center !important;  /* 表头保持居中 */
+    }
+
+    /* 确保按钮也居中 */
+    .table-center td .btn-group {
+        margin: 0 auto;
+    }
+
+    /* 表格整体样式优化 */
+    .table {
+        margin-bottom: 0;
+        min-width: 1600px;  /* 增加最小宽度适应新的列宽 */
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        font-size: 14px;  /* 整体字体大小 */
+        table-layout: fixed;  /* 固定表格布局 */
+    }
+
+    /* 根据字段内容合理分配列宽 */
+    .table th:nth-child(1), .table td:nth-child(1) { width: 50px; }   /* 序号 */
+    .table th:nth-child(2), .table td:nth-child(2) { width: 100px; }  /* 入库时间 */
+    .table th:nth-child(3), .table td:nth-child(3) { width: 90px; }   /* 入库车牌 */
+    .table th:nth-child(4), .table td:nth-child(4) { width: 150px; }  /* 客户名称 - 较宽 */
+    .table th:nth-child(5), .table td:nth-child(5) { width: 60px; }   /* 板数 */
+    .table th:nth-child(6), .table td:nth-child(6) { width: 60px; }   /* 件数 */
+    .table th:nth-child(7), .table td:nth-child(7) { width: 80px; }   /* 重量 */
+    .table th:nth-child(8), .table td:nth-child(8) { width: 80px; }   /* 体积 */
+    .table th:nth-child(9), .table td:nth-child(9) { width: 100px; }  /* 订单类型 */
+    .table th:nth-child(10), .table td:nth-child(10) { width: 100px; } /* 出境模式 */
+    .table th:nth-child(11), .table td:nth-child(11) { width: 120px; } /* 报关行 - 较宽 */
+    .table th:nth-child(12), .table td:nth-child(12) { width: 80px; }  /* 库位 */
+    .table th:nth-child(13), .table td:nth-child(13) { width: 80px; }  /* 单据 */
+    .table th:nth-child(14), .table td:nth-child(14) { width: 100px; } /* 跟单客服 */
+    .table th:nth-child(15), .table td:nth-child(15) { width: 140px; } /* 识别编码 - 最宽 */
+    .table th:nth-child(16), .table td:nth-child(16) { width: 100px; } /* 操作仓库 */
+    .table th:nth-child(17), .table td:nth-child(17) { width: 120px; } /* 操作 */
+
+    /* 徽章样式优化 */
+    .badge {
+        font-size: 11px;  /* 适当增大徽章字体 */
+        padding: 3px 6px;  /* 增加徽章内边距 */
+    }
+
+    /* 按钮组样式优化 */
+    .btn-group-sm .btn {
+        padding: 4px 6px;  /* 增加按钮内边距 */
+        font-size: 11px;   /* 增加按钮字体 */
+        border-radius: 3px;
+        min-width: 30px;  /* 增加最小宽度 */
+    }
+
+    /* 数字列居中对齐 */
+    .table td:nth-child(5), .table td:nth-child(6),
+    .table td:nth-child(7), .table td:nth-child(8) {
+        text-align: center !important;  /* 数字列保持居中对齐 */
+        font-family: 'Courier New', monospace;
+        font-weight: 500;
+        font-size: 15px !important;  /* 数字列字体稍大 */
+    }
+
+    /* 序号列也居中 */
+    .table td:nth-child(1) {
+        text-align: center !important;
+        font-weight: 500;
+    }
+
+    /* 操作列居中 */
+    .table td:nth-child(17) {
+        text-align: center !important;
+    }
+
+    /* 空状态容器样式 - 铺满整个页面宽度和高度 - v2 */
+    .empty-state-container {
+        width: 100% !important;
+        min-height: 60vh !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        background-color: #f8f9fa !important;
+        border: 2px dashed #dee2e6 !important;
+        border-radius: 8px !important;
+        margin: 20px 0 !important;
+        position: relative !important;
+    }
+
+    .empty-state-content {
+        text-align: center !important;
+        padding: 40px 20px !important;
+        max-width: 400px !important;
+    }
+
+    .empty-state-container .fas {
+        color: #6c757d !important;
+        font-size: 4rem !important;
+    }
+
+    .empty-state-container h4 {
+        font-weight: 500 !important;
+        margin-bottom: 1rem !important;
+        color: #6c757d !important;
+    }
+
+    .empty-state-container p {
+        font-size: 1.1rem !important;
+        line-height: 1.5 !important;
+        color: #6c757d !important;
+    }
+
+    .empty-state-container .btn-lg {
+        padding: 12px 30px !important;
+        font-size: 1.1rem !important;
+        border-radius: 6px !important;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
+        transition: all 0.3s ease !important;
+    }
+
+    .empty-state-container .btn-lg:hover {
+        transform: translateY(-1px) !important;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.15) !important;
+    }
+
+    /* 提示信息框铺满宽度 */
+    .search-box .alert {
+        width: 100% !important;
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+        box-sizing: border-box !important;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- 页面标题 -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-success">
+                <div class="card-header bg-success text-white">
+                    <h3 class="card-title mb-0">
+                        <i class="fas fa-list me-2"></i>前端仓入库记录
+                        <span class="badge bg-light text-success ms-2">Frontend Warehouse Records</span>
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-8">
+                            <p class="card-text mb-0">
+                                <i class="fas fa-info-circle me-1"></i>
+                                查看平湖仓、昆山仓、成都仓的主动入库记录（仓库直接收货入库）
+                            </p>
+                        </div>
+                        <div class="col-md-4 text-end">
+                            <a href="{{ url_for('main.frontend_inbound_integrated') }}" class="btn btn-success">
+                                <i class="fas fa-plus me-1"></i>新增入库
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 数据汇总区域 -->
+    {% if summary_data %}
+    <div class="row mb-3">
+        <div class="col-12">
+            <div class="card border-info">
+                <div class="card-header bg-info text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-chart-bar me-2"></i>数据汇总
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-md-2 offset-md-1">
+                            <div class="border rounded p-3 bg-light">
+                                <h4 class="text-primary mb-1">{{ summary_data.total_records }}</h4>
+                                <small class="text-muted">收货总票数</small>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="border rounded p-3 bg-light">
+                                <h4 class="text-success mb-1">{{ summary_data.total_pallets }}</h4>
+                                <small class="text-muted">总板数</small>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="border rounded p-3 bg-light">
+                                <h4 class="text-warning mb-1">{{ summary_data.total_packages }}</h4>
+                                <small class="text-muted">总件数</small>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="border rounded p-3 bg-light">
+                                <h4 class="text-info mb-1">{{ "%.1f"|format(summary_data.total_weight) }}</h4>
+                                <small class="text-muted">总重量(kg)</small>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="border rounded p-3 bg-light">
+                                <h4 class="text-secondary mb-1">{{ "%.2f"|format(summary_data.total_volume) }}</h4>
+                                <small class="text-muted">总体积(m³)</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- 简化的搜索区域 -->
+    <div class="search-box">
+        <form id="searchForm" action="{{ url_for('main.frontend_inbound_list') }}" method="get">
+
+            <!-- 日期范围行 -->
+            <div class="search-form-row">
+                <label class="search-label">入库时间:</label>
+                <div class="date-picker-container search-control" style="width: 160px;">
+                    <input type="date" class="form-control" id="date_start" name="date_start"
+                           value="{{ search_params.get('date_start', '') if search_params else '' }}">
+                </div>
+                <span class="mx-2">至</span>
+                <div class="date-picker-container search-control" style="width: 160px;">
+                    <input type="date" class="form-control" id="date_end" name="date_end"
+                           value="{{ search_params.get('date_end', '') if search_params else '' }}">
+                </div>
+            </div>
+
+            <!-- 仓库选择行 -->
+            <div class="search-form-row">
+                <label class="search-label">仓库:</label>
+                <select class="form-select search-control" id="warehouse_id" name="warehouse_id" style="width: 160px;">
+                    <option value="">全部仓库</option>
+                    {% for warehouse in warehouses %}
+                    <option value="{{ warehouse.id }}" {{ 'selected' if search_params.get('warehouse_id') == warehouse.id|string else '' }}>
+                        {{ warehouse.warehouse_name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- 搜索条件行 -->
+            <div class="search-form-row">
+                <label class="search-label">筛选字段:</label>
+                <select class="form-select search-control" id="search_field" name="search_field" style="width: 160px;">
+                    <option value="customer_name" selected>客户名称</option>
+                    <option value="plate_number">车牌号</option>
+                    <option value="identification_code">识别编码</option>
+                    <option value="inbound_type">入库类型</option>
+                    <option value="order_type">订单类型</option>
+                    <option value="export_mode">出境模式</option>
+                    <option value="customs_broker">报关行</option>
+                    <option value="service_staff">跟单客服</option>
+                    <option value="location">库位</option>
+                </select>
+
+                <label class="search-label" style="margin-left: 15px;">搜索条件:</label>
+                <select class="form-select search-control" id="search_condition" name="search_condition" style="width: 160px;">
+                    <option value="contains" selected>包含</option>
+                    <option value="exact">完全匹配</option>
+                    <option value="startswith">开头是</option>
+                    <option value="endswith">结尾是</option>
+                </select>
+
+                <input type="text" class="form-control search-control" id="search_value" name="search_value"
+                       placeholder="请输入搜索内容" style="width: 260px; margin-left: 15px;"
+                       value="{{ search_params.get('search_value', '') if search_params else '' }}">
+
+                <div class="search-buttons">
+                    <button type="submit" id="search_btn" class="btn btn-primary">
+                        <i class="fas fa-search me-1"></i> 搜索
+                    </button>
+                    <button type="button" id="reset_btn" class="btn btn-outline-secondary ms-2">
+                        <i class="fas fa-redo me-1"></i> 刷新
+                    </button>
+                    <a href="{{ url_for('main.export_frontend_inbound') }}?{{ request.query_string.decode('utf-8') }}"
+                       class="btn btn-export ms-2" id="exportBtn" onclick="showExportLoading(this)">
+                        <i class="fas fa-file-export me-2"></i>导出数据
+                    </a>
+                </div>
+            </div>
+
+            <!-- 隐藏字段，用于后端处理 -->
+            <input type="hidden" name="customer_name" id="customer_name_hidden" value="{{ search_params.get('customer_name', '') if search_params else '' }}">
+            <input type="hidden" name="plate_number" id="plate_number_hidden" value="{{ search_params.get('plate_number', '') if search_params else '' }}">
+            <input type="hidden" name="identification_code" id="identification_code_hidden" value="{{ search_params.get('identification_code', '') if search_params else '' }}">
+
+            <input type="hidden" name="order_type" id="order_type_hidden" value="{{ search_params.get('order_type', '') if search_params else '' }}">
+            <input type="hidden" name="export_mode" id="export_mode_hidden" value="{{ search_params.get('export_mode', '') if search_params else '' }}">
+            <input type="hidden" name="customs_broker" id="customs_broker_hidden" value="{{ search_params.get('customs_broker', '') if search_params else '' }}">
+            <input type="hidden" name="service_staff" id="service_staff_hidden" value="{{ search_params.get('service_staff', '') if search_params else '' }}">
+            <input type="hidden" name="location" id="location_hidden" value="{{ search_params.get('location', '') if search_params else '' }}">
+        </form>
+    </div>
+
+    <!-- 记录列表 -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-table me-2"></i>入库记录列表
+                    </h5>
+                    <div>
+                        <span class="badge bg-success">前端仓专用</span>
+                        {% if records.total %}
+                        <span class="badge bg-info">共 {{ records.total }} 条记录</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% if records.items %}
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover table-center">
+                            <thead class="table-success">
+                                <tr>
+                                    <th>序号</th>
+                                    <th>入库时间</th>
+                                    <th>入库车牌</th>
+                                    <th>客户名称</th>
+                                    <th>板数</th>
+                                    <th>件数</th>
+                                    <th>重量(kg)</th>
+                                    <th>体积(m³)</th>
+                                    <th>订单类型</th>
+                                    <th>出境模式</th>
+                                    <th>报关行</th>
+                                    <th>库位</th>
+                                    <th>单据</th>
+                                    <th>跟单客服</th>
+                                    <th>识别编码</th>
+                                    <th>操作仓库</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for record in records.items %}
+                                <tr>
+                                    <td>{{ loop.index + (records.page - 1) * records.per_page }}</td>
+                                    <td>{{ record.inbound_time.strftime('%Y-%m-%d') if record.inbound_time else '' }}</td>
+                                    <td>{{ record.plate_number or '-' }}</td>
+                                    <td>{{ record.customer_name }}</td>
+                                    <td>{{ record.pallet_count or 0 }}</td>
+                                    <td>{{ record.package_count or 0 }}</td>
+                                    <td>{{ "%.1f"|format(record.weight or 0) }}</td>
+                                    <td>{{ "%.2f"|format(record.volume or 0) }}</td>
+                                    <td>{{ record.order_type or '-' }}</td>
+                                    <td>{{ record.export_mode or '-' }}</td>
+                                    <td>{{ record.customs_broker or '-' }}</td>
+                                    <td>{{ record.location or '-' }}</td>
+                                    <td>{{ record.documents or '-' }}</td>
+                                    <td>{{ record.service_staff or '-' }}</td>
+                                    <td>{{ record.identification_code or '-' }}</td>
+                                    <td>{{ record.operated_warehouse.warehouse_name if record.operated_warehouse else '-' }}</td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm">
+                                            <a href="{{ url_for('main.view_inbound', id=record.id) }}"
+                                               class="btn btn-outline-info" title="查看详情">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            <button type="button" class="btn btn-outline-warning" title="编辑"
+                                                    onclick="checkAndEdit({{ record.id }}, '{{ record.customer_name }}', '{{ record.identification_code }}')">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                            <button type="button" class="btn btn-outline-danger"
+                                                    title="删除记录"
+                                                    onclick="checkAndDelete({{ record.id }}, '{{ record.customer_name }}', '{{ record.identification_code }}')">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- 分页 -->
+                    {% if records.pages > 1 %}
+                    <nav aria-label="分页导航">
+                        <ul class="pagination justify-content-center">
+                            {% if records.has_prev %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('main.frontend_inbound_list', page=records.prev_num, **search_params) }}">
+                                    <i class="fas fa-chevron-left"></i> 上一页
+                                </a>
+                            </li>
+                            {% endif %}
+                            
+                            {% for page_num in records.iter_pages() %}
+                                {% if page_num %}
+                                    {% if page_num != records.page %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="{{ url_for('main.frontend_inbound_list', page=page_num, **search_params) }}">{{ page_num }}</a>
+                                    </li>
+                                    {% else %}
+                                    <li class="page-item active">
+                                        <span class="page-link">{{ page_num }}</span>
+                                    </li>
+                                    {% endif %}
+                                {% else %}
+                                <li class="page-item disabled">
+                                    <span class="page-link">...</span>
+                                </li>
+                                {% endif %}
+                            {% endfor %}
+                            
+                            {% if records.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('main.frontend_inbound_list', page=records.next_num, **search_params) }}">
+                                    下一页 <i class="fas fa-chevron-right"></i>
+                                </a>
+                            </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                    {% endif %}
+                    {% else %}
+                    <div class="empty-state-container" style="width: 100% !important; min-height: 60vh !important; display: flex !important; align-items: center !important; justify-content: center !important; background-color: #f8f9fa !important; border: 2px dashed #dee2e6 !important; border-radius: 8px !important; margin: 20px 0 !important;">
+                        <div class="empty-state-content" style="text-align: center !important; padding: 40px 20px !important; max-width: 400px !important;">
+                            <i class="fas fa-inbox fa-4x text-muted mb-4" style="color: #6c757d !important; font-size: 4rem !important;"></i>
+                            <h4 class="text-muted mb-3" style="font-weight: 500 !important; margin-bottom: 1rem !important; color: #6c757d !important;">暂无入库记录</h4>
+                            <p class="text-muted mb-4" style="font-size: 1.1rem !important; line-height: 1.5 !important; color: #6c757d !important;">请先进行入库操作</p>
+                            <a href="{{ url_for('main.frontend_inbound_integrated') }}" class="btn btn-success btn-lg" style="padding: 12px 30px !important; font-size: 1.1rem !important; border-radius: 6px !important; box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;">
+                                <i class="fas fa-plus me-2"></i>立即入库
+                            </a>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 删除确认模态框 -->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="deleteModalLabel">
+                    <i class="fas fa-exclamation-triangle me-2"></i>确认删除
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-warning">
+                    <i class="fas fa-warning me-2"></i>
+                    <strong>警告：</strong>删除操作不可恢复！
+                </div>
+                <p>您确定要删除以下入库记录吗？</p>
+                <div class="card">
+                    <div class="card-body">
+                        <p class="mb-1"><strong>客户名称：</strong><span id="deleteCustomerName"></span></p>
+                        <p class="mb-1"><strong>识别编码：</strong><span id="deleteIdentificationCode"></span></p>
+                        <p class="mb-0 text-danger"><strong>注意：对应的库存记录也将被删除</strong></p>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-1"></i>取消
+                </button>
+                <form id="deleteForm" method="POST" style="display: inline;">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-trash me-1"></i>确认删除
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<!-- 使用jsuites日期选择器 -->
+<script src="{{ url_for('static', filename='vendor/js/jsuites.js') }}"></script>
+<script>
+$(document).ready(function() {
+    console.log('前端仓入库记录页面已加载');
+
+    // 设置日期输入框的默认值
+    const urlParams = new URLSearchParams(window.location.search);
+    const dateStart = urlParams.get('date_start') || '{{ search_params.get("date_start", "") if search_params else "" }}';
+    const dateEnd = urlParams.get('date_end') || '{{ search_params.get("date_end", "") if search_params else "" }}';
+
+    if (dateStart) {
+        document.getElementById('date_start').value = dateStart;
+    }
+    if (dateEnd) {
+        document.getElementById('date_end').value = dateEnd;
+    }
+
+    // 设置搜索字段和值
+    const searchField = urlParams.get('search_field') || 'customer_name';
+    const searchValue = urlParams.get('search_value') || '';
+
+    document.getElementById('search_field').value = searchField;
+    document.getElementById('search_value').value = searchValue;
+
+    // 根据搜索字段设置隐藏字段的值
+    updateHiddenFields();
+
+    // 表格行点击高亮
+    $('tbody tr').click(function() {
+        $(this).toggleClass('table-active');
+    });
+});
+
+// 搜索字段变化时更新隐藏字段
+document.getElementById('search_field').addEventListener('change', function() {
+    updateHiddenFields();
+});
+
+// 搜索值变化时更新隐藏字段
+document.getElementById('search_value').addEventListener('input', function() {
+    updateHiddenFields();
+});
+
+// 更新隐藏字段
+function updateHiddenFields() {
+    const searchField = document.getElementById('search_field').value;
+    const searchValue = document.getElementById('search_value').value;
+
+    // 清空所有隐藏字段
+    document.getElementById('customer_name_hidden').value = '';
+    document.getElementById('plate_number_hidden').value = '';
+    document.getElementById('identification_code_hidden').value = '';
+
+    document.getElementById('order_type_hidden').value = '';
+    document.getElementById('export_mode_hidden').value = '';
+    document.getElementById('customs_broker_hidden').value = '';
+    document.getElementById('service_staff_hidden').value = '';
+    document.getElementById('location_hidden').value = '';
+
+    // 根据选择的字段设置对应的隐藏字段值
+    if (searchValue) {
+        const hiddenField = document.getElementById(searchField + '_hidden');
+        if (hiddenField) {
+            hiddenField.value = searchValue;
+        }
+    }
+}
+
+// 重置按钮事件
+document.getElementById('reset_btn').addEventListener('click', function() {
+    // 设置默认显示一周前到今天的数据
+    const today = new Date();
+    const oneWeekAgo = new Date(today);
+    oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+
+    const todayStr = today.toISOString().split('T')[0];
+    const oneWeekAgoStr = oneWeekAgo.toISOString().split('T')[0];
+
+    // 构建URL参数
+    const params = new URLSearchParams();
+    params.set('date_start', oneWeekAgoStr);
+    params.set('date_end', todayStr);
+
+    location.href = '{{ url_for("main.frontend_inbound_list") }}?' + params.toString();
+});
+
+// 检查出库记录并编辑
+function checkAndEdit(recordId, customerName, identificationCode) {
+    // 显示加载提示
+    showLoadingToast('正在检查出库记录...');
+
+    // 检查是否有出库记录
+    fetch(`/api/check-outbound-records/${identificationCode}`)
+        .then(response => response.json())
+        .then(data => {
+            hideLoadingToast();
+
+            if (data.has_outbound) {
+                // 如果有出库记录，显示警告
+                showWarningModal(
+                    '编辑限制',
+                    `客户 ${customerName} 的货物已有出库记录，编辑时有以下限制：<br><br>
+                    <ul class="text-start">
+                        <li>不能修改客户名称、车牌号或入库时间</li>
+                        <li>板数不能小于已出库数量：${data.outbound_pallet} 板</li>
+                        <li>件数不能小于已出库数量：${data.outbound_package} 件</li>
+                    </ul><br>
+                    是否继续编辑？`,
+                    () => {
+                        // 用户确认后跳转到编辑页面
+                        window.location.href = `{{ url_for('main.edit_inbound', id=0) }}`.replace('0', recordId);
+                    }
+                );
+            } else {
+                // 没有出库记录，直接跳转到编辑页面
+                window.location.href = `{{ url_for('main.edit_inbound', id=0) }}`.replace('0', recordId);
+            }
+        })
+        .catch(error => {
+            hideLoadingToast();
+            console.error('检查出库记录失败:', error);
+            showErrorToast('检查出库记录失败，请重试');
+        });
+}
+
+// 检查出库记录并删除
+function checkAndDelete(recordId, customerName, identificationCode) {
+    // 显示加载提示
+    showLoadingToast('正在检查出库记录...');
+
+    // 检查是否有出库记录
+    fetch(`/api/check-outbound-records/${identificationCode}`)
+        .then(response => response.json())
+        .then(data => {
+            hideLoadingToast();
+
+            if (data.has_outbound) {
+                // 如果有出库记录，显示错误提示
+                showErrorModal(
+                    '无法删除',
+                    `客户 ${customerName} 的货物已有出库记录，无法删除入库记录。<br><br>
+                    <strong>出库记录详情：</strong><br>
+                    • 已出库板数：${data.outbound_pallet} 板<br>
+                    • 已出库件数：${data.outbound_package} 件<br><br>
+                    请先处理相关出库记录后再尝试删除。`
+                );
+            } else {
+                // 没有出库记录，显示删除确认对话框
+                confirmDelete(recordId, customerName, identificationCode);
+            }
+        })
+        .catch(error => {
+            hideLoadingToast();
+            console.error('检查出库记录失败:', error);
+            showErrorToast('检查出库记录失败，请重试');
+        });
+}
+
+// 删除确认函数
+function confirmDelete(recordId, customerName, identificationCode) {
+    // 设置模态框中的信息
+    document.getElementById('deleteCustomerName').textContent = customerName;
+    document.getElementById('deleteIdentificationCode').textContent = identificationCode;
+
+    // 设置删除表单的action - 修复URL构建
+    const deleteUrl = '{{ url_for("main.delete_frontend_inbound", id=0) }}'.replace('0', recordId);
+    document.getElementById('deleteForm').action = deleteUrl;
+
+    console.log('删除URL:', deleteUrl); // 调试信息
+
+    // 显示模态框
+    var deleteModal = new bootstrap.Modal(document.getElementById('deleteModal'));
+    deleteModal.show();
+}
+
+// 显示加载提示
+function showLoadingToast(message) {
+    // 创建或更新加载提示
+    let loadingToast = document.getElementById('loadingToast');
+    if (!loadingToast) {
+        loadingToast = document.createElement('div');
+        loadingToast.id = 'loadingToast';
+        loadingToast.className = 'toast align-items-center text-white bg-info border-0';
+        loadingToast.style.position = 'fixed';
+        loadingToast.style.top = '20px';
+        loadingToast.style.right = '20px';
+        loadingToast.style.zIndex = '9999';
+        loadingToast.innerHTML = `
+            <div class="d-flex">
+                <div class="toast-body">
+                    <i class="fas fa-spinner fa-spin me-2"></i>${message}
+                </div>
+            </div>
+        `;
+        document.body.appendChild(loadingToast);
+    } else {
+        loadingToast.querySelector('.toast-body').innerHTML = `<i class="fas fa-spinner fa-spin me-2"></i>${message}`;
+    }
+
+    const toast = new bootstrap.Toast(loadingToast);
+    toast.show();
+}
+
+// 隐藏加载提示
+function hideLoadingToast() {
+    const loadingToast = document.getElementById('loadingToast');
+    if (loadingToast) {
+        const toast = bootstrap.Toast.getInstance(loadingToast);
+        if (toast) {
+            toast.hide();
+        }
+    }
+}
+
+// 显示成功提示
+function showSuccessToast(message) {
+    showToast(message, 'success', 'fas fa-check-circle');
+}
+
+// 显示错误提示
+function showErrorToast(message) {
+    showToast(message, 'danger', 'fas fa-exclamation-circle');
+}
+
+// 通用提示函数
+function showToast(message, type, icon) {
+    const toastId = 'toast_' + Date.now();
+    const toast = document.createElement('div');
+    toast.id = toastId;
+    toast.className = `toast align-items-center text-white bg-${type} border-0`;
+    toast.style.position = 'fixed';
+    toast.style.top = '20px';
+    toast.style.right = '20px';
+    toast.style.zIndex = '9999';
+    toast.innerHTML = `
+        <div class="d-flex">
+            <div class="toast-body">
+                <i class="${icon} me-2"></i>${message}
+            </div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+        </div>
+    `;
+
+    document.body.appendChild(toast);
+    const bsToast = new bootstrap.Toast(toast);
+    bsToast.show();
+
+    // 自动移除
+    toast.addEventListener('hidden.bs.toast', () => {
+        document.body.removeChild(toast);
+    });
+}
+
+// 显示警告模态框
+function showWarningModal(title, message, onConfirm) {
+    const modalId = 'warningModal_' + Date.now();
+    const modal = document.createElement('div');
+    modal.id = modalId;
+    modal.className = 'modal fade';
+    modal.innerHTML = `
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-warning text-dark">
+                    <h5 class="modal-title">
+                        <i class="fas fa-exclamation-triangle me-2"></i>${title}
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    ${message}
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-1"></i>取消
+                    </button>
+                    <button type="button" class="btn btn-warning" id="${modalId}_confirm">
+                        <i class="fas fa-check me-1"></i>继续
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(modal);
+    const bsModal = new bootstrap.Modal(modal);
+
+    // 绑定确认按钮事件
+    document.getElementById(modalId + '_confirm').addEventListener('click', () => {
+        bsModal.hide();
+        if (onConfirm) onConfirm();
+    });
+
+    // 模态框隐藏后移除
+    modal.addEventListener('hidden.bs.modal', () => {
+        document.body.removeChild(modal);
+    });
+
+    bsModal.show();
+}
+
+// 显示错误模态框
+function showErrorModal(title, message) {
+    const modalId = 'errorModal_' + Date.now();
+    const modal = document.createElement('div');
+    modal.id = modalId;
+    modal.className = 'modal fade';
+    modal.innerHTML = `
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title">
+                        <i class="fas fa-times-circle me-2"></i>${title}
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    ${message}
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-check me-1"></i>确定
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(modal);
+    const bsModal = new bootstrap.Modal(modal);
+
+    // 模态框隐藏后移除
+    modal.addEventListener('hidden.bs.modal', () => {
+        document.body.removeChild(modal);
+    });
+
+    bsModal.show();
+}
+
+// 导出加载状态处理
+function showExportLoading(button) {
+    // 显示加载状态
+    const originalText = button.innerHTML;
+    button.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>正在导出...';
+    button.disabled = true;
+    button.style.pointerEvents = 'none';
+
+    // 设置超时恢复按钮状态（30秒后）
+    setTimeout(function() {
+        button.innerHTML = originalText;
+        button.disabled = false;
+        button.style.pointerEvents = 'auto';
+    }, 30000);
+
+    // 返回true允许链接继续执行
+    return true;
+}
+
+// 页面加载完成后绑定事件
+document.addEventListener('DOMContentLoaded', function() {
+    // 监听页面卸载事件，如果是因为下载文件导致的，恢复按钮状态
+    window.addEventListener('beforeunload', function() {
+        const exportBtn = document.getElementById('exportBtn');
+        if (exportBtn && exportBtn.disabled) {
+            setTimeout(function() {
+                exportBtn.innerHTML = '<i class="fas fa-file-export me-2"></i>导出数据';
+                exportBtn.disabled = false;
+                exportBtn.style.pointerEvents = 'auto';
+            }, 2000);
+        }
+    });
+});
+
+</script>
+{% endblock %}

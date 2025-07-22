@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title">权限调试信息</h5>
+                </div>
+                <div class="card-body">
+                    <h6>当前用户信息：</h6>
+                    <ul>
+                        <li>用户名: {{ current_user.username }}</li>
+                        <li>用户ID: {{ current_user.id }}</li>
+                        {% if current_user.warehouse %}
+                        <li>仓库: {{ current_user.warehouse.warehouse_name }} ({{ current_user.warehouse.warehouse_type }})</li>
+                        {% else %}
+                        <li>仓库: 未绑定</li>
+                        {% endif %}
+                    </ul>
+
+                    <h6>权限检查结果：</h6>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h7>页面权限：</h7>
+                            <ul>
+                                <li>FRONTEND_INBOUND_OPERATION: {{ has_page_permission('FRONTEND_INBOUND_OPERATION') }}</li>
+                                <li>FRONTEND_INBOUND_RECORDS: {{ has_page_permission('FRONTEND_INBOUND_RECORDS') }}</li>
+                                <li>FRONTEND_RECEIVE_RECORDS: {{ has_page_permission('FRONTEND_RECEIVE_RECORDS') }}</li>
+                                <li>BACKEND_INBOUND_OPERATION: {{ has_page_permission('BACKEND_INBOUND_OPERATION') }}</li>
+                                <li>BACKEND_RECEIVE_RECORDS: {{ has_page_permission('BACKEND_RECEIVE_RECORDS') }}</li>
+                                <li>BACKEND_INBOUND_RECORDS: {{ has_page_permission('BACKEND_INBOUND_RECORDS') }}</li>
+                                <li>FRONTEND_OUTBOUND_OPERATION: {{ has_page_permission('FRONTEND_OUTBOUND_OPERATION') }}</li>
+                                <li>FRONTEND_OUTBOUND_RECORDS: {{ has_page_permission('FRONTEND_OUTBOUND_RECORDS') }}</li>
+                                <li>BACKEND_OUTBOUND_OPERATION: {{ has_page_permission('BACKEND_OUTBOUND_OPERATION') }}</li>
+                                <li>BACKEND_OUTBOUND_RECORDS: {{ has_page_permission('BACKEND_OUTBOUND_RECORDS') }}</li>
+                                <li>FRONTEND_INVENTORY_LIST: {{ has_page_permission('FRONTEND_INVENTORY_LIST') }}</li>
+                                <li>BACKEND_INVENTORY_LIST: {{ has_page_permission('BACKEND_INVENTORY_LIST') }}</li>
+                                <li>ALL_INVENTORY_LIST: {{ has_page_permission('ALL_INVENTORY_LIST') }}</li>
+                                <li>TRANSIT_CARGO_LIST: {{ has_page_permission('TRANSIT_CARGO_LIST') }}</li>
+                                <li>LABEL_PRINT: {{ has_page_permission('LABEL_PRINT') }}</li>
+                                <li>RECEIVER_LIST: {{ has_page_permission('RECEIVER_LIST') }}</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h7>菜单权限：</h7>
+                            <ul>
+                                <li>INBOUND_MENU: {{ has_menu_permission('INBOUND_MENU') }}</li>
+                                <li>OUTBOUND_MENU: {{ has_menu_permission('OUTBOUND_MENU') }}</li>
+                                <li>INVENTORY_MENU: {{ has_menu_permission('INVENTORY_MENU') }}</li>
+                                <li>ADMIN_MENU: {{ has_menu_permission('ADMIN_MENU') }}</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

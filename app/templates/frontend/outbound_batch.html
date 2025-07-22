@@ -1,0 +1,223 @@
+{% extends "base.html" %}
+
+{% block title %}前端仓出库操作{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- 页面标题 -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-success">
+                <div class="card-header bg-success text-white">
+                    <h3 class="card-title mb-0">
+                        <i class="fas fa-truck me-2"></i>前端仓出库操作
+                        <span class="badge bg-light text-success ms-2">Frontend Warehouse</span>
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <p class="card-text mb-0">
+                        <i class="fas fa-info-circle me-1"></i>
+                        平湖仓、昆山仓、成都仓的货物出库操作
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 出库类型选择 -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title">
+                        <i class="fas fa-route me-2"></i>出库类型选择
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="card border-warning">
+                                <div class="card-body text-center">
+                                    <i class="fas fa-shipping-fast fa-3x text-warning mb-3"></i>
+                                    <h5 class="card-title">集拼发往后端仓</h5>
+                                    <p class="card-text">将货物集拼装载，发往凭祥北投仓</p>
+                                    <a href="{{ url_for('main.frontend_outbound_direct', destination='chunjiang') }}" class="btn btn-warning">
+                                        <i class="fas fa-check me-1"></i>选择此类型
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card border-primary">
+                                <div class="card-body text-center">
+                                    <i class="fas fa-truck fa-3x text-primary mb-3"></i>
+                                    <h5 class="card-title">直接配送客户</h5>
+                                    <p class="card-text">直接从前端仓配送到客户工厂</p>
+                                    <a href="{{ url_for('main.frontend_outbound_direct') }}" class="btn btn-primary">
+                                        <i class="fas fa-check me-1"></i>选择此类型
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 出库操作表单 -->
+    <div class="row" id="outboundForm" style="display: none;">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title">
+                        <i class="fas fa-clipboard-list me-2"></i>出库单录入
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <span id="outboundTypeText">请选择出库类型</span>
+                    </div>
+                    
+                    <!-- 这里可以包含出库表单 -->
+                    <div class="alert alert-warning">
+                        <i class="fas fa-construction me-2"></i>
+                        前端仓专用出库界面正在开发中...
+                    </div>
+                    
+                    <!-- 临时链接到原有功能 -->
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-start">
+                        <a href="{{ url_for('main.outbound') }}" class="btn btn-success">
+                            <i class="fas fa-arrow-right me-1"></i>使用通用出库功能
+                        </a>
+                        <a href="{{ url_for('main.frontend_outbound_list') }}" class="btn btn-outline-success">
+                            <i class="fas fa-list me-1"></i>查看前端仓出库记录
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 操作说明 -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="alert alert-info">
+                <h5><i class="fas fa-lightbulb me-2"></i>前端仓出库流程</h5>
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>集拼发往后端仓：</h6>
+                        <ol>
+                            <li>选择待发货物</li>
+                            <li>安排车辆和司机</li>
+                            <li>货物装载</li>
+                            <li>生成运输单据</li>
+                            <li>发车到凭祥北投仓</li>
+                        </ol>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>直接配送客户：</h6>
+                        <ol>
+                            <li>确认客户订单</li>
+                            <li>准备配送货物</li>
+                            <li>安排配送车辆</li>
+                            <li>生成配送单据</li>
+                            <li>配送到客户工厂</li>
+                        </ol>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 快速统计 -->
+    <div class="row">
+        <div class="col-md-3">
+            <div class="card text-white bg-success">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h6 class="card-title">今日出库</h6>
+                            <h4 class="mb-0">--</h4>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-truck fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-warning">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h6 class="card-title">待发货</h6>
+                            <h4 class="mb-0">--</h4>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-clock fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-info">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h6 class="card-title">在途货物</h6>
+                            <h4 class="mb-0">--</h4>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-shipping-fast fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-secondary">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h6 class="card-title">库存余量</h6>
+                            <h4 class="mb-0">--</h4>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-boxes fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+$(document).ready(function() {
+    // 前端仓出库页面的特定JavaScript代码
+    console.log('前端仓出库页面已加载');
+});
+
+function selectOutboundType(type) {
+    const outboundForm = document.getElementById('outboundForm');
+    const outboundTypeText = document.getElementById('outboundTypeText');
+    
+    if (type === 'transfer') {
+        outboundTypeText.textContent = '集拼发往后端仓 - 需要选择货物并安排运输车辆';
+        outboundForm.style.display = 'block';
+    } else if (type === 'direct') {
+        outboundTypeText.textContent = '直接配送客户 - 需要确认客户信息和配送地址';
+        outboundForm.style.display = 'block';
+    }
+    
+    // 滚动到表单位置
+    outboundForm.scrollIntoView({ behavior: 'smooth' });
+}
+</script>
+{% endblock %}

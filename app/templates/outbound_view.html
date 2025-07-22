@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h3 class="card-title">出库记录详情</h3>
+                        <div>
+                            <a href="{{ url_for('main.edit_outbound', id=record.id) }}" class="btn btn-primary">
+                                <i class="fas fa-edit"></i> 编辑
+                            </a>
+                            <a href="{{ url_for('main.outbound_list') }}" class="btn btn-secondary ml-2">
+                                <i class="fas fa-arrow-left"></i> 返回列表
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group row">
+                                <label class="col-sm-4 col-form-label">出库时间</label>
+                                <div class="col-sm-8">
+                                    <p class="form-control-plaintext">{{ record.outbound_time.strftime('%Y-%m-%d') if record.outbound_time else '' }}</p>
+                                </div>
+                            </div>
+                            <div class="form-group row">
+                                <label class="col-sm-4 col-form-label">出库车牌</label>
+                                <div class="col-sm-8">
+                                    <p class="form-control-plaintext">{{ record.plate_number }}</p>
+                                </div>
+                            </div>
+                            <div class="form-group row">
+                                <label class="col-sm-4 col-form-label">客户名称</label>
+                                <div class="col-sm-8">
+                                    <p class="form-control-plaintext">{{ record.customer_name }}</p>
+                                </div>
+                            </div>
+                            <div class="form-group row">
+                                <label class="col-sm-4 col-form-label">板数</label>
+                                <div class="col-sm-8">
+                                    <p class="form-control-plaintext">{{ record.pallet_count }}</p>
+                                </div>
+                            </div>
+                            <div class="form-group row">
+                                <label class="col-sm-4 col-form-label">件数</label>
+                                <div class="col-sm-8">
+                                    <p class="form-control-plaintext">{{ record.package_count }}</p>
+                                </div>
+                            </div>
+                            <div class="form-group row">
+                                <label class="col-sm-4 col-form-label">重量(kg)</label>
+                                <div class="col-sm-8">
+                                    <p class="form-control-plaintext">{{ record.weight }}</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group row">
+                                <label class="col-sm-4 col-form-label">体积(m³)</label>
+                                <div class="col-sm-8">
+                                    <p class="form-control-plaintext">{{ record.volume }}</p>
+                                </div>
+                            </div>
+                            <div class="form-group row">
+                                <label class="col-sm-4 col-form-label">目的地</label>
+                                <div class="col-sm-8">
+                                    <p class="form-control-plaintext">{{ record.destination or '—' }}</p>
+                                </div>
+                            </div>
+                            <div class="form-group row">
+                                <label class="col-sm-4 col-form-label">运输公司</label>
+                                <div class="col-sm-8">
+                                    <p class="form-control-plaintext">{{ record.transport_company or '—' }}</p>
+                                </div>
+                            </div>
+                            <div class="form-group row">
+                                <label class="col-sm-4 col-form-label">跟单客服</label>
+                                <div class="col-sm-8">
+                                    <p class="form-control-plaintext">{{ record.service_staff or '—' }}</p>
+                                </div>
+                            </div>
+                            <div class="form-group row">
+                                <label class="col-sm-4 col-form-label">创建时间</label>
+                                <div class="col-sm-8">
+                                    <p class="form-control-plaintext">{{ record.outbound_time.strftime('%Y-%m-%d %H:%M:%S') }}</p>
+                                </div>
+                            </div>
+                            <div class="form-group row">
+                                <label class="col-sm-4 col-form-label">更新时间</label>
+                                <div class="col-sm-8">
+                                    <p class="form-control-plaintext">{{ record.update_time.strftime('%Y-%m-%d %H:%M:%S') }}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row mt-3">
+                        <div class="col-md-12">
+                            <div class="form-group">
+                                <label>备注</label>
+                                <div class="p-2 border rounded bg-light">
+                                    {% set combined_remarks = [] %}
+                                    {% if record.remarks %}
+                                        {% set _ = combined_remarks.append(record.remarks) %}
+                                    {% endif %}
+                                    {% if record.remark1 %}
+                                        {% set _ = combined_remarks.append(record.remark1) %}
+                                    {% endif %}
+                                    {% if record.remark2 %}
+                                        {% set _ = combined_remarks.append(record.remark2) %}
+                                    {% endif %}
+                                    {{ '; '.join(combined_remarks) if combined_remarks else '无备注' }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

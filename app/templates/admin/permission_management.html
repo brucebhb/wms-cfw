@@ -1,0 +1,425 @@
+{% extends "base.html" %}
+{% set title = "权限管理" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-shield-alt"></i> 权限管理
+                    </h3>
+                    <div class="card-tools">
+                        <a href="/admin/permissions/decorator-guide" class="btn btn-secondary btn-sm me-2">
+                            <i class="fas fa-book"></i> 装饰器指南
+                        </a>
+                        <button type="button" class="btn btn-info btn-sm me-2" onclick="syncPermissionsFromDecorators()">
+                            <i class="fas fa-sync"></i> 同步装饰器权限
+                        </button>
+                        <button type="button" class="btn btn-warning btn-sm me-2" onclick="syncNavigationPermissions()">
+                            <i class="fas fa-sitemap"></i> 同步导航权限
+                        </button>
+                        <button type="button" class="btn btn-success btn-sm me-2" onclick="initReceiverPermission()">
+                            <i class="fas fa-plus"></i> 初始化收货人权限
+                        </button>
+                        <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#batchAssignModal">
+                            <i class="fas fa-users"></i> 批量分配权限
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <!-- 用户权限表格 -->
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-striped" id="permissionTable">
+                            <thead>
+                                <tr>
+                                    <th>用户名</th>
+                                    <th>真实姓名</th>
+                                    <th>所属仓库</th>
+                                    <th>仓库类型</th>
+                                    <th>菜单权限数</th>
+                                    <th>页面权限数</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for user in users %}
+                                <tr>
+                                    <td>{{ user.username }}</td>
+                                    <td>{{ user.real_name }}</td>
+                                    <td>{{ user.warehouse.warehouse_name if user.warehouse else '未分配' }}</td>
+                                    <td>
+                                        {% if user.warehouse %}
+                                            {% if user.warehouse.warehouse_type == 'frontend' %}
+                                                <span class="badge bg-primary">前端仓</span>
+                                            {% else %}
+                                                <span class="badge bg-success">后端仓</span>
+                                            {% endif %}
+                                        {% else %}
+                                            <span class="badge bg-secondary">未分配</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-info" id="menu-count-{{ user.id }}">-</span>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-warning" id="page-count-{{ user.id }}">-</span>
+                                    </td>
+                                    <td>
+                                        <button type="button" class="btn btn-sm btn-outline-primary" onclick="editUserPermissions({{ user.id }})">
+                                            <i class="fas fa-edit"></i> 编辑权限
+                                        </button>
+                                        <button type="button" class="btn btn-sm btn-outline-danger" onclick="resetUserPermissions({{ user.id }})">
+                                            <i class="fas fa-undo"></i> 重置
+                                        </button>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 编辑权限模态框 -->
+<div class="modal fade" id="editPermissionModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">编辑用户权限</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="permissionForm">
+                    <input type="hidden" id="editUserId">
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>菜单权限</h6>
+                            <div class="form-check-list" id="menuPermissions">
+                                {% for menu in menus %}
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" value="{{ menu.menu_code }}" id="menu_{{ menu.menu_code }}">
+                                    <label class="form-check-label" for="menu_{{ menu.menu_code }}">
+                                        {{ menu.menu_name }}
+                                    </label>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <h6>页面权限</h6>
+                            <div class="form-check-list" id="pagePermissions">
+                                {% for page in pages %}
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" value="{{ page.page_code }}" id="page_{{ page.page_code }}">
+                                    <label class="form-check-label" for="page_{{ page.page_code }}">
+                                        {{ page.page_name }}
+                                    </label>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary" onclick="saveUserPermissions()">保存权限</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 批量分配权限模态框 -->
+<div class="modal fade" id="batchAssignModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">批量分配权限</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="batchAssignForm">
+                    <div class="mb-3">
+                        <label for="warehouseType" class="form-label">仓库类型</label>
+                        <select class="form-select" id="warehouseType" required>
+                            <option value="">请选择仓库类型</option>
+                            <option value="frontend">前端仓</option>
+                            <option value="backend">后端仓</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="permissionTemplate" class="form-label">权限模板</label>
+                        <select class="form-select" id="permissionTemplate" required>
+                            <option value="">请选择权限模板</option>
+                            <option value="basic">基础权限（入库+出库）</option>
+                            <option value="full">完整权限（入库+出库+库存+打印）</option>
+                        </select>
+                    </div>
+                    
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i>
+                        批量分配将覆盖所选仓库类型下所有用户的现有权限。
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-warning" onclick="batchAssignPermissions()">批量分配</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// 页面加载时获取所有用户的权限统计
+$(document).ready(function() {
+    loadPermissionCounts();
+});
+
+function loadPermissionCounts() {
+    {% for user in users %}
+    loadUserPermissionCount({{ user.id }});
+    {% endfor %}
+}
+
+function loadUserPermissionCount(userId) {
+    $.get(`/permission/user/${userId}/permissions`)
+        .done(function(data) {
+            $(`#menu-count-${userId}`).text(data.menu_permissions.length);
+            $(`#page-count-${userId}`).text(data.page_permissions.length);
+        })
+        .fail(function() {
+            $(`#menu-count-${userId}`).text('错误');
+            $(`#page-count-${userId}`).text('错误');
+        });
+}
+
+function editUserPermissions(userId) {
+    $('#editUserId').val(userId);
+    
+    // 清空所有复选框
+    $('#menuPermissions input[type="checkbox"]').prop('checked', false);
+    $('#pagePermissions input[type="checkbox"]').prop('checked', false);
+    
+    // 获取用户当前权限
+    $.get(`/permission/user/${userId}/permissions`)
+        .done(function(data) {
+            // 设置菜单权限
+            data.menu_permissions.forEach(function(menuCode) {
+                $(`#menu_${menuCode}`).prop('checked', true);
+            });
+            
+            // 设置页面权限
+            data.page_permissions.forEach(function(pageCode) {
+                $(`#page_${pageCode}`).prop('checked', true);
+            });
+            
+            $('#editPermissionModal').modal('show');
+        })
+        .fail(function() {
+            alert('获取用户权限失败');
+        });
+}
+
+function saveUserPermissions() {
+    const userId = $('#editUserId').val();
+    
+    // 获取选中的菜单权限
+    const menuPermissions = [];
+    $('#menuPermissions input[type="checkbox"]:checked').each(function() {
+        menuPermissions.push($(this).val());
+    });
+    
+    // 获取选中的页面权限
+    const pagePermissions = [];
+    $('#pagePermissions input[type="checkbox"]:checked').each(function() {
+        pagePermissions.push($(this).val());
+    });
+    
+    // 发送更新请求
+    $.ajax({
+        url: `/permission/user/${userId}/permissions`,
+        method: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify({
+            menu_permissions: menuPermissions,
+            page_permissions: pagePermissions
+        }),
+        success: function(response) {
+            if (response.success) {
+                alert(response.message);
+                $('#editPermissionModal').modal('hide');
+                loadUserPermissionCount(userId);
+            } else {
+                alert('保存失败: ' + response.message);
+            }
+        },
+        error: function() {
+            alert('保存权限失败');
+        }
+    });
+}
+
+function resetUserPermissions(userId) {
+    if (confirm('确定要重置该用户的所有权限吗？此操作不可撤销。')) {
+        $.ajax({
+            url: `/permission/permissions/reset/${userId}`,
+            method: 'POST',
+            success: function(response) {
+                if (response.success) {
+                    alert(response.message);
+                    loadUserPermissionCount(userId);
+                } else {
+                    alert('重置失败: ' + response.message);
+                }
+            },
+            error: function() {
+                alert('重置权限失败');
+            }
+        });
+    }
+}
+
+function batchAssignPermissions() {
+    const warehouseType = $('#warehouseType').val();
+    const permissionTemplate = $('#permissionTemplate').val();
+    
+    if (!warehouseType || !permissionTemplate) {
+        alert('请选择仓库类型和权限模板');
+        return;
+    }
+    
+    if (confirm(`确定要为所有${warehouseType === 'frontend' ? '前端仓' : '后端仓'}用户分配${permissionTemplate === 'basic' ? '基础' : '完整'}权限吗？`)) {
+        $.ajax({
+            url: '/permission/permissions/batch-assign',
+            method: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({
+                warehouse_type: warehouseType,
+                permission_template: permissionTemplate
+            }),
+            success: function(response) {
+                if (response.success) {
+                    alert(response.message);
+                    $('#batchAssignModal').modal('hide');
+                    loadPermissionCounts();
+                } else {
+                    alert('批量分配失败: ' + response.message);
+                }
+            },
+            error: function() {
+                alert('批量分配权限失败');
+            }
+        });
+    }
+}
+
+// 初始化收货人权限
+function initReceiverPermission() {
+    if (confirm('确定要初始化收货人信息管理权限吗？\n这将在系统中添加收货人信息管理的页面权限。')) {
+        $.ajax({
+            url: '/admin/permissions/init-receiver-permission',
+            type: 'POST',
+            headers: {
+                'X-CSRFToken': $('meta[name=csrf-token]').attr('content')
+            },
+            success: function(response) {
+                if (response.success) {
+                    showMessage('success', response.message);
+                    // 刷新页面以显示新权限
+                    setTimeout(function() {
+                        location.reload();
+                    }, 1500);
+                } else {
+                    showMessage('error', '初始化失败: ' + response.message);
+                }
+            },
+            error: function() {
+                showMessage('error', '初始化收货人权限失败');
+            }
+        });
+    }
+}
+
+// 显示消息提示
+function showMessage(type, message) {
+    const alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
+    const alertHtml = `
+        <div class="alert ${alertClass} alert-dismissible fade show" role="alert">
+            <strong>${type === 'success' ? '成功' : '错误'}:</strong> ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    `;
+
+    // 在页面顶部显示消息
+    $('.container-fluid').prepend(alertHtml);
+
+    // 3秒后自动隐藏
+    setTimeout(function() {
+        $('.alert').fadeOut();
+    }, 3000);
+}
+
+// 从装饰器同步权限
+function syncPermissionsFromDecorators() {
+    if (confirm('确定要从装饰器同步权限到数据库吗？\n这将自动添加新的权限定义。')) {
+        $.ajax({
+            url: '/admin/permissions/sync-from-decorators',
+            type: 'POST',
+            headers: {
+                'X-CSRFToken': $('meta[name=csrf-token]').attr('content')
+            },
+            success: function(response) {
+                if (response.success) {
+                    showMessage('success', response.message);
+                    // 刷新页面以显示新权限
+                    setTimeout(function() {
+                        location.reload();
+                    }, 1500);
+                } else {
+                    showMessage('error', '同步失败: ' + response.message);
+                }
+            },
+            error: function() {
+                showMessage('error', '同步权限失败');
+            }
+        });
+    }
+}
+
+// 同步导航菜单权限
+function syncNavigationPermissions() {
+    if (confirm('确定要同步导航菜单中的权限吗？\n这将确保权限配置界面与实际导航菜单一致。')) {
+        $.ajax({
+            url: '/admin/permissions/sync-navigation',
+            type: 'POST',
+            headers: {
+                'X-CSRFToken': $('meta[name=csrf-token]').attr('content')
+            },
+            success: function(response) {
+                if (response.success) {
+                    showMessage('success', response.message);
+                    // 刷新页面以显示新权限
+                    setTimeout(function() {
+                        location.reload();
+                    }, 1500);
+                } else {
+                    showMessage('error', '同步失败: ' + response.message);
+                }
+            },
+            error: function() {
+                showMessage('error', '同步导航权限失败');
+            }
+        });
+    }
+}
+</script>
+{% endblock %}

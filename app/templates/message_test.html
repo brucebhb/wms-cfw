@@ -1,0 +1,201 @@
+{% extends "base.html" %}
+
+{% block title %}消息系统测试{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3>消息系统测试</h3>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h5>测试按钮</h5>
+                            <div class="btn-group-vertical d-grid gap-2">
+                                <button type="button" class="btn btn-success" onclick="testSuccess()">
+                                    测试成功消息
+                                </button>
+                                <button type="button" class="btn btn-danger" onclick="testError()">
+                                    测试错误消息
+                                </button>
+                                <button type="button" class="btn btn-warning" onclick="testWarning()">
+                                    测试警告消息
+                                </button>
+                                <button type="button" class="btn btn-info" onclick="testInfo()">
+                                    测试信息消息
+                                </button>
+                                <button type="button" class="btn btn-primary" onclick="testShowMessage()">
+                                    测试 showMessage 函数
+                                </button>
+                                <button type="button" class="btn btn-secondary" onclick="testSuccessMessage()">
+                                    测试"成功添加 5 条记录"
+                                </button>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <h5>控制台输出</h5>
+                            <div id="console-output" style="background: #f8f9fa; padding: 10px; height: 300px; overflow-y: auto; font-family: monospace; font-size: 12px;">
+                                <!-- 控制台输出将显示在这里 -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// 重写console方法以显示在页面上
+const originalConsole = {
+    log: console.log,
+    error: console.error,
+    warn: console.warn,
+    debug: console.debug
+};
+
+function addToConsoleOutput(type, message) {
+    const output = document.getElementById('console-output');
+    const timestamp = new Date().toLocaleTimeString();
+    const color = {
+        'log': '#000',
+        'error': '#dc3545',
+        'warn': '#ffc107',
+        'debug': '#6c757d'
+    }[type] || '#000';
+    
+    output.innerHTML += `<div style="color: ${color};">[${timestamp}] ${message}</div>`;
+    output.scrollTop = output.scrollHeight;
+}
+
+console.log = function(...args) {
+    originalConsole.log(...args);
+    addToConsoleOutput('log', args.join(' '));
+};
+
+console.error = function(...args) {
+    originalConsole.error(...args);
+    addToConsoleOutput('error', args.join(' '));
+};
+
+console.warn = function(...args) {
+    originalConsole.warn(...args);
+    addToConsoleOutput('warn', args.join(' '));
+};
+
+console.debug = function(...args) {
+    originalConsole.debug(...args);
+    addToConsoleOutput('debug', args.join(' '));
+};
+
+// 测试函数
+function testSuccess() {
+    console.log('测试成功消息...');
+    if (typeof showSuccess === 'function') {
+        showSuccess('这是一个成功消息！');
+        console.log('showSuccess 函数调用完成');
+    } else {
+        console.error('showSuccess 函数不存在');
+    }
+}
+
+function testError() {
+    console.log('测试错误消息...');
+    if (typeof showError === 'function') {
+        showError('这是一个错误消息！');
+        console.log('showError 函数调用完成');
+    } else {
+        console.error('showError 函数不存在');
+    }
+}
+
+function testWarning() {
+    console.log('测试警告消息...');
+    if (typeof showWarning === 'function') {
+        showWarning('这是一个警告消息！');
+        console.log('showWarning 函数调用完成');
+    } else {
+        console.error('showWarning 函数不存在');
+    }
+}
+
+function testInfo() {
+    console.log('测试信息消息...');
+    if (typeof showInfo === 'function') {
+        showInfo('这是一个信息消息！');
+        console.log('showInfo 函数调用完成');
+    } else {
+        console.error('showInfo 函数不存在');
+    }
+}
+
+function testShowMessage() {
+    console.log('测试 showMessage 函数...');
+    if (typeof showMessage === 'function') {
+        console.log('MessageType 对象:', typeof MessageType !== 'undefined' ? MessageType : '未定义');
+        
+        // 测试不同类型
+        showMessage('测试成功类型', 'success');
+        setTimeout(() => showMessage('测试错误类型', 'danger'), 1000);
+        setTimeout(() => showMessage('测试警告类型', 'warning'), 2000);
+        setTimeout(() => showMessage('测试信息类型', 'info'), 3000);
+        
+        // 测试使用 MessageType 常量
+        if (typeof MessageType !== 'undefined') {
+            setTimeout(() => showMessage('使用 MessageType.SUCCESS', MessageType.SUCCESS), 4000);
+        }
+        
+        console.log('showMessage 函数调用完成');
+    } else {
+        console.error('showMessage 函数不存在');
+    }
+}
+
+function testSuccessMessage() {
+    console.log('测试"成功添加 5 条记录"消息...');
+    if (typeof showMessage === 'function') {
+        showMessage('成功添加 5 条记录', 'danger');
+        console.log('showMessage 函数调用完成');
+    } else {
+        console.error('showMessage 函数不存在');
+    }
+}
+
+// 页面加载完成后的初始化
+$(document).ready(function() {
+    console.log('消息系统测试页面已加载');
+    console.log('可用的消息函数:');
+    console.log('- showMessage:', typeof showMessage);
+    console.log('- showSuccess:', typeof showSuccess);
+    console.log('- showError:', typeof showError);
+    console.log('- showWarning:', typeof showWarning);
+    console.log('- showInfo:', typeof showInfo);
+    console.log('- MessageType:', typeof MessageType !== 'undefined' ? MessageType : '未定义');
+    
+    // 保存原始函数
+    if (typeof window.showMessage === 'function') {
+        window.originalShowMessage = window.showMessage;
+        
+        window.showMessage = function(message, type, options) {
+            console.log('自定义showMessage被调用:', message, type);
+            
+            // 确保成功消息使用正确的类型
+            if (message && (message.includes('成功') || message.includes('添加')) && type !== 'success') {
+                console.log('修正消息类型从', type, '到 success');
+                type = 'success';
+            }
+            
+            // 调用原始函数
+            return window.originalShowMessage(message, type, options);
+        };
+        
+        console.log('消息函数已重写');
+    }
+});
+</script>
+{% endblock %}

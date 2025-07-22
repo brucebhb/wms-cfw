@@ -1,0 +1,3466 @@
+{% extends "base.html" %}
+
+{% block styles %}
+<link rel="preload" href="https://cdn.bootcdn.net/ajax/libs/handsontable/13.0.0/handsontable.full.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+<noscript><link rel="stylesheet" href="https://cdn.bootcdn.net/ajax/libs/handsontable/13.0.0/handsontable.full.min.css"></noscript>
+<!-- 添加自定义表格样式 -->
+<link rel="stylesheet" href="{{ url_for('static', filename='css/simple-table.css') }}" type="text/css" />
+<style>
+    .batch-options {
+        margin-bottom: 1rem;
+    }
+    #hot-container {
+        height: 600px; /* 增加表格容器高度 */
+        overflow: visible; /* 修改为visible，确保内容不被截断 */
+        margin-bottom: 20px;
+        margin-left: auto;
+        margin-right: auto;
+        position: relative;
+    }
+    /* 增加表格行高的样式 */
+    .handsontable td {
+        height: 32px !important; /* 设置单元格高度 */
+        line-height: 28px !important; /* 设置行高 */
+        padding: 4px 6px !important; /* 增加内边距 */
+        font-size: 14px !important; /* 增加字体大小 */
+        text-align: center !important; /* 单元格内容居中 */
+        vertical-align: middle !important; /* 垂直居中 */
+    }
+    /* 增加表头行高 */
+    .handsontable th {
+        height: 36px !important;
+        padding: 6px 6px !important;
+        font-size: 14px !important;
+        font-weight: bold !important;
+        text-align: center !important; /* 表头内容居中 */
+        vertical-align: middle !important; /* 垂直居中 */
+    }
+    /* 确保所有单元格包括输入框内的内容都居中 */
+    .handsontable .htDimmed,
+    .handsontable .current,
+    .handsontable .htCenter {
+        text-align: center !important;
+        vertical-align: middle !important;
+    }
+    /* 确保数字输入也居中 */
+    .handsontable input[type="text"],
+    .handsontable input[type="number"],
+    .handsontable input[type="date"] {
+        text-align: center !important;
+    }
+    .handsontable .required {
+        color: #ff0000;
+    }
+    .btn-action {
+        margin-right: 8px;
+    }
+    .file-upload {
+        display: none;
+    }
+    .error-message {
+        color: #dc3545;
+        margin-top: 8px;
+        text-align: center;
+    }
+    .success-message {
+        color: #28a745;
+        margin-top: 8px;
+        text-align: center;
+    }
+    /* 自定义表头样式 */
+    .handsontable .htColHeader .colHeader {
+        position: relative;
+    }
+    /* 列宽拖动样式 */
+    .handsontable .manualColumnResizer {
+        cursor: col-resize;
+        background: #ddd;
+    }
+    .handsontable .manualColumnResizer.active,
+    .handsontable .manualColumnResizer:hover {
+        background: #8c8c8c;
+    }
+    /* 内容区域居中 */
+    .card-body {
+        text-align: center;
+    }
+    /* 按钮组居中 */
+    .action-buttons {
+        display: flex;
+        justify-content: center;
+        margin-bottom: 1rem;
+    }
+    /* 提示信息容器 */
+    .info-container {
+        background-color: #fff8e1; /* 米黄色背景 */
+        padding: 10px 15px;
+        border-radius: 4px;
+        margin-bottom: 15px;
+        display: flex;
+        align-items: center;
+        border: 1px solid #ffe082;
+    }
+    
+    /* 设置库存选择表格中重量和体积列的宽度 */
+    #inventoryTable th:nth-child(11), 
+    #inventoryTable td:nth-child(11),
+    #inventoryTable th:nth-child(12), 
+    #inventoryTable td:nth-child(12) {
+        width: 60px !important;
+        max-width: 60px !important;
+    }
+    
+    /* 设置库存选择表格中报关行和出境模式的列宽 */
+    #inventoryTable th:nth-child(13), 
+    #inventoryTable td:nth-child(13),
+    #inventoryTable th:nth-child(14), 
+    #inventoryTable td:nth-child(14) {
+        width: 80px !important;
+        max-width: 80px !important;
+    }
+    
+    /* 设置库存选择表格中库位和单据的列宽 */
+    #inventoryTable th:nth-child(15), 
+    #inventoryTable td:nth-child(15),
+    #inventoryTable th:nth-child(16), 
+    #inventoryTable td:nth-child(16) {
+        width: 40px !important;
+        max-width: 40px !important;
+    }
+    
+    /* 设置库存选择表格中跟单客服的列宽 */
+    #inventoryTable th:nth-child(20),
+    #inventoryTable td:nth-child(20) {
+        width: 70px !important;
+        max-width: 70px !important;
+    }
+    
+    /* 设置库存选择表格中入库车牌、客户名称和送货干线车的列宽 */
+    #inventoryTable th:nth-child(2),
+    #inventoryTable td:nth-child(2),
+    #inventoryTable th:nth-child(3),
+    #inventoryTable td:nth-child(3),
+    #inventoryTable th:nth-child(4),
+    #inventoryTable td:nth-child(4) {
+        width: 100px !important;
+        max-width: 100px !important;
+    }
+    
+    /* 设置输入框宽度 */
+    #inventoryTable .inventory-weight,
+    #inventoryTable .inventory-volume {
+        width: 60px !important;
+    }
+    
+    /* 移除数字输入框的上下调整按钮 */
+    #inventoryTable .inventory-weight::-webkit-inner-spin-button,
+    #inventoryTable .inventory-weight::-webkit-outer-spin-button,
+    #inventoryTable .inventory-volume::-webkit-inner-spin-button,
+    #inventoryTable .inventory-volume::-webkit-outer-spin-button,
+    .handsontable input[type="number"]::-webkit-inner-spin-button,
+    .handsontable input[type="number"]::-webkit-outer-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+    }
+    
+    #inventoryTable .inventory-weight[type=number],
+    #inventoryTable .inventory-volume[type=number],
+    .handsontable input[type="number"] {
+        -moz-appearance: textfield;
+    }
+    
+    .table-note {
+        text-align: left;
+    }
+    
+    .table-note .required {
+        color: #ff0000;
+    }
+    
+    /* 中间按钮容器 */
+    .center-buttons {
+        display: flex;
+        justify-content: center;
+        gap: 10px;
+        margin-bottom: 15px;
+    }
+    /* 加载指示器样式 */
+    .loading-indicator {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        text-align: center;
+        background: rgba(255,255,255,0.9);
+        padding: 15px 20px;
+        border-radius: 5px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        z-index: 1000;
+    }
+    
+    /* 公共信息输入区 */
+    .common-inputs {
+        background-color: #f8f9fa;
+        padding: 15px;
+        border-radius: 5px;
+        margin-bottom: 20px;
+        border: 1px solid #dee2e6;
+    }
+    
+    .common-inputs .row {
+        margin-bottom: 10px;
+    }
+
+    /* 时间输入框样式 */
+    .time-input {
+        width: 120px;  /* 从80px增加到120px */
+        text-align: center;
+        font-family: monospace;
+    }
+
+    .time-input:focus {
+        border-color: #007bff;
+        box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+    }
+
+    .time-input::placeholder {
+        color: #6c757d;
+        font-size: 0.9em;
+    }
+
+    .time-input.is-invalid {
+        border-color: #dc3545;
+    }
+
+    .time-input.is-valid {
+        border-color: #28a745;
+    }
+
+    /* 日期输入框样式 */
+    .date-input {
+        width: 140px;  /* 限制日期输入框宽度 */
+        flex-shrink: 0;
+    }
+    
+    .common-inputs label {
+        font-weight: 500;
+        margin-bottom: 3px;
+        display: block;
+        text-align: left;
+    }
+    
+    /* 弹窗样式 */
+    .custom-modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0,0,0,0.5);
+        z-index: 10000;
+        justify-content: center;
+        align-items: center;
+    }
+    
+    /* 添加关键样式来解决模态框可能被覆盖的问题 */
+    #inventoryModal {
+        z-index: 10001 !important; /* 确保在最顶层 */
+    }
+    
+    #inventoryModal .modal-content {
+        background-color: white;
+        min-width: 80%;
+        max-height: 90vh;
+        position: relative;
+        z-index: 10002 !important; /* 确保内容不被覆盖 */
+        border-radius: 5px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    }
+    
+    /* 模态框固定的标题栏和底部按钮样式 */
+    .modal-header-fixed {
+        position: sticky;
+        top: 0;
+        background: white;
+        z-index: 1030;
+        padding: 15px 15px 0;
+        border-bottom: 1px solid #dee2e6;
+        border-top-left-radius: 4px;
+        border-top-right-radius: 4px;
+    }
+    
+    .modal-footer-fixed {
+        position: sticky;
+        bottom: 0;
+        background: white;
+        z-index: 1030;
+        padding: 15px;
+        border-top: 1px solid #dee2e6;
+        border-bottom-left-radius: 4px;
+        border-bottom-right-radius: 4px;
+        text-align: right;
+    }
+    
+    .search-container {
+        padding: 10px 15px;
+        background: white;
+    }
+    
+    /* DataTables特定样式 */
+    #inventoryTable_wrapper {
+        margin-top: 15px;
+    }
+    
+    #inventoryTable_filter {
+        display: none; /* 隐藏默认搜索框，我们使用自定义搜索框 */
+    }
+    
+    #inventoryTable_length {
+        margin-bottom: 10px;
+        text-align: left;
+    }
+    
+    #inventoryTable th {
+        background-color: #f5f5f5;
+        border: 1px solid #ccc !important;
+    }
+    
+    #inventoryTable td {
+        vertical-align: middle;
+        border: 1px solid #ddd !important;
+    }
+    
+    /* 确保表格中的输入框样式正确 */
+    #inventoryTable input[type="text"], 
+    #inventoryTable input[type="number"] {
+        width: 100%;
+        max-width: 100px;
+        padding: 4px;
+        margin: 0;
+        box-sizing: border-box;
+        text-align: center;
+    }
+    
+    /* 使备注栏输入框撑满单元格 */
+    #inventoryTable .inventory-remark1,
+    #inventoryTable .inventory-remark2 {
+        width: 100% !important;
+        max-width: 100% !important;
+    }
+    
+    /* 确保全出按钮样式正确 */
+    #inventoryTable .btn-full-out {
+        padding: 2px 8px;
+        font-size: 12px;
+        line-height: 1.5;
+    }
+    
+    /* 移除所有数字输入框的上下调整按钮 */
+    input[type="number"]::-webkit-inner-spin-button,
+    input[type="number"]::-webkit-outer-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+    }
+    
+    input[type="number"] {
+        -moz-appearance: textfield;
+    }
+    
+    /* 确保模态框内的按钮可点击 */
+    #inventoryModal button, #receiverModal button {
+        position: relative;
+        z-index: 10003 !important;
+        pointer-events: auto !important;
+        cursor: pointer !important;
+    }
+    
+    .modal-content {
+        background-color: white;
+        padding: 20px;
+        border-radius: 5px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        max-width: 500px;
+        width: 90%;
+        text-align: center;
+        position: relative;
+    }
+    
+    .modal-close {
+        position: absolute;
+        top: 10px;
+        right: 15px;
+        font-size: 24px;
+        font-weight: bold;
+        cursor: pointer;
+        z-index: 1040; /* 确保比其他元素高 */
+        color: #555;
+        transition: color 0.2s;
+    }
+    
+    .modal-close:hover {
+        color: #000;
+    }
+    
+    .modal-header {
+        padding-right: 30px; /* 给关闭按钮留出空间 */
+    }
+    
+    .modal-success .modal-header {
+        color: #28a745;
+        border-bottom: 1px solid #e9ecef;
+        padding-bottom: 10px;
+        margin-bottom: 15px;
+    }
+    
+    .modal-error .modal-header {
+        color: #dc3545;
+        border-bottom: 1px solid #e9ecef;
+        padding-bottom: 10px;
+        margin-bottom: 15px;
+    }
+    
+    .modal-header i {
+        font-size: 1.5em;
+        margin-right: 10px;
+    }
+    
+    .modal-footer {
+        padding-top: 15px;
+        margin-top: 15px;
+        border-top: 1px solid #e9ecef;
+        text-align: right;
+    }
+    
+    /* 修复按钮问题的样式 */
+    .action-buttons button, 
+    .center-buttons button,
+    .modal-content button {
+        position: relative;
+        z-index: 1001 !important;
+        pointer-events: auto !important;
+        cursor: pointer !important;
+    }
+    
+    /* 确保表格不会覆盖按钮 */
+    .wtHolder {
+        z-index: 50;
+    }
+
+    /* 调整表格样式 */
+    #inventoryTable {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    #inventoryTable th, #inventoryTable td {
+        padding: 8px;
+        text-align: center;
+        vertical-align: middle;
+    }
+
+    /* 调整输入框样式 */
+    #inventoryTable input[type="number"], 
+    #inventoryTable input[type="text"],
+    #inventoryTable select {
+        width: 100%;
+        padding: 4px;
+        border: 1px solid #ced4da;
+        border-radius: 4px;
+    }
+
+    /* 固定表头 */
+    #inventoryTable thead {
+        position: sticky;
+        top: 0;
+        background-color: #f8f9fa;
+        z-index: 1;
+    }
+    
+    /* 设置库存选择表格中跟单客服的列宽 */
+    #inventoryTable th:nth-child(17), 
+    #inventoryTable td:nth-child(17) {
+        width: 70px !important;
+        max-width: 70px !important;
+    }
+    
+    /* 设置库存选择表格中备注1和备注2的列宽 */
+    #inventoryTable th:nth-child(18), 
+    #inventoryTable td:nth-child(18),
+    #inventoryTable th:nth-child(19), 
+    #inventoryTable td:nth-child(19) {
+        width: 150px !important;
+        max-width: none !important;
+    }
+    
+    /* 设置库存选择表格中入库车牌和客户名称的列宽 */
+    #inventoryTable th:nth-child(2), 
+    #inventoryTable td:nth-child(2),
+    #inventoryTable th:nth-child(3), 
+    #inventoryTable td:nth-child(3) {
+        width: 100px !important;
+        max-width: 100px !important;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h4 class="card-title">
+            <i class="fas fa-truck me-2"></i>前端仓发运后端仓（批量录入）
+        </h4>
+        <div>
+            <button type="button" class="btn btn-outline-secondary btn-sm me-2" id="downloadTemplateBtn">
+                <i class="fas fa-download me-1"></i> 下载模板
+            </button>
+            <button type="button" class="btn btn-outline-info btn-sm me-2" id="importExcelBtn">
+                <i class="fas fa-file-excel me-1"></i> Excel导入
+            </button>
+            <input type="file" id="fileUpload" class="file-upload" accept=".xlsx, .xls, .csv">
+        </div>
+    </div>
+    <div class="card-body">
+        <!-- 上层：公共信息输入区 -->
+        <div class="common-inputs">
+            <!-- 第一行：出库车牌/车型/司机姓名/电话号码 -->
+            <div class="row">
+                <div class="col-md-3">
+                    <div class="mb-2">
+                        <label for="plate-number">出库车牌: *</label>
+                        <input type="text" class="form-control" id="plate-number" placeholder="请输入出库车牌" required>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="mb-2">
+                        <label for="vehicle-type">车型: *</label>
+                        <input type="text" class="form-control" id="vehicle-type" placeholder="请输入车辆类型" required>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="mb-2">
+                        <label for="driver-name">司机姓名: *</label>
+                        <input type="text" class="form-control" id="driver-name" placeholder="请输入司机姓名" required>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="mb-2">
+                        <label for="driver-phone">电话号码: *</label>
+                        <input type="text" class="form-control" id="driver-phone" placeholder="请输入电话号码" required>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 第二行：集拼车到仓时间/开始装车时间/结束装车时间/离仓发运时间 -->
+            <div class="row">
+                <div class="col-md-3">
+                    <div class="mb-2">
+                        <label class="form-label fw-bold">集拼车到仓时间: *</label>
+                        <div class="d-flex">
+                            <input type="date" class="form-control date-input me-2" id="arrive-date" required>
+                            <input type="text" class="form-control time-input" id="arrive-time-input" placeholder="HH:MM" maxlength="5" required>
+                        </div>
+                        <input type="hidden" id="arrive-time" name="arrive-time">
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="mb-2">
+                        <label class="form-label fw-bold">开始装车时间: *</label>
+                        <div class="d-flex">
+                            <input type="date" class="form-control date-input me-2" id="loading-start-date" required>
+                            <input type="text" class="form-control time-input" id="loading-start-time-input" placeholder="HH:MM" maxlength="5" required>
+                        </div>
+                        <input type="hidden" id="loading-start-time" name="loading-start-time">
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="mb-2">
+                        <label class="form-label fw-bold">结束装车时间: *</label>
+                        <div class="d-flex">
+                            <input type="date" class="form-control date-input me-2" id="loading-end-date" required>
+                            <input type="text" class="form-control time-input" id="loading-end-time-input" placeholder="HH:MM" maxlength="5" required>
+                        </div>
+                        <input type="hidden" id="loading-end-time" name="loading-end-time">
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="mb-2">
+                        <label class="form-label fw-bold">离仓发运时间: *</label>
+                        <div class="d-flex">
+                            <input type="date" class="form-control date-input me-2" id="departure-date" required>
+                            <input type="text" class="form-control time-input" id="departure-time-input" placeholder="HH:MM" maxlength="5" required>
+                        </div>
+                        <input type="hidden" id="departure-time" name="departure-time">
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 第三行：目的仓库/详细地址/联络窗口 -->
+            <div class="row">
+                <div class="col-md-3">
+                    <div class="mb-2">
+                        <label for="destination">目的仓库: *</label>
+                        <div class="input-group">
+                            <input type="text" class="form-control" id="destination" readonly placeholder="请选择目的仓库" required>
+                            <button class="btn btn-primary" type="button" id="selectReceiverBtn" style="z-index: 9999; position: relative; cursor: pointer !important; pointer-events: auto !important;" onclick="try { openReceiverModal(); } catch(e) { console.error('点击事件错误',e); }">
+                                <i class="fas fa-search"></i> 选择
+                            </button>
+                            <input type="hidden" id="receiver_id" name="receiver_id" required>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-2">
+                        <label for="destination-address">详细地址: *</label>
+                        <input type="text" class="form-control" id="destination-address" readonly placeholder="选择目的仓后自动填充" required>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="mb-2">
+                        <label for="contact">联络窗口: *</label>
+                        <input type="text" class="form-control" id="contact" readonly placeholder="选择目的仓后自动填充" required>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 第四行：大层板/小层板/卡板 -->
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="mb-2">
+                        <label for="large-layer">大层板:</label>
+                        <input type="number" class="form-control" id="large-layer" placeholder="请输入大层板数量">
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="mb-2">
+                        <label for="small-layer">小层板:</label>
+                        <input type="number" class="form-control" id="small-layer" placeholder="请输入小层板数量">
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="mb-2">
+                        <label for="pallet">卡板:</label>
+                        <input type="number" class="form-control" id="pallet" placeholder="请输入卡板数量">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="batch-options mb-3">
+            <div class="row align-items-center justify-content-center">
+                <div class="col-md-3">
+                    <label class="form-label">默认出库时间</label>
+                    <input type="date" class="form-control" id="defaultOutboundTime">
+                </div>
+                <div class="col-md-9">
+                    <div class="action-buttons">
+                        <button type="button" class="btn btn-success btn-sm btn-action" id="addRowBtn">
+                            <i class="fas fa-plus"></i> 添加行
+                        </button>
+                        <button type="button" class="btn btn-danger btn-sm btn-action" id="removeRowBtn">
+                            <i class="fas fa-trash"></i> 删除选中行
+                        </button>
+                        <button type="button" class="btn btn-warning btn-sm btn-action" id="clearDataBtn">
+                            <i class="fas fa-eraser"></i> 清空数据
+                        </button>
+                        <span class="ms-3 text-secondary"><i class="fas fa-info-circle"></i> 支持复制粘贴Excel数据</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="info-container">
+            <div class="table-note">
+                <i class="fas fa-info-circle me-1"></i> <span class="required">*</span> 为必填项，除大层板、小层板、卡板、重量和体积外，所有公共信息字段都必填。表格中<span class="required">板数</span>与<span class="required">件数</span>至少填写一项
+            </div>
+        </div>
+        
+        <div class="center-buttons">
+            <!-- 出库选择按钮 -->
+            <button type="button" class="btn btn-info" id="selectInventoryBtn" onclick="openInventoryModal()">
+                <i class="fas fa-warehouse"></i> 出库选择
+            </button>
+            <button type="button" class="btn btn-secondary" id="resetBtn" onclick="resetForm(window.hot)">
+                <i class="fas fa-undo"></i> 重置
+            </button>
+            <button type="button" class="btn btn-primary" id="saveBtn">
+                <i class="fas fa-save"></i> 批量保存
+            </button>
+        </div>
+
+        <!-- 下层：表格区域 -->
+        <div id="hot-container">
+            <div id="loading-indicator" class="loading-indicator">
+                <div class="spinner-border text-primary mb-2" role="status"></div>
+                <div>表格加载中，请稍候...</div>
+            </div>
+            <div id="spreadsheet"></div>
+        </div>
+    </div>
+</div>
+
+
+
+<!-- 出库选择模态框 -->
+<div id="inventoryModal" class="custom-modal">
+    <div class="modal-content" style="max-width: 95%; width: auto; max-height: 90vh; display: flex; flex-direction: column;">
+        <!-- 固定的标题栏 -->
+        <div class="modal-header-fixed">
+            <span class="modal-close" onclick="document.getElementById('inventoryModal').style.display='none'">&times;</span>
+            <div class="modal-header">
+                <i class="fas fa-boxes"></i> 库存信息选择
+            </div>
+            <div class="search-container mb-3">
+                <input type="text" class="form-control" id="inventorySearch" placeholder="输入关键字搜索库存...">
+            </div>
+        </div>
+        
+        <!-- 可滚动的内容区域 -->
+        <div class="modal-body" style="overflow-y: auto; flex: 1;">
+            <div class="table-responsive">
+                <table class="table table-striped table-hover" id="inventoryTable" width="100%">
+                    <thead>
+                        <tr>
+                            <th>选择</th>
+                            <th>客户名称</th>
+                            <th>入库车牌</th>
+                            <th>送货干线车</th>
+                            <th>识别编码</th>
+                            <th>订单类型</th>
+                            <th>入库板数</th>
+                            <th>入库件数</th>
+                            <th>库存板数</th>
+                            <th>库存件数</th>
+                            <th>全出</th>
+                            <th>出库板数</th>
+                            <th>出库件数</th>
+                            <th>重量(kg)</th>
+                            <th>体积(m³)</th>
+                            <th>出境模式</th>
+                            <th>报关行</th>
+                            <th>库位</th>
+                            <th>单据</th>
+                            <th>跟单客服</th>
+                            <th>备注1</th>
+                            <th>备注2</th>
+                        </tr>
+                    </thead>
+                    <tbody id="inventoryTableBody">
+                        <!-- 由DataTables填充 -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <!-- 固定的底部按钮 -->
+        <div class="modal-footer-fixed">
+            <button type="button" class="btn btn-secondary" onclick="document.getElementById('inventoryModal').style.display='none'">取消</button>
+            <button type="button" class="btn btn-primary" id="confirmInventorySelection">确认选择</button>
+        </div>
+    </div>
+</div>
+
+<!-- 收货人选择模态框 -->
+<div id="receiverModal" class="custom-modal">
+    <div class="modal-content" style="max-width: 90%; width: auto; max-height: 90vh; display: flex; flex-direction: column;">
+        <!-- 固定的标题栏 -->
+        <div class="modal-header-fixed">
+            <span class="modal-close" onclick="document.getElementById('receiverModal').style.display='none'">&times;</span>
+            <div class="modal-header">
+                <i class="fas fa-warehouse"></i> 目的仓选择
+            </div>
+            <div class="search-container mb-3">
+                <input type="text" class="form-control" id="receiverSearch" placeholder="输入关键字搜索目的仓...">
+            </div>
+        </div>
+        
+        <!-- 可滚动的内容区域 -->
+        <div class="modal-body" style="overflow-y: auto; flex: 1;">
+            <div class="table-responsive">
+                <table class="table table-striped table-hover" id="receiverTable">
+                    <thead>
+                        <tr>
+                            <th>选择</th>
+                            <th>目的仓</th>
+                            <th>详细地址</th>
+                            <th>联络窗口</th>
+                        </tr>
+                    </thead>
+                    <tbody id="receiverTableBody">
+                        <!-- 这里将由JavaScript动态填充目的仓数据 -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <!-- 固定的底部按钮 -->
+        <div class="modal-footer-fixed">
+            <button type="button" class="btn btn-secondary" onclick="document.getElementById('receiverModal').style.display='none'">取消</button>
+            <button type="button" class="btn btn-primary" onclick="confirmSelectedReceiver()">确认选择</button>
+        </div>
+    </div>
+</div>
+
+<!-- 成功提示弹窗 -->
+<div id="successModal" class="custom-modal modal-success">
+    <div class="modal-content">
+        <span class="modal-close" onclick="document.getElementById('successModal').style.display='none'">&times;</span>
+        <div class="modal-header">
+            <i class="fas fa-check-circle"></i> 操作成功
+        </div>
+        <div class="modal-body" id="successMessage"></div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-success close-modal" onclick="document.getElementById('successModal').style.display='none'">确定</button>
+        </div>
+    </div>
+</div>
+
+<!-- 错误提示弹窗 -->
+<div id="errorModal" class="custom-modal modal-error">
+    <div class="modal-content">
+        <span class="modal-close" onclick="document.getElementById('errorModal').style.display='none'">&times;</span>
+        <div class="modal-header">
+            <i class="fas fa-exclamation-circle"></i> 操作失败
+        </div>
+        <div class="modal-body" id="errorMessage"></div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-danger close-modal" onclick="document.getElementById('errorModal').style.display='none'">确定</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+
+<!-- 确保Handsontable库加载 -->
+<script src="https://cdn.bootcdn.net/ajax/libs/handsontable/13.0.0/handsontable.full.min.js" defer></script>
+
+<!-- 添加DataTables相关文件 - 使用更可靠的CDN链接 -->
+<link href="https://cdn.datatables.net/1.10.25/css/dataTables.bootstrap5.min.css" rel="stylesheet">
+<script src="https://cdn.datatables.net/1.10.25/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.10.25/js/dataTables.bootstrap5.min.js"></script>
+
+<script>
+// 用于存储DataTables实例
+var inventoryTable = null;
+
+// 重写库存选择模态框打开函数
+function openInventoryModal() {
+    console.log('打开DataTables库存选择模态框');
+    
+    // 显示模态框
+    document.getElementById('inventoryModal').style.display = 'flex';
+    
+    // 检查DataTable是否已初始化
+    if ($.fn.DataTable.isDataTable('#inventoryTable')) {
+        console.log('DataTables已初始化，正在重新加载数据');
+        // 重新加载数据
+        inventoryTable.ajax.reload();
+        return;
+    }
+    
+    console.log('初始化DataTables');
+    // 初始化DataTable
+    inventoryTable = $('#inventoryTable').DataTable({
+        processing: true,
+        serverSide: false,
+        language: {
+            processing: "加载中...",
+            search: "搜索:",
+            lengthMenu: "显示 _MENU_ 条记录",
+            info: "显示第 _START_ 至 _END_ 条记录，共 _TOTAL_ 条",
+            infoEmpty: "显示第 0 至 0 条记录，共 0 条",
+            infoFiltered: "(从 _MAX_ 条记录过滤)",
+            loadingRecords: "加载中...",
+            zeroRecords: "没有匹配记录",
+            emptyTable: "没有数据",
+            paginate: {
+                first: "首页",
+                previous: "上页",
+                next: "下页",
+                last: "末页"
+            }
+        },
+        dom: '<"top"lf>rt<"bottom"ip>',
+        pageLength: 50,
+        lengthMenu: [[10, 20, 50, 100, -1], [10, 20, 50, 100, "全部"]],
+        ajax: {
+            url: '/api/inventory/list',
+            dataSrc: function(json) {
+                console.log('收到库存数据:', json);
+                if (json.success && json.inventory) {
+                    // 为每条库存记录添加默认的空备注字段（如果不存在）
+                    json.inventory.forEach(item => {
+                        if (!item.hasOwnProperty('remark1')) item.remark1 = '';
+                        if (!item.hasOwnProperty('remark2')) item.remark2 = '';
+                    });
+                    window.inventoryCodes = json.inventory;
+                    return json.inventory;
+                }
+                return [];
+            }
+        },
+        createdRow: function(row, data, dataIndex) {
+            $(row).attr('data-index', dataIndex);
+        },
+        columns: [
+            {
+                data: null,
+                orderable: false,
+                render: function(data, type, row, meta) {
+                    return '<input type="checkbox" class="inventory-selector" data-index="' + meta.row + '">';
+                }
+            },
+            { data: 'customer_name' },
+            { data: 'plate_number' },
+            { data: 'identification_code' },
+            {
+                data: 'order_type',
+                defaultContent: '原车出境'
+            },
+            { data: 'inbound_pallet_count' },
+            { data: 'inbound_package_count' },
+            { data: 'pallet_count' },
+            { data: 'package_count' },
+            {
+                data: null,
+                orderable: false,
+                render: function(data, type, row, meta) {
+                    return '<button type="button" class="btn btn-sm btn-outline-primary btn-full-out" data-index="' + meta.row + '">全出</button>';
+                }
+            },
+            {
+                data: null,
+                orderable: false,
+                render: function(data, type, row, meta) {
+                    return '<input type="number" class="form-control form-control-sm outbound-pallet" min="0" max="' + row.pallet_count + '" value="0">';
+                }
+            },
+            {
+                data: null,
+                orderable: false,
+                render: function(data, type, row, meta) {
+                    return '<input type="number" class="form-control form-control-sm outbound-package" min="0" max="' + row.package_count + '" value="0">';
+                }
+            },
+            {
+                data: null,
+                orderable: false,
+                render: function(data, type, row, meta) {
+                    return '<input type="number" step="0.01" class="form-control form-control-sm inventory-weight" min="0" value="' + (row.weight || 0) + '">';
+                }
+            },
+            {
+                data: null,
+                orderable: false,
+                render: function(data, type, row, meta) {
+                    return '<input type="number" step="0.01" class="form-control form-control-sm inventory-volume" min="0" value="' + (row.volume || 0) + '">';
+                }
+            },
+            { data: 'export_mode' },
+            {
+                data: null,
+                orderable: false,
+                render: function(data, type, row, meta) {
+                    return '<input type="text" class="form-control form-control-sm inventory-customs-broker" value="' + (row.customs_broker || '') + '">';
+                }
+            },
+            { data: 'location' },
+            { data: 'documents' },
+            {
+                data: null,
+                orderable: false,
+                render: function(data, type, row, meta) {
+                    return '<input type="text" class="form-control form-control-sm inventory-service-staff" value="' + (row.service_staff || '') + '">';
+                }
+            },
+            {
+                data: null,
+                orderable: false,
+                render: function(data, type, row, meta) {
+                    return '<input type="text" class="form-control form-control-sm inventory-remark1" value="' + (row.remark1 || '') + '">';
+                }
+            },
+            {
+                data: null,
+                orderable: false,
+                render: function(data, type, row, meta) {
+                    return '<input type="text" class="form-control form-control-sm inventory-remark2" value="' + (row.remark2 || '') + '">';
+                }
+            }
+        ],
+        initComplete: function(settings, json) {
+            // 将搜索框与DataTables搜索关联
+            $('#inventorySearch').on('keyup', function() {
+                inventoryTable.search($(this).val()).draw();
+            });
+            
+            // 全出按钮事件
+            $('#inventoryTable').on('click', '.btn-full-out', function() {
+                var index = $(this).data('index');
+                var row = $(this).closest('tr');
+                var data = inventoryTable.row(row).data();
+                
+                row.find('.outbound-pallet').val(data.pallet_count);
+                row.find('.outbound-package').val(data.package_count);
+                row.find('.inventory-selector').prop('checked', true);
+            });
+            
+            // 数量验证
+            $('#inventoryTable').on('change', '.outbound-pallet, .outbound-package', function() {
+                var input = $(this);
+                var value = parseFloat(input.val()) || 0;
+                var max = parseFloat(input.attr('max')) || 0;
+
+                if (value < 0) {
+                    input.val(0);
+                } else if (value > max) {
+                    input.val(max);
+                    alert('出库数量不能超过库存数量(' + max + ')');
+                }
+
+                // 当数量大于0时，自动选中复选框
+                if (value > 0) {
+                    $(this).closest('tr').find('.inventory-selector').prop('checked', true);
+                }
+
+                // 调用拆票分装功能
+                var row = $(this).closest('tr')[0];
+                var rowData = inventoryTable.row(row).data();
+                if (rowData) {
+                    updateSplitShipmentRemark(row, rowData);
+                }
+            });
+        }
+    });
+}
+
+// 重写确认库存选择函数
+function confirmInventorySelection() {
+    console.log("执行确认库存选择");
+    if (!inventoryTable) {
+        console.error('DataTables实例不存在');
+        alert('表格未初始化，请刷新页面后重试');
+        return;
+    }
+    
+    const checkedRows = $('#inventoryTable .inventory-selector:checked').closest('tr');
+    console.log("选中行数:", checkedRows.length);
+    
+    if (checkedRows.length === 0) {
+        alert('请至少选择一条库存记录');
+        return;
+    }
+    
+    const selectedItems = [];
+    let hasInvalidItem = false;
+    
+    // 收集选中的数据
+    checkedRows.each(function() {
+        const row = $(this);
+        const rowData = inventoryTable.row(row).data();
+        console.log("行数据:", rowData);
+        
+        // 获取用户输入的数据
+        const outboundPalletCount = parseInt(row.find('.outbound-pallet').val()) || 0;
+        const outboundPackageCount = parseInt(row.find('.outbound-package').val()) || 0;
+        
+        // 获取重量和体积，允许为空值
+        let weight = row.find('.inventory-weight').val();
+        weight = weight !== undefined && weight !== null && weight !== '' ? parseFloat(weight) : '';
+        
+        let volume = row.find('.inventory-volume').val();
+        volume = volume !== undefined && volume !== null && volume !== '' ? parseFloat(volume) : '';
+        
+        const customsBroker = row.find('.inventory-customs-broker').val() || '';
+        const serviceStaff = row.find('.inventory-service-staff').val() || '';
+        const deliveryPlateNumber = row.find('.delivery-plate-number').val() || '';
+        const remark1 = row.find('.inventory-remark1').val() || '';
+        const remark2 = row.find('.inventory-remark2').val() || '';
+        
+        // 验证至少有一项出库数量
+        if (outboundPalletCount === 0 && outboundPackageCount === 0) {
+            alert(`请为 ${rowData.customer_name} - ${rowData.plate_number} 至少输入板数或件数中的一项出库数量`);
+            hasInvalidItem = true;
+            return false; // 中断循环
+        }
+        
+        // 创建合并后的数据对象
+        selectedItems.push({
+            ...rowData,
+            outbound_pallet_count: outboundPalletCount,
+            outbound_package_count: outboundPackageCount,
+            weight: weight,
+            volume: volume,
+            customs_broker: customsBroker,
+            service_staff: serviceStaff,
+            plate_number: deliveryPlateNumber, // 送货干线车（前端仓→后端仓）
+            inbound_plate: rowData.inbound_plate || rowData.plate_number, // 入库车牌（工厂→前端仓）
+            document_no: rowData.documents, // 确保字段名一致
+            remark1: remark1,
+            remark2: remark2
+        });
+    });
+    
+    if (hasInvalidItem) {
+        return; // 如果有无效项，不继续处理
+    }
+    
+    // 关闭模态框
+    document.getElementById('inventoryModal').style.display = 'none';
+    
+    // 将数据添加到出库表格
+    const hot = window.hot;
+    if (!hot) {
+        console.error('Handsontable实例不存在');
+        alert('无法获取表格实例，请刷新页面后重试');
+        return;
+    }
+    
+    console.log("准备添加数据到热表格");
+    // 准备数据数组
+    const dataArray = selectedItems.map(item => [
+        item.customer_name || '',         // 客户名称
+        item.plate_number || '',         // 入库车牌
+        item.order_type || '',            // 订单类型
+        item.outbound_pallet_count || 0,  // 出库板数
+        item.outbound_package_count || 0, // 出库件数
+        item.weight !== undefined && item.weight !== null ? item.weight : '',  // 重量（允许为空）
+        item.volume !== undefined && item.volume !== null ? item.volume : '',  // 体积（允许为空）
+        item.export_mode || '',           // 出境模式
+        item.customs_broker || '',        // 报关行
+        item.location || '',              // 库位
+        item.documents || '',             // 单据
+        item.service_staff || '',         // 跟单客服
+        item.identification_code || '',    // 识别编码
+        item.remark1 || '',               // 备注1
+        item.remark2 || ''               // 备注2
+    ]);
+    
+    // 计算当前有效数据行数
+    const currentData = hot.getData();
+    let firstEmptyRowIndex = 0;
+    
+    for (let i = 0; i < currentData.length; i++) {
+        const row = currentData[i];
+        // 检查行是否有任何非空值
+        const hasValue = row.some(cell => cell !== null && cell !== undefined && cell !== '');
+        if (!hasValue) {
+            firstEmptyRowIndex = i;
+            break;
+        }
+        // 如果所有行都有值，则使用最后一行之后的索引
+        if (i === currentData.length - 1) {
+            firstEmptyRowIndex = currentData.length;
+        }
+    }
+    
+    console.log("找到的第一个空行索引:", firstEmptyRowIndex);
+    // 更新数据
+    const newData = [...currentData];
+    for (let i = 0; i < dataArray.length; i++) {
+        if (firstEmptyRowIndex + i < newData.length) {
+            newData[firstEmptyRowIndex + i] = dataArray[i];
+        } else {
+            newData.push(dataArray[i]);
+        }
+    }
+    
+    // 加载数据到表格
+    console.log("更新表格数据");
+    hot.loadData(newData);
+    console.log(`已将 ${selectedItems.length} 条库存记录添加到表格`);
+}
+
+// 覆盖原始函数并绑定事件
+window.openInventoryModal = openInventoryModal;
+$(document).ready(function() {
+    console.log("文档准备就绪，绑定确认按钮事件");
+    // 确保绑定确认按钮事件
+    $('#confirmInventorySelection').off('click').on('click', confirmInventorySelection);
+});
+
+// 首先定义工具函数，确保在使用前已定义
+// 显示成功提示
+function showSuccess(message) {
+    console.log('显示成功消息:', message);
+    const successModal = document.getElementById('successModal');
+    const successMessage = document.getElementById('successMessage');
+    
+    if (successModal && successMessage) {
+        successMessage.textContent = message;
+        successModal.style.display = 'flex';
+        
+        // 自动关闭（可选）
+        setTimeout(() => {
+            hideSuccess();
+        }, 3000);
+    } else {
+        // 如果找不到模态框，使用alert作为备选
+        alert('成功: ' + message);
+    }
+}
+
+// 隐藏成功提示
+function hideSuccess() {
+    const successModal = document.getElementById('successModal');
+    if (successModal) {
+        successModal.style.display = 'none';
+    }
+}
+
+// 显示错误提示
+function showError(message) {
+    console.log('显示错误消息:', message);
+    const errorModal = document.getElementById('errorModal');
+    const errorMessage = document.getElementById('errorMessage');
+    
+    if (errorModal && errorMessage) {
+        errorMessage.textContent = message;
+        errorModal.style.display = 'flex';
+    } else {
+        // 如果找不到模态框，使用alert作为备选
+        alert('错误: ' + message);
+    }
+}
+
+// 隐藏错误提示
+function hideError() {
+    console.log('隐藏错误消息');
+    const errorModal = document.getElementById('errorModal');
+    if (errorModal) {
+        errorModal.style.display = 'none';
+    }
+}
+
+// 隐藏所有消息
+function hideMessages() {
+    console.log('隐藏所有消息');
+    hideSuccess();
+    hideError();
+}
+
+// 显示加载指示器
+function showLoadingIndicator(message) {
+    console.log('显示加载指示器:', message);
+    // 只在控制台输出日志，不显示弹窗
+}
+
+// 隐藏加载指示器
+function hideLoadingIndicator() {
+    console.log('隐藏加载指示器');
+    const loadingIndicator = document.getElementById('loading-indicator');
+    if (loadingIndicator) {
+        loadingIndicator.style.display = 'none';
+    }
+    
+    // 确保库存表格加载指示器也被隐藏
+    const inventoryTableBody = document.getElementById('inventoryTableBody');
+    if (inventoryTableBody) {
+        const loadingRow = inventoryTableBody.querySelector('tr td[colspan="15"]');
+        if (loadingRow && loadingRow.textContent.includes('正在加载')) {
+            inventoryTableBody.innerHTML = '<tr><td colspan="15" class="text-center">暂无库存数据</td></tr>';
+        }
+    }
+}
+
+// 立即确保全局函数可用
+window.openReceiverModal = function() {
+    console.log('打开收货人选择模态框 - 全局函数被调用');
+    // 直接显示模态框
+    const receiverModal = document.getElementById('receiverModal');
+    if (receiverModal) {
+        console.log('显示收货人选择模态框');
+        receiverModal.style.display = 'flex';
+        
+        // 获取收货人数据
+        console.log('开始发送API请求获取收货人数据');
+        fetch('/api/receivers?scenario=frontend_to_backend') // 指定前端仓发运后端仓场景
+            .then(response => {
+                console.log('收到API响应:', response.status);
+                return response.json();
+            })
+            .then(data => {
+                console.log('解析API响应数据:', data);
+                
+                if (data.success) {
+                    // 填充收货人表格
+                    console.log('填充收货人表格，数据条数:', data.receivers ? data.receivers.length : 0);
+                    populateReceiverTable(data.receivers || []);
+                } else {
+                    console.error('API返回错误:', data.message);
+                    receiverModal.style.display = 'none';
+                    alert('获取收货人数据失败: ' + (data.message || '未知错误'));
+                }
+            })
+            .catch(error => {
+                console.error('获取收货人数据时出错:', error);
+                receiverModal.style.display = 'none';
+                alert('获取收货人数据出错，请稍后重试');
+            });
+    } else {
+        console.error('找不到收货人选择模态框元素');
+        alert('收货人选择对话框未找到，请刷新页面后重试');
+    }
+}
+
+// 填充收货人表格 - 全局函数
+function populateReceiverTable(receivers) {
+    console.log('填充收货人表格 - 全局函数被调用');
+    const tableBody = document.getElementById('receiverTableBody');
+    if (!tableBody) {
+        console.error('找不到收货人表格体元素');
+        return;
+    }
+    
+    // 清空表格
+    tableBody.innerHTML = '';
+    
+    if (!receivers || receivers.length === 0) {
+        const row = document.createElement('tr');
+        row.innerHTML = '<td colspan="7" class="text-center">没有可用的收货人数据</td>';
+        tableBody.appendChild(row);
+        return;
+    }
+    
+    // 填充数据
+    receivers.forEach(item => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td><input type="radio" name="receiver-select" class="receiver-select" data-id="${item.id}"></td>
+            <td>${item.warehouse_name || ''}</td>
+            <td>${item.address || ''}</td>
+            <td>${item.contact || ''}</td>
+        `;
+
+        // 添加双击事件
+        row.addEventListener('dblclick', function() {
+            console.log('双击选择目的仓:', item.warehouse_name);
+            // 自动选中该行的单选按钮
+            const radio = row.querySelector('.receiver-select');
+            if (radio) {
+                radio.checked = true;
+            }
+            // 直接确认选择
+            confirmSelectedReceiver();
+        });
+
+        // 添加单击事件（选中单选按钮）
+        row.addEventListener('click', function(e) {
+            // 如果点击的不是单选按钮本身，则选中单选按钮
+            if (e.target.type !== 'radio') {
+                const radio = row.querySelector('.receiver-select');
+                if (radio) {
+                    radio.checked = true;
+                }
+            }
+        });
+
+        // 添加鼠标悬停样式
+        row.style.cursor = 'pointer';
+        row.addEventListener('mouseenter', function() {
+            row.style.backgroundColor = '#f8f9fa';
+        });
+        row.addEventListener('mouseleave', function() {
+            row.style.backgroundColor = '';
+        });
+
+        tableBody.appendChild(row);
+    });
+    
+    // 添加搜索功能
+    const searchInput = document.getElementById('receiverSearch');
+    if (searchInput) {
+        searchInput.addEventListener('input', function() {
+            const searchTerm = this.value.toLowerCase();
+            const rows = tableBody.querySelectorAll('tr');
+            
+            rows.forEach(row => {
+                const text = row.textContent.toLowerCase();
+                if (text.includes(searchTerm)) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        });
+    }
+}
+
+// 填充库存表格
+function populateInventoryTable(inventoryItems) {
+    console.log('填充库存表格 - 函数被调用，数据条数:', inventoryItems ? inventoryItems.length : 0);
+    
+    // 调试：打印第一条库存数据，查看是否包含报关行和跟单客服字段
+    if (inventoryItems && inventoryItems.length > 0) {
+        console.log('第一条库存数据示例:', inventoryItems[0]);
+        console.log('报关行字段值:', inventoryItems[0].customs_broker);
+        console.log('跟单客服字段值:', inventoryItems[0].service_staff);
+    }
+    
+    const tableBody = document.getElementById('inventoryTableBody');
+    if (!tableBody) {
+        console.error('找不到库存表格体元素');
+        return;
+    }
+    
+    // 清空表格
+    tableBody.innerHTML = '';
+    
+    if (!inventoryItems || inventoryItems.length === 0) {
+        const row = document.createElement('tr');
+        row.innerHTML = '<td colspan="16" class="text-center">暂无库存数据</td>';
+        tableBody.appendChild(row);
+        return;
+    }
+    
+    // 填充表格
+    inventoryItems.forEach((item, index) => {
+        const row = document.createElement('tr');
+        row.setAttribute('data-index', index);
+        
+        // 计算可用库存数量
+        const availablePallets = item.pallet_count - (item.outbound_pallet_count || 0);
+        const availablePackages = item.package_count - (item.outbound_package_count || 0);
+        
+        // 确保报关行和跟单客服字段有值，即使是空字符串
+        const customsBroker = item.customs_broker !== undefined ? item.customs_broker : '';
+        const serviceStaff = item.service_staff !== undefined ? item.service_staff : '';
+        
+        console.log(`库存项 ${index} 的报关行:`, customsBroker);
+        console.log(`库存项 ${index} 的跟单客服:`, serviceStaff);
+        
+        // 使用实际的字段名，简化表格结构，与截图保持一致
+        row.innerHTML = `
+            <td><input type="checkbox" class="inventory-selector" data-index="${index}"></td>
+            <td>${item.customer_name || ''}</td>
+            <td>${item.inbound_plate || item.plate_number || ''}</td>
+            <td><input type="text" class="form-control form-control-sm delivery-plate-number" value="${item.delivery_plate_number || ''}" placeholder="送货干线车"></td>
+            <td>${item.identification_code || ''}</td>
+            <td>${item.order_type || '原车出境'}</td>
+            <td>${availablePallets}</td>
+            <td>${availablePackages}</td>
+            <td><button type="button" class="btn btn-sm btn-outline-primary btn-full-out" style="padding: 2px 5px; font-size: 12px;" data-type="pallet" data-value="${availablePallets}">全出</button></td>
+            <td><input type="number" class="form-control form-control-sm outbound-pallet" min="0" max="${availablePallets}" value="0"></td>
+            <td><input type="number" class="form-control form-control-sm outbound-package" min="0" max="${availablePackages}" value="0"></td>
+            <td><input type="number" class="form-control form-control-sm inventory-weight" min="0" value="${item.weight || 0}"></td>
+            <td><input type="number" class="form-control form-control-sm inventory-volume" min="0" value="${item.volume || 0}"></td>
+            <td>${item.export_mode || '普通'}</td>
+            <td><input type="text" class="form-control form-control-sm inventory-customs-broker" value="${customsBroker}"></td>
+            <td>${item.location || ''}</td>
+            <td>${item.documents || item.document_no || ''}</td>
+            <td><input type="text" class="form-control form-control-sm inventory-service-staff" value="${serviceStaff}"></td>
+            <td><input type="text" class="form-control form-control-sm inventory-remark1" value="${item.remark1 || ''}" data-user-modified="false"></td>
+            <td><input type="text" class="form-control form-control-sm inventory-remark2" value="${item.remark2 || ''}"></td>
+        `;
+        
+        tableBody.appendChild(row);
+        
+        // 添加验证事件
+        const outboundPalletInput = row.querySelector('.outbound-pallet');
+        if (outboundPalletInput) {
+            outboundPalletInput.addEventListener('change', function() {
+                validateOutboundQuantity(this, availablePallets, 'pallet');
+                updateSplitShipmentRemark(row, item);
+            });
+        }
+
+        const outboundPackageInput = row.querySelector('.outbound-package');
+        if (outboundPackageInput) {
+            outboundPackageInput.addEventListener('change', function() {
+                validateOutboundQuantity(this, availablePackages, 'package');
+                updateSplitShipmentRemark(row, item);
+            });
+        }
+
+        // 添加备注1手动修改检测
+        const remark1Input = row.querySelector('.inventory-remark1');
+        if (remark1Input) {
+            remark1Input.addEventListener('input', function() {
+                this.dataset.userModified = 'true';
+            });
+        }
+        
+        // 添加全出按钮事件
+        const fullOutBtn = row.querySelector('.btn-full-out');
+        if (fullOutBtn) {
+            fullOutBtn.addEventListener('click', function() {
+                const type = this.getAttribute('data-type');
+                const value = parseInt(this.getAttribute('data-value'));
+                
+                // 不论按钮类型，同时填入板数和件数
+                const palletInput = this.closest('tr').querySelector('.outbound-pallet');
+                const packageInput = this.closest('tr').querySelector('.outbound-package');
+                
+                if (palletInput) {
+                    palletInput.value = availablePallets;
+                }
+                
+                if (packageInput) {
+                    packageInput.value = availablePackages;
+                }
+                
+                // 自动选中对应行的复选框
+                const checkbox = this.closest('tr').querySelector('.inventory-selector');
+                if (checkbox && !checkbox.checked) {
+                    checkbox.checked = true;
+                }
+            });
+        }
+    });
+    
+    // 设置库存搜索功能
+    setupInventorySearch();
+    
+    // 设置确认选择按钮事件
+    document.getElementById('confirmInventorySelection').onclick = confirmInventorySelection;
+    
+    // 设置关闭模态框按钮事件
+    const closeButtons = document.querySelectorAll('#inventoryModal .modal-close, #inventoryModal .close-modal');
+    closeButtons.forEach(button => {
+        button.onclick = function() {
+            document.getElementById('inventoryModal').style.display = 'none';
+        };
+    });
+}
+
+// 验证出库数量不超过库存数量
+function validateOutboundQuantity(input, maxValue, type) {
+    const value = parseInt(input.value) || 0;
+    if (value < 0) {
+        input.value = 0;
+        showError(`${type === 'pallet' ? '出库板数' : '出库件数'}不能为负数`);
+    } else if (value > maxValue) {
+        input.value = maxValue;
+        showError(`${type === 'pallet' ? '出库板数' : '出库件数'}不能超过库存数量(${maxValue})`);
+    }
+}
+
+// 更新拆票分装备注
+function updateSplitShipmentRemark(row, inventoryItem) {
+    try {
+        console.log('updateSplitShipmentRemark called for:', inventoryItem.identification_code);
+        const outboundPalletInput = row.querySelector('.outbound-pallet');
+        const outboundPackageInput = row.querySelector('.outbound-package');
+        const remark1Input = row.querySelector('.inventory-remark1');
+
+        if (!outboundPalletInput || !outboundPackageInput || !remark1Input) {
+            console.log('Missing input elements');
+            return;
+        }
+
+        // 如果用户已经手动输入了备注，不自动覆盖
+        if (remark1Input.dataset.userModified === 'true') {
+            return;
+        }
+
+        const outboundPallet = parseInt(outboundPalletInput.value) || 0;
+        const outboundPackage = parseInt(outboundPackageInput.value) || 0;
+
+        // 使用入库时的原始数量来判断是否整票出库
+        const originalPallet = inventoryItem.inbound_pallet_count || 0;
+        const originalPackage = inventoryItem.inbound_package_count || 0;
+
+        console.log('Quantities:', {
+            outboundPallet, outboundPackage, originalPallet, originalPackage
+        });
+
+        // 检查是否为整票出库（基于入库时的原始数量）
+        const isFullShipment = (outboundPallet === originalPallet && outboundPackage === originalPackage);
+
+        if (isFullShipment || (outboundPallet === 0 && outboundPackage === 0)) {
+            // 整票出库或未输入数量，清空备注
+            console.log('Full shipment or no quantity, clearing remark');
+            remark1Input.value = '';
+            return;
+        }
+
+        // 获取历史出库记录来生成备注
+        console.log('Getting outbound history for:', inventoryItem.identification_code);
+        getOutboundHistory(inventoryItem.identification_code).then(history => {
+            console.log('Outbound history:', history);
+            const shipmentCount = history.length + 1; // +1 因为当前记录还未保存
+
+            if (shipmentCount === 1) {
+                // 第一次出库且非整票，标记为拆票分装
+                console.log('First partial shipment, setting remark to 拆票分装');
+                remark1Input.value = '拆票分装';
+            } else if (shipmentCount <= 3) {
+                // 第2-3次出库，显示之前的出库记录
+                const remarkParts = [];
+                for (let i = 0; i < history.length; i++) {
+                    const record = history[i];
+                    const palletInfo = record.pallet_count > 0 ? `${record.pallet_count}板` : '';
+                    const packageInfo = record.package_count > 0 ? `${record.package_count}件` : '';
+
+                    let quantityInfo = '';
+                    if (palletInfo && packageInfo) {
+                        quantityInfo = `${palletInfo}${packageInfo}`;
+                    } else if (palletInfo) {
+                        quantityInfo = palletInfo;
+                    } else if (packageInfo) {
+                        quantityInfo = packageInfo;
+                    }
+
+                    if (quantityInfo) {
+                        remarkParts.push(`${quantityInfo}在${record.plate_number}`);
+                    }
+                }
+                remark1Input.value = remarkParts.join('/');
+            } else {
+                // 超过3次出库，只显示最近3次
+                const recentRecords = history.slice(-3);
+                const remarkParts = [];
+                const startIndex = history.length - 2;
+
+                for (let i = 0; i < recentRecords.length; i++) {
+                    const record = recentRecords[i];
+                    const palletInfo = record.pallet_count > 0 ? `${record.pallet_count}板` : '';
+                    const packageInfo = record.package_count > 0 ? `${record.package_count}件` : '';
+
+                    let quantityInfo = '';
+                    if (palletInfo && packageInfo) {
+                        quantityInfo = `${palletInfo}${packageInfo}`;
+                    } else if (palletInfo) {
+                        quantityInfo = palletInfo;
+                    } else if (packageInfo) {
+                        quantityInfo = packageInfo;
+                    }
+
+                    if (quantityInfo) {
+                        remarkParts.push(`${quantityInfo}在${record.plate_number}`);
+                    }
+                }
+                remark1Input.value = remarkParts.join('/');
+            }
+        }).catch(error => {
+            console.error('获取出库历史记录失败:', error);
+        });
+
+    } catch (error) {
+        console.error('更新拆票分装备注时出错:', error);
+    }
+}
+
+// 获取出库历史记录
+async function getOutboundHistory(identificationCode) {
+    try {
+        const response = await fetch(`/api/outbound/history?identification_code=${encodeURIComponent(identificationCode)}`);
+        const data = await response.json();
+
+        if (data.success) {
+            return data.records || [];
+        } else {
+            console.error('获取出库历史记录失败:', data.message);
+            return [];
+        }
+    } catch (error) {
+        console.error('获取出库历史记录时出错:', error);
+        return [];
+    }
+}
+
+// 库存搜索功能
+function setupInventorySearch() {
+    const searchInput = document.getElementById('inventorySearch');
+    if (!searchInput) return;
+    
+    searchInput.addEventListener('input', function() {
+        const searchText = this.value.toLowerCase();
+        const rows = document.querySelectorAll('#inventoryTableBody tr');
+        
+        rows.forEach(row => {
+            const cells = row.querySelectorAll('td');
+            let shouldShow = false;
+            
+            // 跳过第一个单元格（选择框）和列入单元格
+            for (let i = 1; i < cells.length; i++) {
+                if (cells[i].textContent.toLowerCase().includes(searchText)) {
+                    shouldShow = true;
+                    break;
+                }
+            }
+            
+            row.style.display = shouldShow ? '' : 'none';
+        });
+    });
+}
+
+// 添加调试函数，查看表格中的数据
+function debugTableData() {
+    if (!window.hot) {
+        console.error('表格实例不存在');
+        return;
+    }
+    
+    const data = window.hot.getData();
+    console.log('表格数据:', data);
+    
+    // 打印表格的基本信息
+    console.log('表格列数:', window.hot.countCols());
+    console.log('表格行数:', window.hot.countRows());
+    
+    // 打印表格的列定义
+    console.log('表格列定义:', window.hot.getSettings().columns);
+    
+    // 打印表格的第一行数据（如果有）
+    if (data && data.length > 0) {
+        console.log('表格第一行数据:', data[0]);
+    }
+}
+
+// 在确认库存选择后调用调试函数
+function confirmInventorySelection() {
+    console.log('确认库存选择 - 函数被调用');
+    const checkedBoxes = document.querySelectorAll('#inventoryTableBody .inventory-selector:checked');
+    
+    if (checkedBoxes.length === 0) {
+        alert('请至少选择一条库存记录');
+        return;
+    }
+    
+    const selectedItems = [];
+    let hasInvalidItem = false;
+    
+    // 获取选中的库存项并收集用户输入的数据
+    checkedBoxes.forEach(checkbox => {
+        const row = checkbox.closest('tr');
+        const index = parseInt(row.getAttribute('data-index'));
+        if (window.inventoryCodes && window.inventoryCodes[index]) {
+            // 获取原始库存数据
+            const baseItem = window.inventoryCodes[index];
+            
+            // 获取用户输入的数据
+            const outboundPalletCount = parseInt(row.querySelector('.outbound-pallet').value) || 0;
+            const outboundPackageCount = parseInt(row.querySelector('.outbound-package').value) || 0;
+            const weight = parseFloat(row.querySelector('.inventory-weight').value) || 0;
+            const volume = parseFloat(row.querySelector('.inventory-volume').value) || 0;
+            const customsBroker = row.querySelector('.inventory-customs-broker').value || '';
+            const serviceStaff = row.querySelector('.inventory-service-staff').value || '';
+            const deliveryPlateNumber = row.querySelector('.delivery-plate-number').value || '';
+            const remark1 = row.querySelector('.inventory-remark1').value || '';
+            const remark2 = row.querySelector('.inventory-remark2').value || '';
+            
+            // 验证至少有一项出库数量
+            if (outboundPalletCount === 0 && outboundPackageCount === 0) {
+                alert(`请为 ${baseItem.customer_name} - ${baseItem.inbound_plate} 至少输入板数或件数中的一项出库数量`);
+                hasInvalidItem = true;
+                return;
+            }
+            
+            // 添加调试日志
+            console.log(`备注字段 - remark1: "${remark1}", remark2: "${remark2}"`);
+            
+            // 创建合并后的数据对象
+            const selectedItem = {
+                ...baseItem,
+                outbound_pallet_count: outboundPalletCount,
+                outbound_package_count: outboundPackageCount,
+                weight: weight,
+                volume: volume,
+                customs_broker: customsBroker,
+                service_staff: serviceStaff,
+                plate_number: deliveryPlateNumber, // 送货干线车（前端仓→后端仓）
+                inbound_plate: baseItem.inbound_plate || baseItem.plate_number, // 入库车牌（工厂→前端仓）
+                document_no: baseItem.documents, // 确保字段名一致
+                remark1: remark1,
+                remark2: remark2
+            };
+            
+            console.log("创建的数据对象:", selectedItem);
+            
+            selectedItems.push(selectedItem);
+        }
+    });
+    
+    if (hasInvalidItem) {
+        return; // 如果有无效项，不继续处理
+    }
+    
+    if (selectedItems.length === 0) {
+        alert('无法获取选中的库存记录数据，请刷新页面后重试');
+        return;
+    }
+    
+    console.log('选中的库存记录:', selectedItems);
+    
+    // 获取表格实例
+    const hot = window.hot;
+    if (!hot) {
+        alert('无法获取表格实例，请刷新页面后重试');
+        return;
+    }
+    
+    // 关闭库存模态框
+    document.getElementById('inventoryModal').style.display = 'none';
+    
+    // 使用Handsontable API添加数据
+    try {
+        // 准备数据数组
+        const dataArray = selectedItems.map(item => {
+            console.log("准备添加到表格的项目:", item);
+            console.log("备注字段值:", item.remark1, item.remark2);
+            const rowData = [
+                item.customer_name || '',         // 客户名称
+                item.plate_number || '',          // 入库车牌
+                item.identification_code || '',   // 识别编码
+                item.order_type || '',            // 订单类型
+                item.inbound_pallet_count || 0,   // 入库板数
+                item.inbound_package_count || 0,  // 入库件数
+                item.outbound_pallet_count || 0,  // 出库板数
+                item.outbound_package_count || 0, // 出库件数
+                item.weight !== undefined && item.weight !== null ? item.weight : '',  // 重量（允许为空）
+                item.volume !== undefined && item.volume !== null ? item.volume : '',  // 体积（允许为空）
+                item.export_mode || '',           // 出境模式
+                item.customs_broker || '',        // 报关行
+                item.location || '',              // 库位
+                item.documents || '',             // 单据
+                item.service_staff || '',         // 跟单客服
+                item.remark1 || '',               // 备注1 - 确保有值
+                item.remark2 || ''                // 备注2 - 确保有值
+            ];
+            console.log("生成的行数据:", rowData);
+            console.log("备注1索引15:", rowData[15]);
+            console.log("备注2索引16:", rowData[16]);
+            return rowData;
+        });
+        
+        console.log('准备添加到表格的数据:', dataArray);
+        
+        // 计算当前有效数据行数
+        const currentData = hot.getData();
+        let firstEmptyRowIndex = 0;
+        
+        for (let i = 0; i < currentData.length; i++) {
+            const row = currentData[i];
+            // 检查行是否有任何非空值
+            const hasValue = row.some(cell => cell !== null && cell !== undefined && cell !== '');
+            if (!hasValue) {
+                firstEmptyRowIndex = i;
+                break;
+            }
+            // 如果所有行都有值，则使用最后一行之后的索引
+            if (i === currentData.length - 1) {
+                firstEmptyRowIndex = currentData.length;
+            }
+        }
+        
+        console.log('当前有效数据行数:', firstEmptyRowIndex);
+        
+        // 使用更新数据的方法而不是插入行
+        // 1. 获取当前数据的副本
+        const newData = [...currentData];
+        
+        // 2. 将新数据添加到适当位置
+        for (let i = 0; i < dataArray.length; i++) {
+            if (firstEmptyRowIndex + i < newData.length) {
+                // 替换现有行
+                newData[firstEmptyRowIndex + i] = dataArray[i];
+            } else {
+                // 添加新行
+                newData.push(dataArray[i]);
+            }
+        }
+        
+        // 3. 使用loadData方法更新整个表格
+        hot.loadData(newData);
+        
+        console.log(`已将 ${selectedItems.length} 条库存记录添加到表格`);
+    } catch (error) {
+        console.error('添加数据到表格时出错:', error);
+        alert('添加数据到表格时出错，请刷新页面后重试');
+    }
+    
+    // 隐藏加载指示器
+    hideLoadingIndicator();
+}
+
+// 确认选择收货人 - 全局函数
+function confirmSelectedReceiver() {
+    console.log('确认选择收货人 - 全局函数被调用');
+    const selectedRadio = document.querySelector('.receiver-select:checked');
+    if (!selectedRadio) {
+        console.error('未选择收货人');
+        return;
+    }
+    
+    const receiverId = selectedRadio.dataset.id;
+    console.log('选中的收货人ID:', receiverId);
+    
+    // 获取收货人详细信息
+    fetch(`/api/receiver/${receiverId}`)
+        .then(response => {
+            console.log('获取收货人详情API响应:', response.status);
+            return response.json();
+        })
+        .then(data => {
+            console.log('获取收货人详情数据:', data);
+            if (data.success && data.receiver) {
+                const receiver = data.receiver;
+                
+                // 更新表单字段
+                document.getElementById('receiver_id').value = receiver.id;
+                document.getElementById('destination').value = receiver.warehouse_name;
+                document.getElementById('destination-address').value = receiver.address;
+                document.getElementById('contact').value = receiver.contact || '';
+                
+                // 关闭模态框
+                const receiverModal = document.getElementById('receiverModal');
+                if (receiverModal) {
+                    receiverModal.style.display = 'none';
+                }
+            } else {
+                console.error('获取收货人详细信息失败:', data.message);
+            }
+        })
+        .catch(error => {
+            console.error('获取收货人详细信息时出错:', error);
+        });
+}
+
+// 添加验证和保存数据的函数
+function validateAndSaveData(hot) {
+    if (!hot) {
+        console.error('表格实例不存在，无法保存数据');
+        showError('表格组件未初始化，请刷新页面后重试');
+        return;
+    }
+    
+    // 获取表格所有数据
+    const data = hot.getData();
+    console.log('获取到表格数据:', data);
+    
+    // 收集表单的公共信息
+    const commonData = {
+        outbound_plate: document.getElementById('plate-number').value.trim(),
+        vehicle_type: document.getElementById('vehicle-type').value.trim(),
+        driver_name: document.getElementById('driver-name').value.trim(),
+        driver_phone: document.getElementById('driver-phone').value.trim(),
+        arrive_time: formatDateTimeLocalToServerFormat(document.getElementById('arrive-time').value),
+        loading_start_time: formatDateTimeLocalToServerFormat(document.getElementById('loading-start-time').value),
+        loading_end_time: formatDateTimeLocalToServerFormat(document.getElementById('loading-end-time').value),
+        departure_time: formatDateTimeLocalToServerFormat(document.getElementById('departure-time').value),
+        large_layer: parseInt(document.getElementById('large-layer').value || 0),
+        small_layer: parseInt(document.getElementById('small-layer').value || 0),
+        pallet: parseInt(document.getElementById('pallet').value || 0),
+        destination: document.getElementById('destination').value.trim(),
+        destination_address: document.getElementById('destination-address').value.trim(),
+        contact: document.getElementById('contact').value.trim(),
+        receiver_id: document.getElementById('receiver_id').value.trim()
+    };
+    
+    // 验证公共信息
+    if (!commonData.outbound_plate) {
+        showError('请输入出库车牌');
+        return;
+    }
+    
+    if (!commonData.vehicle_type) {
+        showError('请输入车型');
+        return;
+    }
+    
+    if (!commonData.driver_name) {
+        showError('请输入司机姓名');
+        return;
+    }
+    
+    if (!commonData.driver_phone) {
+        showError('请输入司机电话');
+        return;
+    }
+    
+    if (!commonData.arrive_time) {
+        showError('请输入集拼车到仓时间');
+        return;
+    }
+    
+    if (!commonData.loading_start_time) {
+        showError('请输入开始装车时间');
+        return;
+    }
+    
+    if (!commonData.loading_end_time) {
+        showError('请输入结束装车时间');
+        return;
+    }
+    
+    if (!commonData.departure_time) {
+        showError('请输入离仓发运时间');
+        return;
+    }
+    
+    if (!commonData.destination) {
+        showError('请选择目的仓库');
+        return;
+    }
+    
+    if (!commonData.receiver_id) {
+        showError('未正确选择收货人，请重新选择目的仓库');
+        return;
+    }
+    
+    // 收集有效的出库记录
+    const recordsToSave = [];
+    
+    // 默认出库时间
+    const defaultOutboundTime = document.getElementById('defaultOutboundTime').value || '';
+    
+    for (let i = 0; i < data.length; i++) {
+        const row = data[i];
+        // 忽略空行
+        if (!row.some(cell => cell !== null && cell !== undefined && cell !== '')) {
+            continue;
+        }
+        
+        // 基本字段验证
+        // 0:客户名称, 1:入库车牌, 2:识别编码, 3:订单类型, 4:板数, 5:件数, 6:重量, 7:体积, 8:出境模式, 9:报关行, 10:库位, 11:单据, 12:跟单客服, 13:备注1, 14:备注2
+        if (!row[0]) {
+            showError(`第 ${i + 1} 行缺少客户名称`);
+            return;
+        }
+        
+        if (!row[6] && !row[7]) {
+            showError(`第 ${i + 1} 行缺少出库板数和出库件数，请至少填写一项`);
+            return;
+        }
+        
+        // 出库时间 - 使用默认值或从defaultOutboundTime获取
+        const outboundTime = defaultOutboundTime ? formatDatetime(new Date(defaultOutboundTime)) : '';
+        
+        // 调试日志 - 显示当前行数据
+        console.log(`第 ${i+1} 行原始数据:`, row);
+        console.log(`第 ${i+1} 行备注字段: remark1="${row[16]}", remark2="${row[17]}"`);
+        
+        // 创建出库记录对象
+        const recordData = {
+            customer_name: row[0] || '',
+            inbound_plate: row[1] || '', // 入库车牌（工厂→前端仓）
+            plate_number: row[2] || '', // 送货干线车（前端仓→后端仓）
+            identification_code: row[3] || '',
+            order_type: row[4] || '原车出境',
+            inbound_pallet_count: parseFloat(row[5]) || 0,
+            inbound_package_count: parseFloat(row[6]) || 0,
+            pallet_count: parseFloat(row[7]) || 0,
+            package_count: parseFloat(row[8]) || 0,
+            weight: row[9] !== '' ? parseFloat(row[9]) : null,
+            volume: row[10] !== '' ? parseFloat(row[10]) : null,
+            export_mode: row[11] || '',
+            customs_broker: row[12] || '',
+            location: row[13] || '',
+            document_no: row[14] || '',
+            service_staff: row[15] || '',
+            remark1: (row[16] !== null && row[16] !== undefined) ? row[16] : '',
+            remark2: (row[17] !== null && row[17] !== undefined) ? row[17] : '',
+            outbound_time: outboundTime,
+            outbound_plate: commonData.outbound_plate,
+            departure_time: commonData.departure_time,
+            large_layer: commonData.large_layer,
+            small_layer: commonData.small_layer,
+            pallet_board: commonData.pallet,
+            destination: commonData.destination,
+            contact: commonData.contact,
+            destination_address: commonData.destination_address,
+            receiver_id: commonData.receiver_id
+        };
+        
+        console.log(`第 ${i+1} 行处理后数据:`, recordData);
+        recordsToSave.push(recordData);
+    }
+    
+    if (recordsToSave.length === 0) {
+        showError('没有要保存的有效数据');
+        return;
+    }
+    
+    console.log('准备保存的出库记录:', recordsToSave);
+    
+    // 准备发送的数据
+    const dataToSend = {
+        items: recordsToSave,
+        common: commonData
+    };
+    
+    // 验证时间格式
+    const timeFields = [
+        { name: '集拼车到仓时间', value: commonData.arrive_time },
+        { name: '开始装车时间', value: commonData.loading_start_time },
+        { name: '结束装车时间', value: commonData.loading_end_time },
+        { name: '离仓发运时间', value: commonData.departure_time }
+    ];
+    
+    // 添加默认出库时间到验证列表（如果有）
+    if (defaultOutboundTime) {
+        timeFields.push({ name: '默认出库时间', value: defaultOutboundTime });
+    }
+    
+    // 时间格式验证正则 YYYY-MM-DD HH:MM:SS 或 YYYY-MM-DD
+    const timeFormatRegex = /^\d{4}-\d{2}-\d{2}( \d{2}:\d{2}:\d{2})?$/;
+    
+    // 检查每个时间字段
+    for (const field of timeFields) {
+        const fieldName = field.name;
+        const fieldValue = field.value;
+        if (!timeFormatRegex.test(fieldValue)) {
+            showError(`${fieldName}格式不正确，请使用YYYY-MM-DD HH:MM:SS格式`);
+            return;
+        }
+    }
+    
+            // 确保remark1和remark2字段都存在于每个item中
+        dataToSend.items.forEach(item => {
+            console.log("发送前检查备注字段:", item.remark1, item.remark2);
+            
+            // 确保备注字段已定义
+            if (item.remark1 === undefined) item.remark1 = '';
+            if (item.remark2 === undefined) item.remark2 = '';
+            
+            // 再次打印确认
+            console.log("确认备注字段:", item.remark1, item.remark2);
+        });
+        
+        console.log("准备发送的完整数据:", JSON.stringify(dataToSend));
+        
+        // 发送API请求到后端
+        fetch('/api/outbound/batch', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(dataToSend)
+        })
+    .then(response => {
+        if (!response.ok) {
+            // 捕获错误响应体
+            return response.text().then(errorText => {
+                console.error('服务器返回错误状态码:', response.status);
+                console.error('错误响应体:', errorText);
+                
+                // 尝试解析JSON响应
+                try {
+                    const errorData = JSON.parse(errorText);
+                    if (errorData && errorData.message) {
+                        throw new Error(`服务器响应错误: ${response.status}, 信息: ${errorData.message}`);
+                    }
+                } catch (parseError) {
+                    // 如果不是JSON或解析失败，返回原始错误
+                    console.error('解析错误响应失败:', parseError);
+                }
+                
+                throw new Error(`服务器响应错误: ${response.status}`);
+            });
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data.success) {
+            console.log(`成功保存 ${data.saved_count || recordsToSave.length} 条出库记录`);
+            
+            // 显示成功消息
+            showSuccess(`成功保存 ${data.saved_count || recordsToSave.length} 条出库记录`);
+            
+            // 延迟后刷新页面
+            setTimeout(() => {
+                location.reload();
+            }, 1500);
+        } else {
+            showError(`保存失败: ${data.message || '未知错误'}`);
+        }
+    })
+    .catch(error => {
+        console.error('保存数据时出错:', error);
+        showError(`保存数据时出错: ${error.message}`);
+    });
+}
+
+// 重置表单功能
+function resetForm(hot) {
+    console.log('正在重置表单...');
+    
+    // 清空表格数据 - 直接创建空数据而不是调用createInitialData
+    const emptyData = Array.from({ length: 5 }, () => Array(13).fill(''));
+    hot.loadData(emptyData);
+    
+    // 清空目的仓信息
+    document.getElementById('destination').value = '';
+    document.getElementById('destination-address').value = '';
+    document.getElementById('contact').value = '';
+    document.getElementById('receiver_id').value = '';
+    
+    // 清空出库车牌
+    const outboundPlateInput = document.getElementById('plate-number');
+    if (outboundPlateInput) {
+        outboundPlateInput.value = '';
+    }
+    
+    // 重置所有时间输入框
+    const timeFields = ['arrive', 'loading-start', 'loading-end', 'departure'];
+    timeFields.forEach(field => {
+        const dateInput = document.getElementById(`${field}-date`);
+        const timeInput = document.getElementById(`${field}-time-input`);
+        const hiddenInput = document.getElementById(`${field}-time`);
+
+        if (dateInput) dateInput.value = '';
+        if (timeInput) {
+            timeInput.value = '';
+            timeInput.classList.remove('is-valid', 'is-invalid');
+        }
+        if (hiddenInput) hiddenInput.value = '';
+    });
+    
+    // 重置默认出库时间
+    const defaultOutboundTimeInput = document.getElementById('defaultOutboundTime');
+    if (defaultOutboundTimeInput) {
+        defaultOutboundTimeInput.value = '';
+    }
+    
+    // 清空大层板、小层板、卡板数量
+    document.getElementById('large-layer').value = '';
+    document.getElementById('small-layer').value = '';
+    document.getElementById('pallet').value = '';
+    
+    console.log('表单已重置');
+    
+    // 显示操作提示
+    showSuccess('表单已重置');
+}
+
+// 添加获取库存识别编码的函数
+function getInventoryCodes() {
+    // 如果已经有缓存数据，直接返回
+    if (window.inventoryCodes) {
+        return Promise.resolve(window.inventoryCodes);
+    }
+    
+    // 否则调用懒加载函数
+    return window.loadInventoryCodes();
+}
+
+// 文件上传处理函数
+function handleFileUpload(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    
+    // 清除之前的消息
+    hideMessages();
+    
+    // 检查文件类型
+    const fileTypes = [
+        'application/vnd.ms-excel',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        'text/csv'
+    ];
+    
+    if (!fileTypes.includes(file.type) && 
+        !file.name.endsWith('.xlsx') && 
+        !file.name.endsWith('.xls') && 
+        !file.name.endsWith('.csv')) {
+        showError('请上传Excel文件(.xlsx, .xls)或CSV文件(.csv)');
+        return;
+    }
+    
+    // 显示加载信息
+    showSuccess('文件上传中，请稍候...');
+    
+    // 确保XLSX库已加载
+    if (typeof XLSX === 'undefined') {
+        loadXLSXLibrary(function() {
+            processExcelFile(file);
+        });
+    } else {
+        processExcelFile(file);
+    }
+}
+
+// 加载XLSX库
+function loadXLSXLibrary(callback) {
+    console.log('正在加载XLSX库...');
+    const script = document.createElement('script');
+    script.src = "https://cdn.bootcdn.net/ajax/libs/xlsx/0.18.5/xlsx.full.min.js";
+    script.onload = function() {
+        console.log('XLSX库加载完成');
+        if (callback && typeof callback === 'function') {
+            callback();
+        }
+    };
+    script.onerror = function() {
+        console.error('XLSX库加载失败');
+        showError('Excel处理库加载失败，请刷新页面重试');
+    };
+    document.head.appendChild(script);
+}
+
+// 处理Excel文件
+function processExcelFile(file) {
+    try {
+        // 读取文件
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                console.log('开始处理导入文件...');
+                
+                // 获取文件数据
+                const data = new Uint8Array(e.target.result);
+                if (typeof XLSX === 'undefined') {
+                    showError('Excel处理库未正确加载，请刷新页面重试');
+                    return;
+                }
+                
+                const workbook = XLSX.read(data, { type: 'array' });
+                
+                // 获取第一个工作表
+                const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                
+                // 将工作表转换为JSON
+                const jsonData = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
+                
+                // 检查数据是否为空
+                if (jsonData.length <= 1) {
+                    showError('导入的文件没有数据或只有表头');
+                    return;
+                }
+                
+                // 检查表头是否匹配
+                const headers = jsonData[0];
+                const expectedHeadersPattern = [
+                    /出库时间/i, 
+                    /客户名称/i, 
+                    /识别编码/i,
+                    /板数/i, 
+                    /件数/i, 
+                    /重量/i, 
+                    /体积/i, 
+                    /出境模式/i, 
+                    /订单类型/i,
+                    /报关行/i,
+                    /跟单客服|服务人员/i
+                ];
+                
+                // 确保表头至少包含必要的字段
+                const missingHeaders = [];
+                expectedHeadersPattern.slice(0, 4).forEach((pattern, index) => {
+                    const found = headers.some(h => pattern.test(String(h)));
+                    if (!found) {
+                        missingHeaders.push(['出库时间', '客户名称', '板数', '件数'][index]);
+                    }
+                });
+                
+                if (missingHeaders.length > 0) {
+                    showError(`导入的文件缺少必要的列: ${missingHeaders.join(', ')}`);
+                    return;
+                }
+                
+                // 确保hot实例存在
+                if (!window.hot) {
+                    showError('表格组件未初始化，请刷新页面后重试');
+                    return;
+                }
+                
+                // 清空当前数据
+                window.hot.updateSettings({
+                    data: []
+                });
+                
+                // 从第二行开始导入数据（跳过表头）
+                const rows = [];
+                for (let i = 1; i < jsonData.length; i++) {
+                    const row = jsonData[i];
+                    // 忽略完全为空的行
+                    if (row && !row.every(cell => cell === null || cell === undefined || cell === '')) {
+                        // 确保每行有12列
+                        const processedRow = [];
+                        for (let j = 0; j < 12; j++) {
+                            if (j < row.length && row[j] !== null && row[j] !== undefined) {
+                                // 处理日期
+                                if (j === 0) {
+                                    // 尝试将Excel日期转换为JS日期
+                                    let date = row[0];
+                                    if (typeof date === 'number') {
+                                        // Excel日期是从1899年12月30日起的天数
+                                        date = new Date(Math.round((date - 25569) * 86400 * 1000));
+                                    } else if (typeof date === 'string') {
+                                        // 尝试解析各种日期格式
+                                        date = new Date(date);
+                                    }
+                                    
+                                    // 检查日期是否有效
+                                    if (!isNaN(date.getTime())) {
+                                        processedRow.push(formatDatetime(date));
+                                    } else {
+                                        processedRow.push(row[j]);
+                                    }
+                                } else {
+                                    processedRow.push(row[j]);
+                                }
+                            } else {
+                                processedRow.push('');
+                            }
+                        }
+                        rows.push(processedRow);
+                    }
+                }
+                
+                // 如果没有有效数据行，添加一个空行
+                if (rows.length === 0) {
+                    rows.push(createEmptyRow());
+                }
+                
+                // 更新表格数据
+                window.hot.updateSettings({
+                    data: rows
+                });
+                
+                // 显示成功消息
+                showSuccess(`成功导入 ${rows.length} 行数据`);
+                
+                // 触发自定义导入完成事件
+                const importEvent = new CustomEvent('excel-import-complete', { 
+                    detail: { rowCount: rows.length } 
+                });
+                document.dispatchEvent(importEvent);
+                
+                console.log('Excel导入事件已触发');
+                
+            } catch (error) {
+                console.error('导入Excel时出错:', error);
+                showError('导入Excel时出错: ' + error.message);
+            }
+        };
+        
+        reader.onerror = function() {
+            showError('读取文件时出错');
+        };
+        
+        reader.readAsArrayBuffer(file);
+    } catch (error) {
+        console.error('处理Excel文件时出错:', error);
+        showError('处理Excel文件时出错: ' + error.message);
+    } finally {
+        // 清除文件输入，允许重新选择相同的文件
+        document.getElementById('fileUpload').value = '';
+    }
+}
+
+/**
+ * 格式化时间字符串为服务器可接受的格式
+ * 接受多种常见的输入格式，返回标准的"YYYY-MM-DD HH:MM:SS"格式
+ */
+function formatTimeString(timeStr) {
+    console.log('格式化前的时间字符串:', timeStr);
+    if (!timeStr) return '';
+    
+    try {
+        // 尝试处理特定格式 "YYYY-MM-DD H:MM" 或 "YYYY-MM-DD HH:MM"，确保小时是两位数
+        let match = timeStr.match(/^(\d{4})-(\d{1,2})-(\d{1,2})\s+(\d{1,2}):(\d{1,2})$/);
+        if (match) {
+            const year = match[1];
+            const month = match[2].padStart(2, '0');
+            const day = match[3].padStart(2, '0');
+            const hour = match[4].padStart(2, '0');  // 确保小时是两位数
+            const minute = match[5].padStart(2, '0');
+            
+            const formattedTime = `${year}-${month}-${day} ${hour}:${minute}:00`;
+            console.log('格式化后的时间字符串 (格式1):', formattedTime);
+            return formattedTime;
+        }
+        
+        // 尝试处理日期和时间分开输入的情况
+        if (timeStr.includes('T')) {
+            const parts = timeStr.split('T');
+            if (parts.length === 2) {
+                const datePart = parts[0];
+                let timePart = parts[1];
+                
+                // 确保时间部分是 HH:MM 格式
+                const timeMatch = timePart.match(/^(\d{1,2}):(\d{1,2})$/);
+                if (timeMatch) {
+                    const hour = timeMatch[1].padStart(2, '0');
+                    const minute = timeMatch[2].padStart(2, '0');
+                    timePart = `${hour}:${minute}:00`;
+                }
+                
+                const formattedTime = `${datePart} ${timePart}`;
+                console.log('格式化后的时间字符串 (格式T):', formattedTime);
+                return formattedTime;
+            }
+        }
+        
+        // 如果已经是合法的完整ISO格式，直接返回
+        if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2})?(\.\d+)?(Z|[+-]\d{2}:\d{2})?$/.test(timeStr)) {
+            // 将ISO格式转换为YYYY-MM-DD HH:MM:SS
+            const date = new Date(timeStr);
+            if (isNaN(date.getTime())) {
+                throw new Error(`无效的时间格式: ${timeStr}`);
+            }
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            const hour = String(date.getHours()).padStart(2, '0');
+            const minute = String(date.getMinutes()).padStart(2, '0');
+            const second = String(date.getSeconds()).padStart(2, '0');
+            
+            const formattedTime = `${year}-${month}-${day} ${hour}:${minute}:${second}`;
+            console.log('格式化后的时间字符串 (ISO格式):', formattedTime);
+            return formattedTime;
+        }
+        
+        // 尝试解析"YYYY-MM-DD HH:MM:SS"或"YYYY/MM/DD HH:MM:SS"
+        match = timeStr.match(/^(\d{4})[-\/](\d{1,2})[-\/](\d{1,2})[ T](\d{1,2}):(\d{1,2})(?::(\d{1,2}))?/);
+        if (match) {
+            const year = parseInt(match[1], 10);
+            const month = parseInt(match[2], 10);
+            const day = parseInt(match[3], 10);
+            const hour = parseInt(match[4], 10);
+            const minute = parseInt(match[5], 10);
+            const second = match[6] ? parseInt(match[6], 10) : 0;
+            
+            // 格式化为YYYY-MM-DD HH:MM:SS，确保所有数字都是两位数
+            const formattedTime = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')} ${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}:${String(second).padStart(2, '0')}`;
+            console.log('格式化后的时间字符串 (格式2):', formattedTime);
+            return formattedTime;
+        }
+        
+        // 尝试处理只有时间部分的情况
+        match = timeStr.match(/^(\d{1,2}):(\d{1,2})(?::(\d{1,2}))?$/);
+        if (match) {
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const day = String(now.getDate()).padStart(2, '0');
+            const hour = String(match[1]).padStart(2, '0');
+            const minute = String(match[2]).padStart(2, '0');
+            const second = match[3] ? String(match[3]).padStart(2, '0') : '00';
+            
+            const formattedTime = `${year}-${month}-${day} ${hour}:${minute}:${second}`;
+            console.log('格式化后的时间字符串 (仅时间格式):', formattedTime);
+            return formattedTime;
+        }
+        
+        // 尝试解析"DD/MM/YYYY HH:MM:SS"或"MM/DD/YYYY HH:MM:SS"
+        match = timeStr.match(/^(\d{1,2})[-\/](\d{1,2})[-\/](\d{4})[ T](\d{1,2}):(\d{1,2})(?::(\d{1,2}))?/);
+        if (match) {
+            // 假设是DD/MM/YYYY格式，如果不合法再尝试MM/DD/YYYY
+            let day = parseInt(match[1], 10);
+            let month = parseInt(match[2], 10);
+            const year = parseInt(match[3], 10);
+            const hour = parseInt(match[4], 10);
+            const minute = parseInt(match[5], 10);
+            const second = match[6] ? parseInt(match[6], 10) : 0;
+            
+            let date = new Date(year, month - 1, day, hour, minute, second);
+            
+            // 如果日期无效，尝试MM/DD/YYYY格式
+            if (isNaN(date.getTime())) {
+                day = parseInt(match[2], 10);
+                month = parseInt(match[1], 10);
+                date = new Date(year, month - 1, day, hour, minute, second);
+            }
+            
+            if (isNaN(date.getTime())) {
+                throw new Error(`无效的时间格式: ${timeStr}`);
+            }
+            
+            // 格式化为YYYY-MM-DD HH:MM:SS，确保所有数字都是两位数
+            const formattedTime = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')} ${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}:${String(second).padStart(2, '0')}`;
+            console.log('格式化后的时间字符串 (格式3):', formattedTime);
+            return formattedTime;
+        }
+        
+        // 尝试解析中文格式"YYYY年MM月DD日 HH时MM分SS秒"
+        match = timeStr.match(/^(\d{4})年(\d{1,2})月(\d{1,2})日\s*(\d{1,2})时(\d{1,2})分(?:(\d{1,2})秒)?/);
+        if (match) {
+            const year = parseInt(match[1], 10);
+            const month = parseInt(match[2], 10);
+            const day = parseInt(match[3], 10);
+            const hour = parseInt(match[4], 10);
+            const minute = parseInt(match[5], 10);
+            const second = match[6] ? parseInt(match[6], 10) : 0;
+            
+            const date = new Date(year, month - 1, day, hour, minute, second);
+            if (isNaN(date.getTime())) {
+                throw new Error(`无效的时间格式: ${timeStr}`);
+            }
+            
+            // 格式化为YYYY-MM-DD HH:MM:SS，确保所有数字都是两位数
+            const formattedTime = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')} ${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}:${String(second).padStart(2, '0')}`;
+            console.log('格式化后的时间字符串 (中文格式):', formattedTime);
+            return formattedTime;
+        }
+        
+        // 最后尝试使用JS的Date解析（不太可靠，但可以作为后备）
+        const date = new Date(timeStr);
+        if (!isNaN(date.getTime())) {
+            const year = date.getFullYear();
+            const month = date.getMonth() + 1;
+            const day = date.getDate();
+            const hour = date.getHours();
+            const minute = date.getMinutes();
+            const second = date.getSeconds();
+            
+            // 格式化为YYYY-MM-DD HH:MM:SS，确保所有数字都是两位数
+            const formattedTime = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')} ${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}:${String(second).padStart(2, '0')}`;
+            console.log('格式化后的时间字符串 (默认JS解析):', formattedTime);
+            return formattedTime;
+        }
+        
+        // 如果所有尝试都失败，抛出错误
+        throw new Error(`无法解析的时间格式: ${timeStr}，请使用格式如"2023-06-30 15:30:00"`);
+    } catch (error) {
+        console.error('时间格式化错误:', error);
+        throw error;
+    }
+}
+
+// 将Date对象格式化为datetime-local输入框需要的格式
+function formatDatetimeLocal(date) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    return `${year}-${month}-${day}T${hours}:${minutes}`;
+}
+
+// 格式化日期时间为YYYY-MM-DD格式
+function formatDatetime(date) {
+    if (!date) return '';
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+}
+
+/**
+ * 将输入框中的时间值转换为服务器所需的格式 YYYY-MM-DD HH:MM:SS
+ * @param {string} timeValue - 用户输入的时间字符串
+ * @return {string} 格式为 YYYY-MM-DD HH:MM:SS 的字符串
+ */
+function convertDatetimeLocalToServerFormat(timeValue) {
+    console.log('转换时间值:', timeValue);
+    
+    if (!timeValue) {
+        throw new Error('时间值不能为空');
+    }
+    
+    try {
+        // 使用formatTimeString函数来处理各种时间格式
+        const formattedTime = formatTimeString(timeValue);
+        console.log('转换后的服务器时间格式:', formattedTime);
+        
+        // 验证最终格式是否符合 YYYY-MM-DD HH:MM:SS
+        if (!/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(formattedTime)) {
+            console.error(`时间格式不正确: "${formattedTime}"，应为 YYYY-MM-DD HH:MM:SS`);
+            throw new Error(`时间格式不正确: ${formattedTime}，请使用格式如"2023-06-30 15:30:00"`);
+        }
+        
+        return formattedTime;
+    } catch (error) {
+        console.error('时间格式转换错误:', error, '原始值:', timeValue);
+        throw error;
+    }
+}
+
+// 添加datetime-local转换为服务器格式的函数
+function formatDateTimeLocalToServerFormat(datetimeLocalValue) {
+    if (!datetimeLocalValue) return '';
+    
+    // datetime-local返回的格式是YYYY-MM-DDTHH:MM
+    // 需要转换为YYYY-MM-DD HH:MM:SS
+    const dateObj = new Date(datetimeLocalValue);
+    
+    if (isNaN(dateObj.getTime())) {
+        console.error('无效的日期时间值:', datetimeLocalValue);
+        return datetimeLocalValue; // 返回原始值，让验证函数处理错误
+    }
+    
+    const year = dateObj.getFullYear();
+    const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+    const day = String(dateObj.getDate()).padStart(2, '0');
+    const hours = String(dateObj.getHours()).padStart(2, '0');
+    const minutes = String(dateObj.getMinutes()).padStart(2, '0');
+    const seconds = String(dateObj.getSeconds()).padStart(2, '0');
+    
+    return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+}
+</script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // 检查Handsontable是否已加载
+        if (typeof Handsontable !== 'undefined') {
+            initPage();
+        } else {
+            console.log('等待Handsontable加载...');
+            // 尝试从备用CDN加载
+            var script = document.createElement('script');
+            script.src = 'https://cdn.jsdelivr.net/npm/handsontable/dist/handsontable.full.min.js';
+            script.onload = function() {
+                console.log('从备用CDN成功加载了Handsontable');
+                initPage();
+            };
+            script.onerror = function() {
+                console.error('备用CDN加载Handsontable失败，尝试从unpkg加载');
+                var script2 = document.createElement('script');
+                script2.src = 'https://unpkg.com/handsontable/dist/handsontable.full.min.js';
+                script2.onload = function() {
+                    console.log('从unpkg成功加载了Handsontable');
+                    initPage();
+                };
+                script2.onerror = function() {
+                    console.error('所有CDN加载Handsontable都失败了');
+                    alert('无法加载表格组件，请检查您的网络连接并刷新页面');
+                };
+                document.head.appendChild(script2);
+            };
+            document.head.appendChild(script);
+        }
+    });
+    
+    // 页面初始化函数
+    function initPage() {
+        console.time('页面总加载时间');
+        console.log('页面DOM加载完成，开始初始化表格...');
+        
+        // 预加载资源
+        preloadResources();
+        
+        // 立即设置目的仓选择按钮事件
+        setupReceiverButton();
+        
+        // 设置出库选择按钮事件 - 直接添加绑定
+        document.getElementById('selectInventoryBtn').addEventListener('click', function() {
+            console.log('出库选择按钮被点击 - 直接绑定');
+            try {
+                openInventoryModal();
+            } catch(err) {
+                console.error('调用openInventoryModal失败:', err);
+                alert('打开出库选择窗口失败，请刷新页面后重试');
+            }
+        });
+        
+        // 设置当前日期为默认值
+        setDefaultDate();
+        
+        // 直接隐藏加载指示器，确保不会一直显示
+        const loadingIndicator = document.getElementById('loading-indicator');
+        if (loadingIndicator) {
+            loadingIndicator.style.display = 'none';
+        }
+        
+        // 隐藏可能存在的成功/错误弹窗
+        hideMessages();
+        
+        // 延迟API调用，先让页面渲染出来
+        setTimeout(() => {
+            // 并行加载数据，使用Promise.all提高效率
+            Promise.all([
+                fetchCustomers(),
+                fetchInventoryCodesLazy() // 懒加载库存数据
+            ])
+            .then(([customers, _]) => {
+                // 初始化表格但不立即加载库存数据
+                initSpreadsheet(customers);
+
+                // 初始化时间输入框
+                initTimeInputs();
+
+                hideLoadingIndicator();
+                console.timeEnd('页面总加载时间');
+            })
+            .catch(error => {
+                console.error('加载数据时出错:', error);
+                showError('加载数据时出错，请刷新页面重试');
+                hideLoadingIndicator();
+            });
+        }, 100);
+        
+        // 下载模板按钮点击事件
+        document.getElementById('downloadTemplateBtn').addEventListener('click', function() {
+            downloadTemplate();
+        });
+        
+        // 设置模态框关闭按钮事件
+        document.querySelectorAll('.modal-close, .close-modal').forEach(function(element) {
+            element.addEventListener('click', function() {
+                // 关闭所有模态框
+                document.querySelectorAll('.custom-modal').forEach(function(modal) {
+                    modal.style.display = 'none';
+                });
+            });
+        });
+    }
+    
+    // 预加载资源函数
+    function preloadResources() {
+        // 预加载XLSX库
+        const preloadXLSX = document.createElement('link');
+        preloadXLSX.rel = 'preload';
+        preloadXLSX.href = 'https://cdn.bootcdn.net/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+        preloadXLSX.as = 'script';
+        document.head.appendChild(preloadXLSX);
+        
+        // 预加载图标
+        const preloadIcons = document.createElement('link');
+        preloadIcons.rel = 'preload';
+        preloadIcons.href = 'https://cdn.bootcdn.net/ajax/libs/font-awesome/5.15.4/webfonts/fa-solid-900.woff2';
+        preloadIcons.as = 'font';
+        preloadIcons.type = 'font/woff2';
+        preloadIcons.crossOrigin = 'anonymous';
+        document.head.appendChild(preloadIcons);
+        
+        // 预连接API域名
+        const preconnectAPI = document.createElement('link');
+        preconnectAPI.rel = 'preconnect';
+        preconnectAPI.href = window.location.origin;
+        document.head.appendChild(preconnectAPI);
+    }
+    
+    // 导出模板函数
+    function exportTemplate() {
+        // 创建工作簿
+        const wb = XLSX.utils.book_new();
+        
+        // 创建表头
+        const headers = [
+            '客户名称 *', 
+            '入库车牌 *',
+            '订单类型 *',
+            '板数 *',
+            '件数 *',
+            '重量(kg) *',
+            '体积(m³) *',
+            '出境模式',
+            '报关行',
+            '库位',
+            '单据',
+            '跟单客服 *'
+        ];
+        
+        // 创建示例数据
+        const data = [
+            headers,
+            ['示例客户', 'A12345', '原车出境', 10, 100, 1000, 5, '保税', '示例报关行', 'A区01', 'DOC12345', '张三']
+        ];
+        
+        // 创建工作表
+        const ws = XLSX.utils.aoa_to_sheet(data);
+        
+        // 添加工作表到工作簿
+        XLSX.utils.book_append_sheet(wb, ws, "出库模板");
+        
+        // 导出Excel
+        XLSX.writeFile(wb, "出库记录模板.xlsx");
+    }
+    
+    // 下载模板函数
+    function downloadTemplate() {
+        // 需要动态加载XLSX库
+        if (typeof XLSX === 'undefined') {
+            const script = document.createElement('script');
+            script.src = "https://cdn.bootcdn.net/ajax/libs/xlsx/0.18.5/xlsx.full.min.js";
+            script.onload = function() {
+                exportTemplate();
+            };
+            document.head.appendChild(script);
+        } else {
+            exportTemplate();
+        }
+    }
+    
+    // 获取客户列表的函数
+    function fetchCustomers() {
+        return fetch('/api/customers')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    return data.customers || [];
+                }
+                return [];
+            });
+    }
+    
+    // 懒加载库存数据 - 只获取必要信息
+    function fetchInventoryCodesLazy() {
+        // 创建一个空的Promise，稍后再实际加载数据
+        window.loadInventoryCodes = function() {
+            console.log('开始加载库存数据 - 全局函数被调用');
+            
+            // 如果已经有缓存数据，直接返回
+            if (window.inventoryCodes) {
+                console.log('使用缓存的库存数据，条数:', window.inventoryCodes.length);
+                return Promise.resolve(window.inventoryCodes);
+            }
+            
+            // 显示加载指示器
+            showLoadingIndicator('正在加载库存数据...');
+            
+            return fetch('/api/inventory')
+                .then(response => {
+                    console.log('收到库存API响应:', response.status);
+                    if (!response.ok) {
+                        throw new Error('获取库存数据失败: ' + response.status);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('解析库存API响应数据');
+                    if (data.success && data.inventory) {
+                        // 缓存数据以供后续使用
+                        window.inventoryCodes = data.inventory;
+                        console.log('成功缓存库存数据，条数:', data.inventory.length);
+                        hideLoadingIndicator();
+                        return data.inventory;
+                    } else {
+                        console.error('库存API返回错误:', data.message || '未知错误');
+                        hideLoadingIndicator();
+                        throw new Error(data.message || '获取库存数据失败');
+                    }
+                })
+                .catch(error => {
+                    console.error('获取库存数据失败:', error);
+                    hideLoadingIndicator();
+                    throw error;
+                });
+        };
+        
+        // 返回一个已解决的Promise，表示函数已准备好
+        return Promise.resolve([]);
+    }
+    
+    // 设置默认日期
+    function setDefaultDate() {
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const day = String(now.getDate()).padStart(2, '0');
+        const hours = String(now.getHours()).padStart(2, '0');
+        const minutes = String(now.getMinutes()).padStart(2, '0');
+        
+        // 设置默认出库日期
+        const localDatetime = `${year}-${month}-${day}`;
+        document.getElementById('defaultOutboundTime').value = localDatetime;
+        
+        // 设置分离式日期时间输入框的默认值
+        const dateValue = `${year}-${month}-${day}`;
+        const timeValue = `${hours}:${minutes}`;
+
+        // 设置到仓时间
+        document.getElementById('arrive-date').value = dateValue;
+        document.getElementById('arrive-time-input').value = timeValue;
+        document.getElementById('arrive-time').value = `${dateValue}T${timeValue}`;
+
+        // 设置开始装车时间比到仓时间晚30分钟
+        const loadingStartTime = new Date(now);
+        loadingStartTime.setMinutes(now.getMinutes() + 30);
+        const loadingStartTimeStr = `${String(loadingStartTime.getHours()).padStart(2, '0')}:${String(loadingStartTime.getMinutes()).padStart(2, '0')}`;
+        document.getElementById('loading-start-date').value = dateValue;
+        document.getElementById('loading-start-time-input').value = loadingStartTimeStr;
+        document.getElementById('loading-start-time').value = `${dateValue}T${loadingStartTimeStr}`;
+
+        // 设置结束装车时间比开始装车时间晚1小时
+        const loadingEndTime = new Date(loadingStartTime);
+        loadingEndTime.setMinutes(loadingStartTime.getMinutes() + 60);
+        const loadingEndTimeStr = `${String(loadingEndTime.getHours()).padStart(2, '0')}:${String(loadingEndTime.getMinutes()).padStart(2, '0')}`;
+        document.getElementById('loading-end-date').value = dateValue;
+        document.getElementById('loading-end-time-input').value = loadingEndTimeStr;
+        document.getElementById('loading-end-time').value = `${dateValue}T${loadingEndTimeStr}`;
+
+        // 设置离仓时间比结束装车时间晚15分钟
+        const departureTime = new Date(loadingEndTime);
+        departureTime.setMinutes(loadingEndTime.getMinutes() + 15);
+        const departureTimeStr = `${String(departureTime.getHours()).padStart(2, '0')}:${String(departureTime.getMinutes()).padStart(2, '0')}`;
+        document.getElementById('departure-date').value = dateValue;
+        document.getElementById('departure-time-input').value = departureTimeStr;
+        document.getElementById('departure-time').value = `${dateValue}T${departureTimeStr}`;
+        
+        console.log('已设置所有时间字段的默认值');
+    }
+    
+    // 时间输入处理函数
+    function initTimeInputs() {
+        // 时间格式验证
+        function validateTimeFormat(timeStr) {
+            const timeRegex = /^([01]?[0-9]|2[0-3]):([0-5][0-9])$/;
+            return timeRegex.test(timeStr);
+        }
+
+        // 格式化时间输入
+        function formatTimeInput(input) {
+            let value = input.value.replace(/[^\d:]/g, '');
+
+            // 自动添加冒号
+            if (value.length === 2 && !value.includes(':')) {
+                value += ':';
+            }
+
+            // 限制长度
+            if (value.length > 5) {
+                value = value.substring(0, 5);
+            }
+
+            input.value = value;
+
+            // 验证格式
+            if (value.length === 5) {
+                if (validateTimeFormat(value)) {
+                    input.classList.remove('is-invalid');
+                    input.classList.add('is-valid');
+                } else {
+                    input.classList.remove('is-valid');
+                    input.classList.add('is-invalid');
+                }
+            } else {
+                input.classList.remove('is-valid', 'is-invalid');
+            }
+
+            // 更新隐藏字段
+            updateHiddenDateTime(input);
+        }
+
+        // 更新隐藏的datetime字段
+        function updateHiddenDateTime(timeInput) {
+            const timeId = timeInput.id;
+            const dateId = timeId.replace('-time-input', '-date');
+            const hiddenId = timeId.replace('-time-input', '-time');
+
+            const dateInput = document.getElementById(dateId);
+            const hiddenInput = document.getElementById(hiddenId);
+
+            if (dateInput && hiddenInput && dateInput.value && timeInput.value) {
+                if (validateTimeFormat(timeInput.value)) {
+                    hiddenInput.value = `${dateInput.value}T${timeInput.value}`;
+                }
+            }
+        }
+
+        // 为所有时间输入框添加事件监听器（使用防抖优化性能）
+        const timeInputs = document.querySelectorAll('.time-input');
+        timeInputs.forEach(input => {
+            // 使用防抖函数减少频繁的DOM操作
+            let debounceTimer;
+            input.addEventListener('input', () => {
+                clearTimeout(debounceTimer);
+                debounceTimer = setTimeout(() => formatTimeInput(input), 150);
+            });
+            input.addEventListener('blur', () => formatTimeInput(input));
+
+            // 键盘事件处理
+            input.addEventListener('keydown', (e) => {
+                // 允许退格、删除、Tab、方向键等
+                if ([8, 9, 27, 46, 37, 38, 39, 40].includes(e.keyCode) ||
+                    // 允许 Ctrl+A, Ctrl+C, Ctrl+V, Ctrl+X
+                    (e.keyCode === 65 && e.ctrlKey) ||
+                    (e.keyCode === 67 && e.ctrlKey) ||
+                    (e.keyCode === 86 && e.ctrlKey) ||
+                    (e.keyCode === 88 && e.ctrlKey)) {
+                    return;
+                }
+                // 只允许数字和冒号
+                if (!((e.keyCode >= 48 && e.keyCode <= 57) ||
+                      (e.keyCode >= 96 && e.keyCode <= 105) ||
+                      e.keyCode === 186 || e.keyCode === 59)) {
+                    e.preventDefault();
+                }
+            });
+        });
+
+        // 为日期输入框添加事件监听器
+        const dateInputs = document.querySelectorAll('input[type="date"]');
+        dateInputs.forEach(input => {
+            input.addEventListener('change', () => {
+                const dateId = input.id;
+                const timeId = dateId.replace('-date', '-time-input');
+                const timeInput = document.getElementById(timeId);
+                if (timeInput) {
+                    updateHiddenDateTime(timeInput);
+                }
+            });
+        });
+    }
+
+    // 初始化表格
+    function initSpreadsheet(customers) {
+        console.time('初始化表格');
+        
+        // 获取表格容器
+        const container = document.getElementById('spreadsheet');
+        if (!container) {
+            console.error('找不到表格容器元素');
+            return;
+        }
+        
+        // 创建初始数据
+        const initialData = createInitialData(5);
+        console.log('初始数据:', initialData);
+        
+        // 设置表格选项
+        const options = {
+            data: initialData,
+            rowHeaders: true,
+            colHeaders: true,
+            width: '100%',
+            height: 'auto', // 使用auto高度，自动适应内容
+            stretchH: 'all',
+            autoWrapRow: true,
+            manualRowResize: true,
+            manualColumnResize: true,
+            columns: [
+                { 
+                    type: 'text',
+                    title: '客户名称 *', 
+                    width: 100
+                },
+                { 
+                    type: 'text',
+                    title: '入库车牌 *', 
+                    width: 100
+                },
+                { 
+                    type: 'text',
+                    title: '识别编码 *', 
+                    width: 150
+                },
+                {
+                    type: 'dropdown',
+                    title: '订单类型 *',
+                    width: 120,
+                    source: ['原车出境', '换车出境', '零担', 'TP订单']
+                },
+                {
+                    type: 'numeric',
+                    title: '入库板数',
+                    width: 80,
+                    readOnly: true
+                },
+                {
+                    type: 'numeric',
+                    title: '入库件数',
+                    width: 80,
+                    readOnly: true
+                },
+                {
+                    type: 'numeric',
+                    title: '出库板数 *',
+                    width: 80
+                },
+                {
+                    type: 'numeric',
+                    title: '出库件数 *',
+                    width: 80
+                },
+                { 
+                    type: 'numeric',
+                    title: '重量(kg)', 
+                    width: 60,
+                    numericFormat: {
+                        pattern: '0,0.00',
+                        culture: 'zh-CN'
+                    }
+                },
+                { 
+                    type: 'numeric',
+                    title: '体积(m³)', 
+                    width: 60,
+                    numericFormat: {
+                        pattern: '0,0.00',
+                        culture: 'zh-CN'
+                    }
+                },
+                { 
+                    type: 'dropdown',
+                    title: '出境模式', 
+                    width: 80,
+                    source: ['普通', '快速', '特殊', '其他']
+                },
+                { 
+                    type: 'text',
+                    title: '报关行', 
+                    width: 80
+                },
+                { 
+                    type: 'text',
+                    title: '库位', 
+                    width: 40
+                },
+                { 
+                    type: 'text',
+                    title: '单据', 
+                    width: 40
+                },
+                { 
+                    type: 'text',
+                    title: '跟单客服 *', 
+                    width: 70
+                },
+                { 
+                    type: 'text',
+                    title: '备注1', 
+                    width: 150
+                },
+                { 
+                    type: 'text',
+                    title: '备注2', 
+                    width: 150
+                }
+            ],
+            minRows: 10,
+            minSpareRows: 2,
+            contextMenu: true,
+            colHeaders: ['客户名称 *', '入库车牌 *', '识别编码 *', '订单类型 *', '入库板数', '入库件数', '出库板数 *', '出库件数 *', '重量(kg)', '体积(m³)', '出境模式', '报关行', '库位', '单据', '跟单客服 *', '备注1', '备注2'],
+            rowHeaders: (index) => index + 1,
+            manualColumnResize: true,
+            manualRowResize: true,
+            licenseKey: 'non-commercial-and-evaluation',
+            // 使用虚拟滚动提高性能
+            viewportRowRenderingOffset: 20, // 增加渲染缓冲区
+            viewportColumnRenderingOffset: 5,
+            // 减少不必要的渲染
+            autoRowSize: false,
+            autoColumnSize: false,
+            // 使用批量更新减少重绘
+            batch: true,
+            // 延迟渲染，提高性能
+            renderAllRows: true, // 修改为true，确保渲染所有行
+            // 添加表格初始化完成的回调
+            afterInit: function() {
+                console.log('表格初始化完成');
+                console.log('表格列数:', this.countCols());
+                console.log('表格行数:', this.countRows());
+            },
+            // 添加数据更改后的回调
+            afterChange: function(changes, source) {
+                if (!changes || source === 'loadData') return;
+                console.log('表格数据已更改:', changes, source);
+                // 强制刷新表格
+                this.render();
+            }
+        };
+        
+        // 创建表格容器
+        
+        // 使用requestIdleCallback延迟创建表格，不阻塞主线程
+        const createTableWhenIdle = () => {
+            if ('requestIdleCallback' in window) {
+                requestIdleCallback(() => {
+                    try {
+                        // 再次检查Handsontable是否已加载
+                        if (typeof Handsontable === 'undefined') {
+                            console.error('Handsontable库未加载，无法创建表格');
+                            showError('表格组件加载失败，请刷新页面重试');
+                            return;
+                        }
+                        
+                        window.hot = new Handsontable(container, options);
+                        console.log('表格创建成功');
+                        console.log('表格列数:', window.hot.countCols());
+                        console.log('表格行数:', window.hot.countRows());
+                        // 设置hot实例并绑定事件
+                        bindEvents(window.hot);
+                        // 确保隐藏加载指示器
+                        hideLoadingIndicator();
+                    } catch (error) {
+                        console.error('创建表格时出错:', error);
+                    }
+                }, { timeout: 1000 }); // 最多等待1秒
+            } else {
+                // 如果浏览器不支持requestIdleCallback，使用setTimeout
+                setTimeout(() => {
+                    try {
+                        // 再次检查Handsontable是否已加载
+                        if (typeof Handsontable === 'undefined') {
+                            console.error('Handsontable库未加载，无法创建表格');
+                            showError('表格组件加载失败，请刷新页面重试');
+                            return;
+                        }
+                        
+                        window.hot = new Handsontable(container, options);
+                        console.log('表格创建成功');
+                        console.log('表格列数:', window.hot.countCols());
+                        console.log('表格行数:', window.hot.countRows());
+                        // 设置hot实例并绑定事件
+                        bindEvents(window.hot);
+                        // 确保隐藏加载指示器
+                        hideLoadingIndicator();
+                    } catch (error) {
+                        console.error('创建表格时出错:', error);
+                    }
+                }, 0);
+            }
+        };
+        
+        // 延迟创建表格
+        createTableWhenIdle();
+        
+        console.timeEnd('初始化表格');
+    }
+    
+    // 创建初始数据函数 - 优化版本
+    function createInitialData(rows) {
+        // 使用Array.from直接创建数组，减少循环
+        // 确保创建的数组与表格列数匹配（16列）
+        return Array.from({ length: 10 }, () => Array(16).fill(''));
+    }
+    
+    // 创建空行函数 - 优化版本
+    function createEmptyRow() {
+        // 返回一个空数组，减少不必要的数据
+        // 确保创建的数组与表格列数匹配（16列）
+        return Array(16).fill('');
+    }
+    
+    // 获取列宽设置
+    function getColumnWidths() {
+        console.time('获取列宽设置');
+        // 默认列宽
+        const defaultWidths = [100, 150, 100, 80, 80, 80, 80, 100, 100, 100, 100];
+        
+        // 从本地存储读取保存的列宽
+        const savedWidths = localStorage.getItem('outbound-table-column-widths');
+        if (savedWidths) {
+            try {
+                const parsedWidths = JSON.parse(savedWidths);
+                // 确保有所有列的宽度
+                if (parsedWidths.length >= defaultWidths.length) {
+                    console.timeEnd('获取列宽设置');
+                    return parsedWidths;
+                }
+            } catch (e) {
+                console.error('解析保存的列宽出错:', e);
+            }
+        }
+        
+        console.timeEnd('获取列宽设置');
+        return defaultWidths;
+    }
+    
+    // 绑定事件函数
+    function bindEvents(hot) {
+        console.time('绑定事件');
+        
+        // 使用事件委托处理按钮点击事件
+        document.addEventListener('click', function(e) {
+            // 导入Excel按钮
+            if (e.target.id === 'importExcelBtn' || e.target.closest('#importExcelBtn')) {
+                document.getElementById('fileUpload').click();
+            }
+            // 保存按钮
+            else if (e.target.id === 'saveBtn' || e.target.closest('#saveBtn')) {
+                if (hot) {
+                    validateAndSaveData(hot);
+                }
+            }
+            // 重置按钮 - 添加事件处理
+            else if (e.target.id === 'resetBtn' || e.target.closest('#resetBtn')) {
+                if (hot) {
+                    resetForm(hot);
+                }
+            }
+            // 清空按钮
+            else if (e.target.id === 'clearBtn' || e.target.closest('#clearBtn')) {
+                if (hot) {
+                    // 直接创建空数据而不是调用createInitialData
+                    const emptyData = Array.from({ length: 10 }, () => Array(12).fill(''));
+                    hot.loadData(emptyData);
+                }
+            }
+            // 关闭成功消息按钮
+            else if (e.target.id === 'closeSuccessBtn' || e.target.closest('#closeSuccessBtn')) {
+                hideSuccess();
+            }
+            // 关闭错误消息按钮
+            else if (e.target.id === 'closeErrorBtn' || e.target.closest('#closeErrorBtn')) {
+                hideError();
+            }
+        }, { passive: true }); // 使用passive事件提高性能
+        
+        // 文件上传处理 - 这个必须直接绑定
+        const fileUpload = document.getElementById('fileUpload');
+        if (fileUpload) {
+            fileUpload.addEventListener('change', handleFileUpload, { passive: true });
+        }
+        
+        console.timeEnd('绑定事件');
+    }
+    
+    // 添加设置目的仓选择按钮事件的函数
+    function setupReceiverButton() {
+        console.log('设置目的仓选择按钮事件 - 页面加载时立即执行');
+        const selectReceiverBtn = document.getElementById('selectReceiverBtn');
+        if (selectReceiverBtn) {
+            // 移除可能存在的旧事件监听器
+            const newSelectReceiverBtn = selectReceiverBtn.cloneNode(true);
+            if (selectReceiverBtn.parentNode) {
+                selectReceiverBtn.parentNode.replaceChild(newSelectReceiverBtn, selectReceiverBtn);
+            }
+            
+            // 添加内联onclick事件（在HTML中已添加）和事件监听器双重保障
+            newSelectReceiverBtn.addEventListener('click', function(e) {
+                console.log('目的仓选择按钮被点击（通过setupReceiverButton添加的事件）');
+                e.stopPropagation();
+                try {
+                    openReceiverModal();
+                } catch(err) {
+                    console.error('调用openReceiverModal时出错:', err);
+                    alert('打开目的仓选择窗口失败，请刷新页面后重试');
+                }
+                return false;
+            }, true);
+            
+            // 确保按钮样式正确
+            newSelectReceiverBtn.style.zIndex = '9999';
+            newSelectReceiverBtn.style.position = 'relative';
+            newSelectReceiverBtn.style.cursor = 'pointer';
+            newSelectReceiverBtn.style.pointerEvents = 'auto';
+            
+            console.log('目的仓选择按钮事件设置完成');
+        } else {
+            console.error('找不到目的仓选择按钮元素，无法设置事件');
+        }
+        
+        // 设置出库选择按钮事件
+        const selectInventoryBtn = document.getElementById('selectInventoryBtn');
+        if (selectInventoryBtn) {
+            // 移除可能存在的旧事件监听器
+            const newSelectInventoryBtn = selectInventoryBtn.cloneNode(true);
+            if (selectInventoryBtn.parentNode) {
+                selectInventoryBtn.parentNode.replaceChild(newSelectInventoryBtn, selectInventoryBtn);
+            }
+            
+            // 添加事件监听器
+            newSelectInventoryBtn.addEventListener('click', function(e) {
+                console.log('出库选择按钮被点击');
+                e.stopPropagation();
+                try {
+                    openInventoryModal();
+                } catch(err) {
+                    console.error('调用openInventoryModal时出错:', err);
+                    alert('打开出库选择窗口失败，请刷新页面后重试');
+                }
+                return false;
+            }, true);
+            
+            // 确保按钮样式正确
+            newSelectInventoryBtn.style.zIndex = '9999';
+            newSelectInventoryBtn.style.position = 'relative';
+            newSelectInventoryBtn.style.cursor = 'pointer';
+            newSelectInventoryBtn.style.pointerEvents = 'auto';
+            
+            console.log('出库选择按钮事件设置完成');
+        } else {
+            console.error('找不到出库选择按钮元素，无法设置事件');
+        }
+    }
+    
+    // 添加获取库存识别编码的函数
+    function getInventoryCodes() {
+        // 如果已经有缓存数据，直接返回
+        if (window.inventoryCodes) {
+            return Promise.resolve(window.inventoryCodes);
+        }
+        
+        // 否则调用懒加载函数
+        return window.loadInventoryCodes();
+    }
+</script>
+{% endblock %}

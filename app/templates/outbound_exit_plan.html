@@ -1,0 +1,1162 @@
+{% extends "base.html" %}
+
+{% block styles %}
+{{ super() }}
+<style>
+    /* 清新现代配色方案 */
+    :root {
+        --primary-color: #4f46e5;       /* 优雅紫色 */
+        --secondary-color: #6366f1;     /* 浅紫色 */
+        --accent-color: #8b5cf6;        /* 紫罗兰色 */
+        --success-color: #10b981;       /* 翠绿色 */
+        --warning-color: #f59e0b;       /* 琥珀色 */
+        --danger-color: #ef4444;        /* 珊瑚红 */
+
+        --text-primary: #1f2937;        /* 深灰文字 */
+        --text-secondary: #6b7280;      /* 中灰文字 */
+        --text-light: #9ca3af;          /* 浅灰文字 */
+
+        --bg-primary: #ffffff;          /* 纯白背景 */
+        --bg-secondary: #f9fafb;        /* 极浅灰背景 */
+        --bg-tertiary: #f3f4f6;         /* 浅灰背景 */
+
+        --border-color: #e5e7eb;        /* 边框颜色 */
+        --border-light: #f3f4f6;        /* 浅边框 */
+
+        --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+        --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    }
+
+    /* 页面背景 - 简洁清新 */
+    body {
+        background: linear-gradient(135deg, #fafbfc 0%, #f8fafc 100%);
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+        color: var(--text-primary);
+        line-height: 1.6;
+    }
+
+    /* 页面头部 - 现代清新设计 */
+    .page-header-fixed {
+        position: sticky;
+        top: 56px;
+        z-index: 1020;
+        background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+        padding: 24px 0;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        box-shadow: var(--shadow-lg);
+        backdrop-filter: blur(20px);
+    }
+
+    /* 页面标题样式 */
+    .page-title {
+        color: white;
+        font-size: 1.75rem;
+        font-weight: 700;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .page-title i {
+        font-size: 1.5rem;
+        opacity: 0.9;
+    }
+
+    /* 批次卡片 - 现代清新设计 */
+    .batch-card {
+        margin-bottom: 24px;
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: var(--shadow-sm);
+        transition: all 0.2s ease;
+        background: var(--bg-primary);
+    }
+
+    .batch-card:hover {
+        box-shadow: var(--shadow-md);
+        border-color: var(--accent-color);
+        transform: translateY(-1px);
+    }
+
+    /* 批次标题 */
+    .batch-header {
+        background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+        color: white;
+        padding: 18px 24px;
+        font-weight: 600;
+        font-size: 1.1rem;
+        border: none;
+    }
+
+    /* 现代清新表格设计 */
+    .table {
+        background: var(--bg-primary);
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: none;
+        border: 1px solid var(--border-color);
+        margin-bottom: 0;
+    }
+
+    .table th {
+        background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+        color: white;
+        font-size: 13px;
+        font-weight: 600;
+        padding: 16px 12px;
+        vertical-align: middle;
+        border: none;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .table td {
+        font-size: 14px;
+        padding: 14px 12px;
+        vertical-align: middle;
+        border-color: var(--border-light);
+        color: var(--text-primary);
+        line-height: 1.4;
+    }
+
+    .table tbody tr {
+        transition: all 0.15s ease;
+    }
+
+    .table tbody tr:hover {
+        background-color: #f8fafc;
+    }
+
+    .table tbody tr:nth-child(even) {
+        background-color: var(--bg-secondary);
+    }
+
+    .table tbody tr:nth-child(even):hover {
+        background-color: #f1f5f9;
+    }
+
+    /* 大部分列不换行 */
+    .table th, .table td {
+        white-space: nowrap;
+    }
+
+    /* 允许特定列换行 */
+    .table td:nth-child(4),   /* 客户名称 */
+    .table td:nth-child(5),   /* 识别编码 */
+    .table td:nth-child(13),  /* 报关行 */
+    .table td:nth-child(17) { /* 备注 */
+        white-space: normal;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+        line-height: 1.3;
+        padding: 10px 8px;
+    }
+
+    .table-responsive {
+        overflow-x: auto;
+        min-height: 200px;
+        border-radius: 8px;
+        background: white;
+    }
+
+    /* 表格布局优化 */
+    .table {
+        table-layout: fixed;
+        width: 100%;
+        min-width: 1500px; /* 调整最小宽度以适应新的列宽分配 */
+    }
+
+    /* 表格列宽优化 - 根据内容特点分配宽度 */
+    .table th:nth-child(1) { width: 40px; }         /* 复选框 - 固定宽度 */
+    .table th:nth-child(2) { width: 90px; }         /* 出库日期 - 固定宽度 */
+    .table th:nth-child(3) { width: 70px; }         /* 批次序号 - 固定宽度 */
+    .table th:nth-child(4) { width: 140px; }        /* 客户名称 - 较宽，允许换行 */
+    .table th:nth-child(5) { width: 180px; }        /* 识别编码 - 最宽，允许换行 */
+    .table th:nth-child(6) { width: 90px; }         /* 入库车牌 */
+    .table th:nth-child(7) { width: 90px; }         /* 送货干线车 */
+    .table th:nth-child(8) { width: 50px; }         /* 板数 - 数字列 */
+    .table th:nth-child(9) { width: 50px; }         /* 件数 - 数字列 */
+    .table th:nth-child(10) { width: 70px; }        /* 重量 - 数字列 */
+    .table th:nth-child(11) { width: 70px; }        /* 体积 - 数字列 */
+    .table th:nth-child(12) { width: 80px; }        /* 出境模式 */
+    .table th:nth-child(13) { width: 120px; }       /* 报关行 - 较宽，允许换行 */
+    .table th:nth-child(14) { width: 80px; }        /* 订单类型 */
+    .table th:nth-child(15) { width: 80px; }        /* 跟单客服 */
+    .table th:nth-child(16) { width: 150px; }       /* 备注 - 较宽，允许换行 */
+
+    /* 内容区域样式 */
+    .content-wrapper {
+        padding-top: 15px;
+    }
+
+    /* 现代清新按钮设计 */
+    .btn {
+        font-weight: 500;
+        border-radius: 8px;
+        padding: 10px 20px;
+        font-size: 14px;
+        transition: all 0.2s ease;
+        border-width: 1px;
+        box-shadow: var(--shadow-sm);
+    }
+
+    .btn-primary {
+        background: var(--primary-color);
+        border-color: var(--primary-color);
+        color: white;
+    }
+
+    .btn-primary:hover {
+        background: #3730a3;
+        border-color: #3730a3;
+        color: white;
+        transform: translateY(-1px);
+        box-shadow: var(--shadow-md);
+    }
+
+    .btn-success {
+        background: var(--success-color);
+        border-color: var(--success-color);
+        color: white;
+    }
+
+    .btn-success:hover {
+        background: #059669;
+        border-color: #059669;
+        color: white;
+        transform: translateY(-1px);
+        box-shadow: var(--shadow-md);
+    }
+
+    .btn-secondary {
+        background: var(--text-secondary);
+        border-color: var(--text-secondary);
+        color: white;
+    }
+
+    .btn-secondary:hover {
+        background: #4b5563;
+        border-color: #4b5563;
+        color: white;
+        transform: translateY(-1px);
+        box-shadow: var(--shadow-md);
+    }
+
+    .btn-outline-light {
+        border-color: rgba(255, 255, 255, 0.5);
+        color: rgba(255, 255, 255, 0.9);
+        background: transparent;
+    }
+
+    .btn-outline-light:hover {
+        background: rgba(255, 255, 255, 0.1);
+        border-color: rgba(255, 255, 255, 0.8);
+        color: white;
+    }
+
+    .btn-lg {
+        padding: 12px 24px;
+        font-size: 16px;
+        font-weight: 600;
+    }
+
+    /* 现代卡片设计 */
+    .card {
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        transition: box-shadow 0.15s ease;
+        background: white;
+    }
+
+    .card:hover {
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    .card-body.bg-light {
+        background: #f8fafc !important;
+        border-radius: 8px;
+    }
+
+    /* 现代表单设计 */
+    .form-control {
+        border: 1px solid var(--border-color);
+        border-radius: 6px;
+        transition: all 0.15s ease;
+        padding: 10px 12px;
+        font-size: 14px;
+        color: var(--text-dark);
+    }
+
+    .form-control:focus {
+        border-color: var(--secondary-blue);
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        outline: none;
+    }
+
+    .input-group-text {
+        background: #f3f4f6;
+        border: 1px solid var(--border-color);
+        color: var(--text-light);
+        font-weight: 500;
+        border-radius: 6px 0 0 6px;
+    }
+
+    .form-label {
+        font-weight: 500;
+        color: var(--text-dark);
+        margin-bottom: 6px;
+        font-size: 14px;
+    }
+
+    /* CFW标识样式 */
+    .cfw-logo {
+        font-size: 14px;
+        font-weight: bold;
+        margin-right: 10px;
+    }
+
+    .cfw-text {
+        color: #e74c3c;
+        font-style: italic;
+    }
+
+    .cfw-chinese {
+        color: #333;
+    }
+
+    /* 数字列样式加强 */
+    .table td.text-right {
+        font-weight: 600;
+        font-size: 15px;
+        color: var(--sky-blue-dark);
+    }
+
+    /* 识别编码特殊样式 */
+    .identification-code {
+        font-family: 'Courier New', monospace;
+        font-size: 13px;
+        line-height: 1.2;
+        background: rgba(135, 206, 235, 0.1);
+        padding: 2px 4px;
+        border-radius: 4px;
+        font-weight: 600;
+    }
+
+    /* 客户名称样式 */
+    .customer-name {
+        font-weight: 600;
+        color: var(--sky-blue-dark);
+    }
+
+    /* 报关行和备注样式 */
+    .text-wrap {
+        font-size: 13px;
+    }
+
+    /* 表格行高度控制 */
+    .table tbody tr {
+        height: auto;
+        min-height: 50px;
+    }
+
+    /* 表格单元格垂直对齐 */
+    .table td {
+        vertical-align: top;
+    }
+
+    /* 数字列保持居中对齐 */
+    .table td.text-right {
+        vertical-align: middle;
+    }
+
+    /* 页面标题美化 */
+    h2 {
+        color: white;
+        font-weight: 700;
+        text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        margin: 0;
+    }
+
+    /* 标签样式美化 */
+    label {
+        font-weight: 600;
+        color: var(--sky-blue-dark);
+        margin-bottom: 5px;
+    }
+
+    /* 复选框样式 - 确保显示打钩 */
+    .form-check-input {
+        border: 2px solid var(--border-color);
+        border-radius: 4px;
+        width: 1.2em;
+        height: 1.2em;
+        transition: all 0.15s ease;
+        background-color: var(--bg-primary);
+        background-size: contain;
+        background-repeat: no-repeat;
+        background-position: center;
+    }
+
+    .form-check-input:checked {
+        background-color: var(--primary-color) !important;
+        border-color: var(--primary-color) !important;
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='white'%3e%3cpath fill-rule='evenodd' d='M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z' clip-rule='evenodd'/%3e%3c/svg%3e") !important;
+        box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.2);
+    }
+
+    .form-check-input:focus {
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        outline: none;
+    }
+
+    .form-check-input:indeterminate {
+        background-color: var(--primary-color) !important;
+        border-color: var(--primary-color) !important;
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='white'%3e%3cpath fill-rule='evenodd' d='M3 10a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z' clip-rule='evenodd'/%3e%3c/svg%3e") !important;
+        opacity: 1;
+    }
+
+    /* 确保Bootstrap的默认样式不会覆盖我们的样式 */
+    .form-check-input[type="checkbox"]:checked {
+        background-color: var(--primary-color) !important;
+        border-color: var(--primary-color) !important;
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='white'%3e%3cpath fill-rule='evenodd' d='M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z' clip-rule='evenodd'/%3e%3c/svg%3e") !important;
+    }
+
+    /* 强制覆盖所有可能的Bootstrap复选框样式 */
+    input[type="checkbox"].form-check-input:checked,
+    .batch-checkbox:checked,
+    .record-checkbox:checked {
+        background-color: var(--primary-color) !important;
+        border-color: var(--primary-color) !important;
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='white'%3e%3cpath fill-rule='evenodd' d='M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z' clip-rule='evenodd'/%3e%3c/svg%3e") !important;
+        background-size: 16px 16px !important;
+        background-repeat: no-repeat !important;
+        background-position: center !important;
+    }
+
+    /* 不确定状态的样式 */
+    input[type="checkbox"].form-check-input:indeterminate,
+    .batch-checkbox:indeterminate {
+        background-color: var(--primary-color) !important;
+        border-color: var(--primary-color) !important;
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='white'%3e%3cpath fill-rule='evenodd' d='M3 10a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z' clip-rule='evenodd'/%3e%3c/svg%3e") !important;
+        background-size: 16px 16px !important;
+        background-repeat: no-repeat !important;
+        background-position: center !important;
+    }
+
+    /* 警告信息样式 */
+    .alert-warning {
+        background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+        border: 2px solid #ffc107;
+        border-radius: 8px;
+        color: #856404;
+    }
+
+    /* 加载指示器样式 */
+    .exit-plan-loading {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(135, 206, 235, 0.8);
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        z-index: 9999;
+        backdrop-filter: blur(5px);
+    }
+
+    .exit-plan-loading .spinner-border {
+        width: 3rem;
+        height: 3rem;
+        border-width: 0.3em;
+        color: white;
+    }
+
+    .exit-plan-loading .mt-2 {
+        color: white;
+        font-size: 1.1rem;
+        font-weight: 600;
+        text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+        margin-top: 1rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- 固定的页面标题和搜索区域 -->
+<div class="page-header-fixed">
+    <div class="container-fluid">
+        <!-- 页面标题和打印按钮 -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div class="d-flex align-items-center">
+                <div class="title-icon-wrapper me-3">
+                    <i class="fas fa-file-export" style="font-size: 2.5rem; color: white; text-shadow: 2px 2px 4px rgba(0,0,0,0.3);"></i>
+                </div>
+                <div>
+                    <h1 class="mb-1" style="font-size: 2.2rem; font-weight: 800; color: white; text-shadow: 2px 2px 4px rgba(0,0,0,0.3);">
+                        出境计划单
+                    </h1>
+                    <div class="d-flex align-items-center">
+                        <img src="{{ url_for('static', filename='img/cfw_logo.png') }}" alt="CFW车夫网" style="height: 24px; width: auto; margin-right: 8px;">
+                        <span style="color: rgba(255,255,255,0.9); font-size: 0.9rem; font-weight: 500;">CFW车夫网 物流管理系统</span>
+                    </div>
+                </div>
+            </div>
+            <div class="d-flex gap-2">
+                <button class="btn btn-success btn-lg" onclick="printSelected()" style="border-radius: 10px; padding: 10px 20px;">
+                    <i class="fas fa-print me-2"></i> 打印选中
+                </button>
+                <button class="btn btn-outline-light btn-sm" onclick="forceHideAllLoading()" title="如果页面显示'正在处理'状态，点击此按钮清除" style="border-radius: 8px;">
+                    <i class="fas fa-times-circle me-1"></i> 清除加载状态
+                </button>
+            </div>
+        </div>
+
+        <!-- 搜索区域 -->
+        <div class="card shadow-sm">
+            <div class="card-body bg-light">
+                <form method="GET" action="{{ url_for('main.outbound_exit_plan') }}">
+                    <div class="row">
+                        <div class="col-md-2">
+                            <div class="form-group">
+                                <label>开始日期</label>
+                                <div class="input-group">
+                                    <div class="input-group-prepend">
+                                        <span class="input-group-text"><i class="far fa-calendar-alt"></i></span>
+                                    </div>
+                                    <input type="date" class="form-control" name="date_start" value="{{ search_params.date_start }}">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="form-group">
+                                <label>结束日期</label>
+                                <div class="input-group">
+                                    <div class="input-group-prepend">
+                                        <span class="input-group-text"><i class="far fa-calendar-alt"></i></span>
+                                    </div>
+                                    <input type="date" class="form-control" name="date_end" value="{{ search_params.date_end }}">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="form-group">
+                                <label>出库/出境车牌</label>
+                                <div class="input-group">
+                                    <div class="input-group-prepend">
+                                        <span class="input-group-text"><i class="fas fa-truck"></i></span>
+                                    </div>
+                                    <input type="text" class="form-control" name="plate_number" value="{{ search_params.plate_number }}" placeholder="输入出库/出境车牌">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="form-group">
+                                <label>批次号</label>
+                                <div class="input-group">
+                                    <div class="input-group-prepend">
+                                        <span class="input-group-text"><i class="fas fa-barcode"></i></span>
+                                    </div>
+                                    <input type="text" class="form-control" name="batch_no" value="{{ search_params.batch_no }}" placeholder="输入批次号">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="form-group">
+                                <label>客户名称</label>
+                                <div class="input-group">
+                                    <div class="input-group-prepend">
+                                        <span class="input-group-text"><i class="fas fa-user"></i></span>
+                                    </div>
+                                    <input type="text" class="form-control" name="customer_name" value="{{ search_params.customer_name }}" placeholder="输入客户名称">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="form-group">
+                                <label>&nbsp;</label>
+                                <div class="d-flex">
+                                    <button type="submit" class="btn btn-primary me-2">
+                                        <i class="fas fa-search"></i> 搜索
+                                    </button>
+                                    <a href="{{ url_for('main.outbound_exit_plan') }}" class="btn btn-secondary">
+                                        <i class="fas fa-undo"></i> 重置
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if show_warning %}
+<div class="container-fluid mt-3">
+    <div class="alert alert-warning">
+        <i class="fas fa-exclamation-triangle"></i>
+        为了提高页面加载速度，请设置搜索条件后再查询。默认显示昨天和今天的数据。
+    </div>
+</div>
+{% endif %}
+
+<!-- 主要内容区域 -->
+<div class="container-fluid content-wrapper">
+    <form id="printForm" method="POST" action="{{ url_for('main.print_exit_plan') }}">
+        <!-- 添加CSRF令牌 -->
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+        {% if batch_groups %}
+            <div class="mb-3">
+                <span class="font-weight-bold">共找到 {{ batch_groups|length }} 个批次，{{ batch_records|length }} 条记录</span>
+                <button type="button" class="btn btn-sm btn-outline-primary ml-2" onclick="selectAll()">全选</button>
+                <button type="button" class="btn btn-sm btn-outline-secondary" onclick="deselectAll()">取消全选</button>
+            </div>
+
+            <!-- 添加记录数限制的警告 -->
+            {% if batch_records|length >= max_records %}
+            <div class="alert alert-warning alert-dismissible fade show" role="alert">
+                <strong>注意!</strong> 为了提高性能，当前只显示了 {{ max_records }} 条记录。请添加更多筛选条件获取更精确的结果。
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            {% endif %}
+
+            {% for batch_no, stats in batch_groups.items() %}
+                <div class="card mb-4 batch-card shadow-sm">
+                    <div class="card-header py-2 batch-header">
+                        <div class="row align-items-center">
+                            <div class="col-auto">
+                                <div class="form-check">
+                                    <input type="checkbox" class="form-check-input batch-checkbox" id="batch-{{ batch_no }}" data-batch="{{ batch_no }}">
+                                    <label class="form-check-label" for="batch-{{ batch_no }}"></label>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <h5 class="mb-0">批次号: {{ batch_no }}</h5>
+                            </div>
+                            <div class="col-md-7 text-md-right">
+                                <span class="badge bg-light text-dark me-2">记录数: {{ stats.records|length }}</span>
+                                <span class="badge bg-light text-dark me-2">总板数: {{ stats.total_pallet }}</span>
+                                <span class="badge bg-light text-dark me-2">总件数: {{ stats.total_package }}</span>
+                                <span class="badge bg-light text-dark">总重量: {{ "%.1f"|format(stats.total_weight) }}KG</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 批次公共信息展示区域 -->
+                    {% set first_record = stats.records[0] %}
+                    {% if first_record %}
+                    <div class="card-body py-2 bg-light border-bottom">
+                        <div class="row small">
+                            <div class="col-md-3">
+                                <i class="fas fa-truck"></i> 出库/出境车牌:
+                                <span class="font-weight-bold">{{ first_record.plate_number or '' }}</span>
+                            </div>
+                            <div class="col-md-3">
+                                <i class="fas fa-calendar"></i> 出库日期:
+                                <span class="font-weight-bold">{{ first_record.outbound_time.strftime('%Y-%m-%d') if first_record.outbound_time else '' }}</span>
+                            </div>
+                            <div class="col-md-3">
+                                <i class="fas fa-map-marker-alt"></i> 目的地:
+                                <span class="font-weight-bold">{{ first_record.destination or '春疆货场' }}</span>
+                            </div>
+                            <div class="col-md-3">
+                                <!-- 空列，保持布局平衡 -->
+                            </div>
+                        </div>
+                        <div class="row small mt-1">
+                            <div class="col-md-3">
+                                <i class="fas fa-car"></i> 车型:
+                                <span class="font-weight-bold">{{ first_record.vehicle_type or '13.5M挂' }}</span>
+                            </div>
+                            <div class="col-md-3">
+                                <i class="fas fa-phone"></i> 联系人:
+                                {% set destination = first_record.destination %}
+                                {% if receivers and destination in receivers %}
+                                    <span class="font-weight-bold">{{ receivers[destination].contact }}</span>
+                                {% else %}
+                                    <span class="font-weight-bold">{{ first_record.receiver_contact or '金英/84-971886919' }}</span>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-3">
+                                <i class="fas fa-building"></i> 工厂地址:
+                                {% if receivers and destination in receivers %}
+                                    <span class="font-weight-bold">{{ receivers[destination].address }}</span>
+                                {% else %}
+                                    <span class="font-weight-bold">{{ first_record.detailed_address or '谅山春疆货场' }}</span>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-3">
+                                <i class="fas fa-weight-hanging"></i> 总体积:
+                                <span class="font-weight-bold">{{ "%.2f"|format(stats.total_volume) }}CBM</span>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- 批次详细记录表格 -->
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-sm table-hover mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th width="40px"></th>
+                                        <th>出库日期</th>
+                                        <th>批次序号</th>
+                                        <th>客户名称</th>
+                                        <th>识别编码</th>
+                                        <th>入库车牌</th>
+                                        <th>送货干线车</th>
+                                        <th>板数</th>
+                                        <th>件数</th>
+                                        <th>重量(KG)</th>
+                                        <th>体积(CBM)</th>
+                                        <th>出境模式</th>
+                                        <th>报关行</th>
+                                        <th>订单类型</th>
+                                        <th>跟单客服</th>
+                                        <th>备注</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for record in stats.records %}
+                                    <tr>
+                                        <td class="text-center align-middle">
+                                            <div class="form-check">
+                                                <input type="checkbox" class="form-check-input record-checkbox batch-item-{{ batch_no }}"
+                                                       id="record-{{ record.id }}" name="record_ids[]" value="{{ record.id }}">
+                                                <label class="form-check-label" for="record-{{ record.id }}"></label>
+                                            </div>
+                                        </td>
+                                        <td>{{ record.outbound_time.strftime('%Y-%m-%d') if record.outbound_time else '' }}</td>
+                                        <td class="text-center">{{ record.batch_sequence or 1 }}/{{ stats.records|length }}</td>
+                                        <td class="customer-name">{{ record.customer_name or '' }}</td>
+                                        <td class="identification-code">{{ record.identification_code or '' }}</td>
+                                        <td>{{ record.inbound_plate or '' }}</td>
+                                        <td>{{ record.delivery_plate_number or '' }}</td>
+                                        <td class="text-right">{{ record.pallet_count or 0 }}</td>
+                                        <td class="text-right">{{ record.package_count or 0 }}</td>
+                                        <td class="text-right">{{ "%.2f"|format(record.weight or 0) }}</td>
+                                        <td class="text-right">{{ "%.2f"|format(record.volume or 0) }}</td>
+                                        <td>{{ record.export_mode or '' }}</td>
+                                        <td class="text-wrap">{{ record.customs_broker or '' }}</td>
+                                        <td>{{ record.order_type or '' }}</td>
+                                        <td>{{ record.service_staff or '' }}</td>
+                                        <td class="text-wrap">
+                                            <!-- 备注栏不再自动生成内容 -->
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+
+            <!-- 分页控件 -->
+            {% if batch_pagination and batch_pagination.pages > 1 %}
+            <div class="d-flex justify-content-between align-items-center mt-4">
+                <div>
+                    <span class="text-muted">
+                        显示第 {{ (batch_pagination.page - 1) * batch_pagination.per_page + 1 }} -
+                        {{ batch_pagination.page * batch_pagination.per_page if batch_pagination.page * batch_pagination.per_page <= batch_pagination.total else batch_pagination.total }}
+                        批次，共 {{ batch_pagination.total }} 个批次
+                    </span>
+                </div>
+                <nav aria-label="批次分页">
+                    <ul class="pagination pagination-sm mb-0">
+                        {% if batch_pagination.has_prev %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('main.outbound_exit_plan', page=batch_pagination.prev_num, **search_params) }}">
+                                    <i class="fas fa-chevron-left"></i> 上一页
+                                </a>
+                            </li>
+                        {% else %}
+                            <li class="page-item disabled">
+                                <span class="page-link"><i class="fas fa-chevron-left"></i> 上一页</span>
+                            </li>
+                        {% endif %}
+
+                        {% for page_num in range(1, batch_pagination.pages + 1) %}
+                            {% if page_num == batch_pagination.page %}
+                                <li class="page-item active">
+                                    <span class="page-link">{{ page_num }}</span>
+                                </li>
+                            {% elif page_num <= 3 or page_num > batch_pagination.pages - 3 or (page_num >= batch_pagination.page - 2 and page_num <= batch_pagination.page + 2) %}
+                                <li class="page-item">
+                                    <a class="page-link" href="{{ url_for('main.outbound_exit_plan', page=page_num, **search_params) }}">{{ page_num }}</a>
+                                </li>
+                            {% elif page_num == 4 and batch_pagination.page > 6 %}
+                                <li class="page-item disabled">
+                                    <span class="page-link">...</span>
+                                </li>
+                            {% elif page_num == batch_pagination.pages - 3 and batch_pagination.page < batch_pagination.pages - 5 %}
+                                <li class="page-item disabled">
+                                    <span class="page-link">...</span>
+                                </li>
+                            {% endif %}
+                        {% endfor %}
+
+                        {% if batch_pagination.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('main.outbound_exit_plan', page=batch_pagination.next_num, **search_params) }}">
+                                    下一页 <i class="fas fa-chevron-right"></i>
+                                </a>
+                            </li>
+                        {% else %}
+                            <li class="page-item disabled">
+                                <span class="page-link">下一页 <i class="fas fa-chevron-right"></i></span>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+            </div>
+            {% endif %}
+        {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                <h4 class="text-muted">暂无出境计划单记录</h4>
+                <p class="text-muted">请调整搜索条件或确认是否有凭祥保税仓/春疆货场的出库记录</p>
+            </div>
+        {% endif %}
+    </form>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+$(document).ready(function() {
+    // 批次选择功能
+    $(document).on('change', '.batch-checkbox', function() {
+        var batchId = $(this).data('batch');
+        var isChecked = $(this).prop('checked');
+
+        console.log('批次复选框变化:', batchId, '选中状态:', isChecked);
+
+        // 更新该批次下所有记录的选中状态
+        $('.batch-item-' + batchId).each(function() {
+            $(this).prop('checked', isChecked);
+        });
+
+        // 清除不确定状态
+        $(this).prop('indeterminate', false);
+    });
+
+    // 监听单个记录复选框变化，更新批次复选框状态
+    $(document).on('change', '.record-checkbox', function() {
+        var classes = $(this).attr('class');
+        var batchMatch = classes.match(/batch-item-(\S+)/);
+
+        if (batchMatch) {
+            var batchId = batchMatch[1];
+            var totalItems = $('.batch-item-' + batchId).length;
+            var checkedItems = $('.batch-item-' + batchId + ':checked').length;
+            var batchCheckbox = $('#batch-' + batchId);
+
+            console.log('记录复选框变化:', batchId, '已选中:', checkedItems, '总数:', totalItems);
+
+            if (checkedItems === 0) {
+                batchCheckbox.prop('checked', false);
+                batchCheckbox.prop('indeterminate', false);
+            } else if (checkedItems === totalItems) {
+                batchCheckbox.prop('checked', true);
+                batchCheckbox.prop('indeterminate', false);
+            } else {
+                batchCheckbox.prop('checked', false);
+                batchCheckbox.prop('indeterminate', true);
+            }
+        }
+    });
+
+    // 页面加载完成后，初始化所有批次复选框状态
+    $('.batch-checkbox').each(function() {
+        var batchId = $(this).data('batch');
+        var totalItems = $('.batch-item-' + batchId).length;
+        var checkedItems = $('.batch-item-' + batchId + ':checked').length;
+
+        if (checkedItems === 0) {
+            $(this).prop('checked', false);
+            $(this).prop('indeterminate', false);
+        } else if (checkedItems === totalItems) {
+            $(this).prop('checked', true);
+            $(this).prop('indeterminate', false);
+        } else {
+            $(this).prop('checked', false);
+            $(this).prop('indeterminate', true);
+        }
+    });
+});
+
+// 全选功能
+function selectAll() {
+    if (typeof $ !== 'undefined') {
+        console.log('执行全选操作');
+
+        // 先选中所有记录复选框
+        $('.record-checkbox').each(function() {
+            $(this).prop('checked', true);
+        });
+
+        // 然后更新所有批次复选框状态
+        $('.batch-checkbox').each(function() {
+            $(this).prop('checked', true);
+            $(this).prop('indeterminate', false);
+        });
+
+        console.log('全选完成');
+    }
+}
+
+// 取消全选功能
+function deselectAll() {
+    if (typeof $ !== 'undefined') {
+        console.log('执行取消全选操作');
+
+        // 先取消选中所有记录复选框
+        $('.record-checkbox').each(function() {
+            $(this).prop('checked', false);
+        });
+
+        // 然后更新所有批次复选框状态
+        $('.batch-checkbox').each(function() {
+            $(this).prop('checked', false);
+            $(this).prop('indeterminate', false);
+        });
+
+        console.log('取消全选完成');
+    }
+}
+
+// 打印选中记录
+function printSelected() {
+    var selectedRecords = $('.record-checkbox:checked');
+
+    if (selectedRecords.length === 0) {
+        alert('请至少选择一条记录进行打印');
+        return;
+    }
+
+    // 显示加载指示器
+    if (typeof showLoading === 'function') {
+        showLoading();
+    }
+
+    // 获取表单数据
+    var form = document.getElementById('printForm');
+    var formData = new FormData(form);
+
+    // 构建查询参数
+    var params = new URLSearchParams();
+    for (var pair of formData.entries()) {
+        params.append(pair[0], pair[1]);
+    }
+
+    // 在新窗口中打开打印页面
+    var printUrl = form.action + '?' + params.toString();
+    var printWindow = window.open(printUrl, '_blank', 'width=1200,height=800,scrollbars=yes,resizable=yes');
+
+    // 立即隐藏加载指示器（因为窗口已经打开）
+    if (typeof hideLoading === 'function') {
+        hideLoading();
+    }
+
+    // 聚焦到新窗口
+    if (printWindow) {
+        printWindow.focus();
+
+        // 监听窗口关闭事件，确保加载指示器被隐藏
+        var checkClosed = setInterval(function() {
+            if (printWindow.closed) {
+                clearInterval(checkClosed);
+                if (typeof hideLoading === 'function') {
+                    hideLoading();
+                }
+            }
+        }, 1000);
+    } else {
+        // 如果窗口打开失败，也要隐藏加载指示器
+        if (typeof hideLoading === 'function') {
+            hideLoading();
+        }
+    }
+}
+
+// 显示加载指示器
+function showLoading() {
+    // 防止递归调用的标志
+    if (window.exitPlanLoadingInProgress) {
+        return;
+    }
+    window.exitPlanLoadingInProgress = true;
+
+    try {
+        // 先清除可能存在的加载指示器
+        hideLoadingInternal();
+
+        // 使用全局的性能管理器的showLoading函数，避免递归
+        if (window.IntegratedPerformanceManager &&
+            window.IntegratedPerformanceManager.showLoading &&
+            typeof window.IntegratedPerformanceManager.showLoading === 'function') {
+            window.currentLoadingIndicator = window.IntegratedPerformanceManager.showLoading('正在生成出境计划单...');
+        } else {
+            // 备用方案：创建本地加载指示器
+            var loadingHtml = '<div class="loading-overlay exit-plan-loading" id="exit-plan-loading-indicator">' +
+                              '<div class="spinner-border text-primary" role="status">' +
+                              '<span class="sr-only">Loading...</span>' +
+                              '</div>' +
+                              '<div class="mt-2">正在生成出境计划单...</div>' +
+                              '</div>';
+            $('body').append(loadingHtml);
+        }
+    } finally {
+        window.exitPlanLoadingInProgress = false;
+    }
+}
+
+// 内部隐藏加载指示器函数（避免递归）
+function hideLoadingInternal() {
+    try {
+        // 隐藏全局加载指示器
+        if (window.currentLoadingIndicator && window.currentLoadingIndicator.hide) {
+            window.currentLoadingIndicator.hide();
+            window.currentLoadingIndicator = null;
+        }
+
+        // 移除所有可能的本地加载指示器
+        $('#exit-plan-loading-indicator').remove();
+        $('.exit-plan-loading').remove();
+        $('#loading-indicator').remove();
+        $('.loading-overlay').remove();
+
+        // 确保页面恢复正常状态
+        $('body').removeClass('loading');
+    } catch (e) {
+        console.error('隐藏加载指示器时出错:', e);
+        // 强制移除所有加载相关元素
+        $('.loading-overlay').remove();
+        $('#loading-indicator').remove();
+        $('#exit-plan-loading-indicator').remove();
+        $('.exit-plan-loading').remove();
+    }
+}
+
+// 隐藏加载指示器
+function hideLoading() {
+    // 防止递归调用的标志
+    if (window.exitPlanHidingInProgress) {
+        return;
+    }
+    window.exitPlanHidingInProgress = true;
+
+    try {
+        hideLoadingInternal();
+        console.log('加载指示器已隐藏');
+    } finally {
+        window.exitPlanHidingInProgress = false;
+    }
+}
+
+// 页面加载完成后隐藏加载指示器
+$(document).ready(function() {
+    // 延迟执行，避免与其他脚本冲突
+    setTimeout(function() {
+        hideLoadingInternal();
+    }, 100);
+});
+
+$(window).on('load', function() {
+    // 延迟执行，确保页面完全加载
+    setTimeout(function() {
+        hideLoadingInternal();
+    }, 200);
+});
+
+// 页面获得焦点时也隐藏加载指示器（用户从打印窗口返回时）
+$(window).on('focus', function() {
+    setTimeout(function() {
+        hideLoadingInternal();
+    }, 50);
+});
+
+// 页面可见性改变时隐藏加载指示器
+$(document).on('visibilitychange', function() {
+    if (!document.hidden) {
+        setTimeout(function() {
+            hideLoadingInternal();
+        }, 50);
+    }
+});
+
+// 强制清理所有加载指示器的函数
+function forceHideAllLoading() {
+    // 重置所有标志
+    window.exitPlanLoadingInProgress = false;
+    window.exitPlanHidingInProgress = false;
+
+    // 清理所有可能的加载指示器
+    try {
+        // 隐藏全局加载指示器
+        if (window.currentLoadingIndicator && window.currentLoadingIndicator.hide) {
+            window.currentLoadingIndicator.hide();
+            window.currentLoadingIndicator = null;
+        }
+
+        // 使用性能管理器的隐藏函数
+        if (window.IntegratedPerformanceManager &&
+            window.IntegratedPerformanceManager.hideLoading) {
+            window.IntegratedPerformanceManager.hideLoading();
+        }
+
+        // 强制移除所有加载相关元素
+        $('.loading-overlay').remove();
+        $('#loading-indicator').remove();
+        $('#exit-plan-loading-indicator').remove();
+        $('.exit-plan-loading').remove();
+        $('.spinner-border').remove();
+
+        // 确保页面恢复正常状态
+        $('body').removeClass('loading');
+
+        console.log('所有加载指示器已强制清理');
+        alert('加载状态已清除');
+    } catch (e) {
+        console.error('强制清理时出错:', e);
+        // 最后的强制清理
+        $('[class*="loading"], [id*="loading"], .spinner-border').remove();
+        alert('加载状态清理完成（强制模式）');
+    }
+    try {
+        // 清理全局加载指示器
+        if (window.currentLoadingIndicator) {
+            if (window.currentLoadingIndicator.hide) {
+                window.currentLoadingIndicator.hide();
+            }
+            window.currentLoadingIndicator = null;
+        }
+
+        // 移除所有可能的加载元素
+        $('.loading-overlay').remove();
+        $('#loading-indicator').remove();
+        $('[class*="loading"]').remove();
+
+        console.log('强制清理所有加载指示器完成');
+    } catch (e) {
+        console.error('强制清理加载指示器时出错:', e);
+    }
+}
+
+// 暴露强制清理函数到全局
+window.forceHideAllLoading = forceHideAllLoading;
+</script>
+{% endblock %}

@@ -1,0 +1,926 @@
+{% extends "base.html" %}
+
+{% block title %}前端仓接收记录{% endblock %}
+
+{% block styles %}
+{{ super() }}
+<!-- 使用jsuites日期选择器 -->
+<link rel="stylesheet" href="{{ url_for('static', filename='vendor/css/jsuites.css') }}">
+<style>
+    /* 样式更新时间: 2025-07-21 - 美化搜索区域样式 */
+    /* 美化的搜索区域样式 */
+    .card-header.bg-primary {
+        background: linear-gradient(135deg, #0d6efd 0%, #0b5ed7 100%) !important;
+        border-bottom: 1px solid #0a58ca;
+    }
+
+    .card.border-primary {
+        border-color: #0d6efd !important;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(13, 110, 253, 0.15);
+    }
+
+    .form-label.fw-bold {
+        color: #495057;
+        font-size: 14px;
+        margin-bottom: 6px;
+    }
+
+    .form-label i {
+        color: #6c757d;
+        font-size: 12px;
+    }
+
+    .form-control, .form-select {
+        border-radius: 6px;
+        border: 1px solid #ced4da;
+        transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+    }
+
+    .form-control:focus, .form-select:focus {
+        border-color: #0d6efd;
+        box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+    }
+    /* 美化按钮样式 */
+    .btn {
+        border-radius: 6px;
+        font-weight: 500;
+        transition: all 0.2s ease;
+        border: none;
+        padding: 8px 16px;
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, #0d6efd 0%, #0b5ed7 100%);
+        box-shadow: 0 2px 4px rgba(13, 110, 253, 0.3);
+    }
+
+    .btn-primary:hover {
+        background: linear-gradient(135deg, #0b5ed7 0%, #0a58ca 100%);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(13, 110, 253, 0.4);
+    }
+
+    .btn-outline-secondary {
+        border: 1px solid #6c757d;
+        color: #6c757d;
+    }
+
+    .btn-outline-secondary:hover {
+        background-color: #6c757d;
+        border-color: #6c757d;
+        transform: translateY(-1px);
+        box-shadow: 0 2px 4px rgba(108, 117, 125, 0.3);
+    }
+
+    .btn-success {
+        background: linear-gradient(135deg, #198754 0%, #157347 100%);
+        box-shadow: 0 2px 4px rgba(25, 135, 84, 0.3);
+    }
+
+    .btn-success:hover {
+        background: linear-gradient(135deg, #157347 0%, #146c43 100%);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(25, 135, 84, 0.4);
+    }
+
+    /* 表格内容显示 - 适中字体大小，支持换行 - 使用更强的选择器 */
+    .table.table-striped.table-hover.table-center th,
+    .table.table-striped.table-hover.table-center td,
+    .table-center th, .table-center td,
+    .table th, .table td {
+        text-align: left !important;  /* 改为左对齐 */
+        vertical-align: middle !important;
+        font-size: 15px !important;  /* 字体大小增大2px：从13px改为15px */
+        padding: 8px 6px !important;  /* 适中的内边距 */
+        line-height: 1.4 !important;  /* 适中的行高 */
+        white-space: normal !important;  /* 允许文字换行 */
+        word-wrap: break-word !important;  /* 长单词自动换行 */
+        word-break: break-all !important;  /* 强制换行 */
+        overflow-wrap: break-word !important;  /* 现代浏览器换行 */
+        border: 1px solid #dee2e6 !important;  /* 添加边框 */
+        max-width: 200px !important;  /* 限制最大宽度强制换行 */
+    }
+
+    /* 特别针对长文本字段的换行设置 */
+    .table-center td:nth-child(3),  /* 客户名称 */
+    .table-center td:nth-child(4),  /* 识别编码 */
+    .table-center td:nth-child(7),  /* 跟单客服 */
+    .table-center td:nth-child(8),  /* 入库车牌 */
+    .table-center td:nth-child(16), /* 备注1 */
+    .table-center td:nth-child(17), /* 备注2 */
+    .table-center td:nth-child(19), /* 接收仓库 */
+    .table-center td:nth-child(20)  /* 操作用户 */ {
+        white-space: normal !important;
+        word-wrap: break-word !important;
+        word-break: break-all !important;
+        overflow-wrap: break-word !important;
+        max-width: 150px !important;
+    }
+
+    /* 数字字段字体加大 - 使用更具体的选择器确保优先级（排除入库车牌字段） */
+    .table.table-striped.table-hover.table-center td:nth-child(9),  /* 送货板数 */
+    .table.table-striped.table-hover.table-center td:nth-child(10), /* 送货件数 */
+    .table.table-striped.table-hover.table-center td:nth-child(11), /* 接收板数 */
+    .table.table-striped.table-hover.table-center td:nth-child(12), /* 接收件数 */
+    .table.table-striped.table-hover.table-center td:nth-child(13), /* 重量(kg) */
+    .table.table-striped.table-hover.table-center td:nth-child(14), /* 体积(m³) */
+    .table.table-striped.table-hover.table-center td:nth-child(15)  /* 单据份数 */ {
+        font-size: 17px !important;  /* 数字字段字体加大到17px */
+        font-weight: 600 !important;  /* 数字字段加粗 */
+        text-align: center !important;  /* 数字字段居中对齐 */
+    }
+
+    /* 强制覆盖数字字段样式（排除入库车牌字段第8列） */
+    td:nth-child(9), td:nth-child(10), td:nth-child(11),
+    td:nth-child(12), td:nth-child(13), td:nth-child(14), td:nth-child(15) {
+        font-size: 17px !important;
+        font-weight: 600 !important;
+        text-align: center !important;
+    }
+
+    /* 缩小接收仓库和操作用户列宽 */
+    .table-center th:nth-child(19),  /* 接收仓库表头 */
+    .table-center td:nth-child(19)   /* 接收仓库内容 */ {
+        max-width: 80px !important;
+        width: 80px !important;
+        font-size: 14px !important;  /* 从12px增大到14px */
+    }
+
+    .table-center th:nth-child(20),  /* 操作用户表头 */
+    .table-center td:nth-child(20)   /* 操作用户内容 */ {
+        max-width: 70px !important;
+        width: 70px !important;
+        font-size: 14px !important;  /* 从12px增大到14px */
+    }
+
+    /* 操作列固定宽度 */
+    .table-center th:nth-child(21),  /* 操作表头 */
+    .table-center td:nth-child(21)   /* 操作内容 */ {
+        max-width: 120px !important;
+        width: 120px !important;
+        text-align: center !important;
+    }
+
+    /* 其他列宽度优化 - 重新调整以适应新增字段 */
+    .table-center th:nth-child(1),   /* 序号 */
+    .table-center td:nth-child(1) {
+        max-width: 35px !important;
+        width: 35px !important;
+        text-align: center !important;
+        font-size: 13px !important;  /* 从11px增大到13px */
+    }
+
+    .table-center th:nth-child(2),   /* 接收时间 */
+    .table-center td:nth-child(2) {
+        max-width: 75px !important;
+        width: 75px !important;
+        font-size: 12px !important;  /* 从10px增大到12px */
+    }
+
+    .table-center th:nth-child(3),   /* 客户名称 */
+    .table-center td:nth-child(3) {
+        max-width: 90px !important;
+        width: 90px !important;
+        font-size: 13px !important;  /* 从11px增大到13px */
+    }
+
+    .table-center th:nth-child(4),   /* 识别编码 */
+    .table-center td:nth-child(4) {
+        max-width: 100px !important;
+        width: 100px !important;
+        font-size: 12px !important;  /* 从10px增大到12px */
+    }
+
+    .table-center th:nth-child(5),   /* 订单类型 */
+    .table-center td:nth-child(5) {
+        max-width: 65px !important;
+        width: 65px !important;
+        font-size: 12px !important;  /* 从10px增大到12px */
+    }
+
+    .table-center th:nth-child(6),   /* 报关行 */
+    .table-center td:nth-child(6) {
+        max-width: 65px !important;
+        width: 65px !important;
+        font-size: 12px !important;  /* 从10px增大到12px */
+    }
+
+    .table-center th:nth-child(7),   /* 跟单客服 */
+    .table-center td:nth-child(7) {
+        max-width: 65px !important;
+        width: 65px !important;
+        font-size: 12px !important;  /* 从10px增大到12px */
+    }
+
+    /* 入库车牌列样式 */
+    .table-center th:nth-child(8),   /* 入库车牌 */
+    .table-center td:nth-child(8) {
+        max-width: 85px !important;
+        width: 85px !important;
+        font-size: 12px !important;  /* 非数量列，增大2px */
+    }
+
+    /* 数字列宽度 */
+    .table-center th:nth-child(9),   /* 送货板数 */
+    .table-center td:nth-child(9),
+    .table-center th:nth-child(10),  /* 送货件数 */
+    .table-center td:nth-child(10),
+    .table-center th:nth-child(11),  /* 接收板数 */
+    .table-center td:nth-child(11),
+    .table-center th:nth-child(12),  /* 接收件数 */
+    .table-center td:nth-child(12) {
+        max-width: 50px !important;
+        width: 50px !important;
+    }
+
+    .table-center th:nth-child(13),  /* 重量 */
+    .table-center td:nth-child(13),
+    .table-center th:nth-child(14),  /* 体积 */
+    .table-center td:nth-child(14),
+    .table-center th:nth-child(15),  /* 单据份数 */
+    .table-center td:nth-child(15) {
+        max-width: 55px !important;
+        width: 55px !important;
+    }
+
+    .table-center th:nth-child(16),  /* 备注1 */
+    .table-center td:nth-child(16),
+    .table-center th:nth-child(17),  /* 备注2 */
+    .table-center td:nth-child(17) {
+        max-width: 70px !important;
+        width: 70px !important;
+        font-size: 12px !important;  /* 从10px增大到12px */
+    }
+
+    .table-center th:nth-child(18),  /* 差异状态 */
+    .table-center td:nth-child(18) {
+        max-width: 55px !important;
+        width: 55px !important;
+        text-align: center !important;
+        font-size: 12px !important;  /* 从10px增大到12px */
+    }
+
+    .table-center th:nth-child(19),  /* 接收仓库 */
+    .table-center td:nth-child(19) {
+        max-width: 65px !important;
+        width: 65px !important;
+        font-size: 12px !important;  /* 从10px增大到12px */
+    }
+
+    .table-center th:nth-child(20),  /* 操作用户 */
+    .table-center td:nth-child(20) {
+        max-width: 60px !important;
+        width: 60px !important;
+        font-size: 12px !important;  /* 从10px增大到12px */
+    }
+
+    /* 表头样式优化 */
+    .table-center th {
+        font-size: 16px !important;  /* 表头字体从14px增大到16px */
+        font-weight: 600;
+        padding: 10px 8px !important;  /* 表头内边距 */
+        background-color: #198754 !important;
+        color: white !important;
+        border: 1px solid #155724 !important;
+        text-align: center !important;  /* 表头保持居中 */
+    }
+
+    /* 确保按钮也居中 */
+    .table-center td .btn-group {
+        margin: 0 auto;
+    }
+
+    /* 表格整体样式优化 */
+    .table-responsive {
+        border-radius: 6px;
+        overflow-x: auto;
+    }
+
+    .table {
+        margin-bottom: 0;
+        min-width: 1600px;  /* 适当增加最小宽度 */
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        font-size: 15px;  /* 整体字体大小增大2px：从13px改为15px */
+    }
+
+    /* 批次分组样式 */
+    .batch-group {
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .batch-header {
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        border-bottom: 1px solid #dee2e6;
+        min-height: 60px;
+    }
+
+    .batch-info h6 {
+        font-size: 16px;
+        margin-bottom: 4px;
+    }
+
+    .batch-info small {
+        font-size: 12px;
+        line-height: 1.2;
+    }
+
+    .summary-item {
+        display: inline-flex;
+        align-items: baseline;
+    }
+
+    .summary-value {
+        font-size: 16px;
+        line-height: 1;
+    }
+
+    .summary-label {
+        font-size: 10px;
+    }
+
+    .batch-group .table {
+        margin-bottom: 0;
+    }
+
+    .batch-group .table thead th {
+        background-color: #198754 !important;
+        font-size: 12px !important;
+        padding: 8px 4px !important;
+    }
+
+    /* 批次删除按钮样式 */
+    .batch-actions .btn {
+        font-size: 12px;
+        padding: 6px 12px;
+        border-radius: 4px;
+    }
+
+    /* 特定列的宽度优化 - 适中的设计，支持换行 */
+    .table th:nth-child(1), .table td:nth-child(1) { width: 50px; }  /* 序号 */
+    .table th:nth-child(2), .table td:nth-child(2) { width: 90px; }  /* 接收时间 */
+    .table th:nth-child(3), .table td:nth-child(3) { width: 120px; }  /* 客户名称 */
+    .table th:nth-child(4), .table td:nth-child(4) { width: 140px; }  /* 识别编码 */
+    .table th:nth-child(5), .table td:nth-child(5) { width: 80px; }  /* 订单类型 */
+    .table th:nth-child(6), .table td:nth-child(6) { width: 100px; }  /* 报关行 */
+    .table th:nth-child(7), .table td:nth-child(7) { width: 80px; } /* 跟单客服 */
+    .table th:nth-child(8), .table td:nth-child(8) { width: 90px; }   /* 入库车牌 */
+    .table th:nth-child(9), .table td:nth-child(9) { width: 70px; }   /* 送货板数 */
+    .table th:nth-child(10), .table td:nth-child(10) { width: 70px; } /* 送货件数 */
+    .table th:nth-child(11), .table td:nth-child(11) { width: 70px; } /* 接收板数 */
+    .table th:nth-child(12), .table td:nth-child(12) { width: 70px; } /* 接收件数 */
+    .table th:nth-child(13), .table td:nth-child(13) { width: 70px; } /* 重量 */
+    .table th:nth-child(14), .table td:nth-child(14) { width: 70px; } /* 体积 */
+    .table th:nth-child(15), .table td:nth-child(15) { width: 70px; } /* 单据份数 */
+    .table th:nth-child(16), .table td:nth-child(16) { width: 100px; } /* 备注1 */
+    .table th:nth-child(17), .table td:nth-child(17) { width: 100px; } /* 备注2 */
+    .table th:nth-child(18), .table td:nth-child(18) { width: 70px; }  /* 差异状态 */
+    .table th:nth-child(19), .table td:nth-child(19) { width: 80px; } /* 接收仓库 */
+    .table th:nth-child(20), .table td:nth-child(20) { width: 80px; } /* 操作用户 */
+    .table th:nth-child(21), .table td:nth-child(21) { width: 80px; } /* 操作 */
+
+    /* 表格行悬停效果优化 */
+    .table-hover tbody tr:hover {
+        background-color: #f8f9fa !important;
+        transform: scale(1.001);
+        transition: all 0.2s ease;
+    }
+
+    /* 徽章样式优化 */
+    .badge {
+        font-size: 9px;  /* 进一步减小徽章字体 */
+        padding: 2px 4px;  /* 减小徽章内边距 */
+    }
+
+    /* 按钮组样式优化 */
+    .btn-group-sm .btn {
+        padding: 2px 4px;  /* 减小按钮内边距 */
+        font-size: 9px;   /* 减小按钮字体 */
+        border-radius: 2px;
+        min-width: 24px;  /* 设置最小宽度 */
+    }
+
+    /* 数字列右对齐 */
+    .table td:nth-child(8), .table td:nth-child(9),
+    .table td:nth-child(10), .table td:nth-child(11),
+    .table td:nth-child(12), .table td:nth-child(13),
+    .table td:nth-child(14) {
+        text-align: center !important;  /* 改为居中对齐，更整齐 */
+        font-family: 'Courier New', monospace;
+        font-weight: 500;
+        font-size: 10px !important;  /* 数字列字体稍小 */
+    }
+
+    /* 表格整体紧凑样式 */
+    .table-responsive {
+        font-size: 13px;  /* 从11px增大到13px */
+    }
+
+    /* 操作按钮样式优化 */
+    .btn-group .btn {
+        padding: 1px 3px;
+        font-size: 9px;
+        margin: 0 1px;
+    }
+
+    /* 强制覆盖所有表格字体大小 - 最高优先级 */
+    body .table-responsive .table.table-striped.table-hover.table-center th,
+    body .table-responsive .table.table-striped.table-hover.table-center td {
+        font-size: 15px !important;
+    }
+
+    /* 强制覆盖数量列字体大小 */
+    body .table-responsive .table.table-striped.table-hover.table-center td:nth-child(9),
+    body .table-responsive .table.table-striped.table-hover.table-center td:nth-child(10),
+    body .table-responsive .table.table-striped.table-hover.table-center td:nth-child(11),
+    body .table-responsive .table.table-striped.table-hover.table-center td:nth-child(12),
+    body .table-responsive .table.table-striped.table-hover.table-center td:nth-child(13),
+    body .table-responsive .table.table-striped.table-hover.table-center td:nth-child(14),
+    body .table-responsive .table.table-striped.table-hover.table-center td:nth-child(15) {
+        font-size: 17px !important;
+        font-weight: 600 !important;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- 页面标题 -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-success">
+                <div class="card-header bg-success text-white">
+                    <h3 class="card-title mb-0">
+                        <i class="fas fa-list me-2"></i>前端仓接收记录
+                        <span class="badge bg-light text-success ms-2">Frontend Receive Records</span>
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-8">
+                            <p class="card-text mb-0">
+                                <i class="fas fa-info-circle me-1"></i>
+                                查看平湖仓、昆山仓、成都仓的接收记录（从其他仓库转入的货物）
+                            </p>
+                        </div>
+                        <div class="col-md-4 text-end">
+                            <a href="{{ url_for('main.frontend_receive') }}" class="btn btn-success me-2">
+                                <i class="fas fa-plus me-1"></i>新增接收
+                            </a>
+                            <a href="{{ url_for('main.export_frontend_receive') }}?{{ request.query_string.decode('utf-8') }}" class="btn btn-primary">
+                                <i class="fas fa-file-export me-1"></i>导出Excel
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 美化的搜索区域 -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-primary">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-search me-2"></i>搜索筛选
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form id="searchForm" action="{{ url_for('main.frontend_receive_list') }}" method="get">
+                        <div class="row g-3">
+                            <!-- 第一行：日期范围和筛选字段 -->
+                            <div class="col-md-3">
+                                <label class="form-label fw-bold">
+                                    <i class="fas fa-calendar-alt me-1"></i>开始日期
+                                </label>
+                                <input type="date" class="form-control" id="date_start" name="date_start"
+                                       value="{{ search_params.get('date_start', '') if search_params else '' }}">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label fw-bold">
+                                    <i class="fas fa-calendar-alt me-1"></i>结束日期
+                                </label>
+                                <input type="date" class="form-control" id="date_end" name="date_end"
+                                       value="{{ search_params.get('date_end', '') if search_params else '' }}">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label fw-bold">
+                                    <i class="fas fa-filter me-1"></i>筛选字段
+                                </label>
+                                <select class="form-select" id="search_field" name="search_field">
+                                    <option value="customer_name" selected>客户名称</option>
+                                    <option value="plate_number">车牌号</option>
+                                    <option value="batch_no">识别编码</option>
+                                    <option value="inbound_type">入库类型</option>
+                                    <option value="order_type">订单类型</option>
+                                    <option value="export_mode">出境模式</option>
+                                    <option value="customs_broker">报关行</option>
+                                    <option value="service_staff">跟单客服</option>
+                                    <option value="location">库位</option>
+                                    <option value="source_warehouse">来源仓库</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label fw-bold">
+                                    <i class="fas fa-cog me-1"></i>搜索条件
+                                </label>
+                                <select class="form-select" id="search_condition" name="search_condition">
+                                    <option value="contains" selected>包含</option>
+                                    <option value="exact">完全匹配</option>
+                                    <option value="startswith">开头是</option>
+                                    <option value="endswith">结尾是</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="row g-3 mt-2">
+                            <!-- 第二行：搜索内容和操作按钮 -->
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">
+                                    <i class="fas fa-keyboard me-1"></i>搜索内容
+                                </label>
+                                <input type="text" class="form-control" id="search_value" name="search_value"
+                                       placeholder="请输入搜索内容"
+                                       value="{{ search_params.get('search_value', '') if search_params else '' }}">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">
+                                    <i class="fas fa-tools me-1"></i>操作
+                                </label>
+                                <div class="d-flex gap-2">
+                                    <button type="submit" id="search_btn" class="btn btn-primary">
+                                        <i class="fas fa-search me-1"></i>搜索
+                                    </button>
+                                    <button type="button" id="reset_btn" class="btn btn-outline-secondary">
+                                        <i class="fas fa-redo me-1"></i>重置
+                                    </button>
+                                    <a href="{{ url_for('main.export_frontend_receive') }}?{{ request.query_string.decode('utf-8') }}"
+                                       class="btn btn-success">
+                                        <i class="fas fa-file-export me-1"></i>导出
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 隐藏字段，用于后端处理 -->
+                        <input type="hidden" name="customer_name" id="customer_name_hidden" value="{{ search_params.get('customer_name', '') if search_params else '' }}">
+                        <input type="hidden" name="plate_number" id="plate_number_hidden" value="{{ search_params.get('plate_number', '') if search_params else '' }}">
+                        <input type="hidden" name="batch_no" id="batch_no_hidden" value="{{ search_params.get('batch_no', '') if search_params else '' }}">
+                        <input type="hidden" name="inbound_type" id="inbound_type_hidden" value="{{ search_params.get('inbound_type', '') if search_params else '' }}">
+                        <input type="hidden" name="order_type" id="order_type_hidden" value="{{ search_params.get('order_type', '') if search_params else '' }}">
+                        <input type="hidden" name="export_mode" id="export_mode_hidden" value="{{ search_params.get('export_mode', '') if search_params else '' }}">
+                        <input type="hidden" name="customs_broker" id="customs_broker_hidden" value="{{ search_params.get('customs_broker', '') if search_params else '' }}">
+                        <input type="hidden" name="service_staff" id="service_staff_hidden" value="{{ search_params.get('service_staff', '') if search_params else '' }}">
+                        <input type="hidden" name="location" id="location_hidden" value="{{ search_params.get('location', '') if search_params else '' }}">
+                        <input type="hidden" name="source_warehouse" id="source_warehouse_hidden" value="{{ search_params.get('source_warehouse', '') if search_params else '' }}">
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 记录列表 -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-table me-2"></i>接收记录列表（按批次分组）
+                    </h5>
+                    <div>
+                        <span class="badge bg-success">前端仓专用</span>
+                        {% if batch_groups.total %}
+                        <span class="badge bg-info">共 {{ batch_groups.total }} 个批次</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% if batch_groups.items %}
+                    <!-- 按批次分组显示 -->
+                    {% for batch_no, batch_data in batch_groups.items %}
+                    <div class="batch-group mb-4">
+                        <!-- 批次公共信息 -->
+                        <div class="batch-header bg-light p-2 rounded mb-2">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <!-- 左侧：批次信息和汇总数据 -->
+                                <div class="d-flex align-items-center">
+                                    <!-- 批次基本信息 -->
+                                    <div class="batch-info me-4">
+                                        <h6 class="mb-1 text-primary">
+                                            <i class="fas fa-layer-group me-1"></i>{{ batch_data.batch_info.batch_no }}
+                                        </h6>
+                                        <small class="text-muted">
+                                            {% if batch_data.batch_info.first_receive_time == batch_data.batch_info.last_receive_time %}
+                                                {{ batch_data.batch_info.first_receive_time.strftime('%Y-%m-%d') if batch_data.batch_info.first_receive_time else '-' }}
+                                            {% else %}
+                                                {{ batch_data.batch_info.first_receive_time.strftime('%Y-%m-%d') if batch_data.batch_info.first_receive_time else '-' }} ~
+                                                {{ batch_data.batch_info.last_receive_time.strftime('%Y-%m-%d') if batch_data.batch_info.last_receive_time else '-' }}
+                                            {% endif %}
+                                        </small>
+                                    </div>
+
+                                    <!-- 汇总数据 - 水平排列 -->
+                                    <div class="batch-summary d-flex">
+                                        <div class="summary-item me-3">
+                                            <span class="summary-value text-primary fw-bold">{{ batch_data.batch_info.total_pallet_count }}</span>
+                                            <small class="summary-label text-muted ms-1">板</small>
+                                        </div>
+                                        <div class="summary-item me-3">
+                                            <span class="summary-value text-success fw-bold">{{ batch_data.batch_info.total_package_count }}</span>
+                                            <small class="summary-label text-muted ms-1">件</small>
+                                        </div>
+                                        <div class="summary-item me-3">
+                                            <span class="summary-value text-info fw-bold">{{ "%.1f"|format(batch_data.batch_info.total_weight) }}</span>
+                                            <small class="summary-label text-muted ms-1">kg</small>
+                                        </div>
+                                        <div class="summary-item me-3">
+                                            <span class="summary-value text-warning fw-bold">{{ batch_data.batch_info.record_count }}</span>
+                                            <small class="summary-label text-muted ms-1">条记录</small>
+                                        </div>
+                                        <!-- 送货干线车信息 -->
+                                        {% if batch_data.records and batch_data.records[0].delivery_plate_number %}
+                                        <div class="summary-item me-3">
+                                            <span class="summary-label text-muted me-1">送货干线车:</span>
+                                            <span class="summary-value text-dark fw-bold">{{ batch_data.records[0].delivery_plate_number }}</span>
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+
+                                <!-- 右侧：删除按钮 -->
+                                <div class="batch-actions">
+                                    <button type="button" class="btn btn-outline-danger btn-sm"
+                                            onclick="deleteBatch('{{ batch_no }}')" title="删除整个批次">
+                                        <i class="fas fa-trash me-1"></i>删除批次
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 批次详细记录表格 -->
+                        <div class="table-responsive">
+                            <table class="table table-sm table-striped table-hover table-center" style="font-size: 15px !important;">
+                                <thead class="table-success">
+                                    <tr>
+                                        <th style="font-size: 16px !important;">序号</th>
+                                        <th style="font-size: 16px !important;">接收时间</th>
+                                        <th style="font-size: 16px !important;">客户名称</th>
+                                        <th style="font-size: 16px !important;">识别编码</th>
+                                        <th style="font-size: 16px !important;">订单类型</th>
+                                        <th style="font-size: 16px !important;">报关行</th>
+                                        <th style="font-size: 16px !important;">跟单客服</th>
+                                        <th style="font-size: 16px !important;">入库车牌</th>
+                                        <th style="font-size: 16px !important;">送货板数</th>
+                                        <th style="font-size: 16px !important;">送货件数</th>
+                                        <th style="font-size: 16px !important;">接收板数</th>
+                                        <th style="font-size: 16px !important;">接收件数</th>
+                                        <th style="font-size: 16px !important;">重量(kg)</th>
+                                        <th style="font-size: 16px !important;">体积(m³)</th>
+                                        <th style="font-size: 16px !important;">单据份数</th>
+                                        <th style="font-size: 16px !important;">备注1</th>
+                                        <th style="font-size: 16px !important;">备注2</th>
+                                        <th style="font-size: 16px !important;">差异状态</th>
+                                        <th style="font-size: 16px !important;">接收仓库</th>
+                                        <th>操作用户</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for record in batch_data.records %}
+                                    <tr data-record-id="{{ record.id }}">
+                                        <td style="font-size: 15px !important;">{{ loop.index }}</td>
+                                        <td style="font-size: 15px !important;">{{ record.inbound_time.strftime('%Y-%m-%d %H:%M') if record.inbound_time else '-' }}</td>
+                                        <td style="font-size: 15px !important;">{{ record.customer_name or '-' }}</td>
+                                        <td style="font-size: 15px !important;">{{ record.identification_code or '-' }}</td>
+                                        <td style="font-size: 15px !important;">{{ record.order_type or '-' }}</td>
+                                        <td style="font-size: 15px !important;">{{ record.customs_broker or '-' }}</td>
+                                        <td style="font-size: 15px !important;">{{ record.service_staff or '-' }}</td>
+                                        <td style="font-size: 15px !important;">{{ record.plate_number or '-' }}</td>
+                                        <td style="font-size: 17px !important; font-weight: 600 !important; text-align: center !important;">{{ record.pallet_count or 0 }}</td>
+                                        <td style="font-size: 17px !important; font-weight: 600 !important; text-align: center !important;">{{ record.package_count or 0 }}</td>
+                                        <td style="font-size: 17px !important; font-weight: 600 !important; text-align: center !important;">{{ record.pallet_count or 0 }}</td>
+                                        <td style="font-size: 17px !important; font-weight: 600 !important; text-align: center !important;">{{ record.package_count or 0 }}</td>
+                                        <td style="font-size: 17px !important; font-weight: 600 !important; text-align: center !important;">{{ "%.1f"|format(record.weight or 0) }}</td>
+                                        <td style="font-size: 17px !important; font-weight: 600 !important; text-align: center !important;">{{ "%.2f"|format(record.volume or 0) }}</td>
+                                        <td style="font-size: 17px !important; font-weight: 600 !important; text-align: center !important;">{{ record.documents or '-' }}</td>
+                                        <td style="font-size: 15px !important;">{{ record.remark1 or '-' }}</td>
+                                        <td style="font-size: 15px !important;">{{ record.remark2 or '-' }}</td>
+                                        <td style="font-size: 15px !important;">
+                                            {% if record.remark2 and ('差异' in record.remark2 or '异常' in record.remark2) %}
+                                            <span class="badge bg-warning">异常</span>
+                                            {% else %}
+                                            <span class="badge bg-success">正常</span>
+                                            {% endif %}
+                                        </td>
+                                        <td style="font-size: 15px !important;">{{ record.operated_warehouse.warehouse_name if record.operated_warehouse else '-' }}</td>
+                                        <td style="font-size: 15px !important;">{{ record.operated_by_user.username if record.operated_by_user else '-' }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    {% endfor %}
+
+                    <!-- 分页 -->
+                    {% if batch_groups.pages > 1 %}
+                    <nav aria-label="分页导航">
+                        <ul class="pagination justify-content-center">
+                            {% if batch_groups.has_prev %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('main.frontend_receive_list', page=batch_groups.prev_num, **search_params) }}">
+                                    <i class="fas fa-chevron-left"></i> 上一页
+                                </a>
+                            </li>
+                            {% endif %}
+
+                            {% for page_num in range(1, batch_groups.pages + 1) %}
+                                {% if page_num != batch_groups.page %}
+                                <li class="page-item">
+                                    <a class="page-link" href="{{ url_for('main.frontend_receive_list', page=page_num, **search_params) }}">{{ page_num }}</a>
+                                </li>
+                                {% else %}
+                                <li class="page-item active">
+                                    <span class="page-link">{{ page_num }}</span>
+                                </li>
+                                {% endif %}
+                            {% endfor %}
+
+                            {% if batch_groups.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('main.frontend_receive_list', page=batch_groups.next_num, **search_params) }}">
+                                    下一页 <i class="fas fa-chevron-right"></i>
+                                </a>
+                            </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                    {% endif %}
+                    {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">暂无接收记录</h5>
+                        <p class="text-muted">请先进行接收操作</p>
+                        <a href="{{ url_for('main.frontend_receive') }}" class="btn btn-success">
+                            <i class="fas fa-plus me-1"></i>立即接收
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<!-- 使用jsuites日期选择器 -->
+<script src="{{ url_for('static', filename='vendor/js/jsuites.js') }}"></script>
+<script>
+$(document).ready(function() {
+    console.log('前端仓接收记录页面已加载');
+
+    // 设置日期输入框的默认值
+    const urlParams = new URLSearchParams(window.location.search);
+    const dateStart = urlParams.get('date_start') || '{{ search_params.get("date_start", "") if search_params else "" }}';
+    const dateEnd = urlParams.get('date_end') || '{{ search_params.get("date_end", "") if search_params else "" }}';
+
+    if (dateStart) {
+        document.getElementById('date_start').value = dateStart;
+    }
+    if (dateEnd) {
+        document.getElementById('date_end').value = dateEnd;
+    }
+
+    // 设置搜索字段和值
+    const searchField = urlParams.get('search_field') || 'customer_name';
+    const searchValue = urlParams.get('search_value') || '';
+
+    document.getElementById('search_field').value = searchField;
+    document.getElementById('search_value').value = searchValue;
+
+    // 根据搜索字段设置隐藏字段的值
+    updateHiddenFields();
+
+    // 表格行点击高亮
+    $('tbody tr').click(function() {
+        $(this).toggleClass('table-active');
+    });
+});
+
+// 搜索字段变化时更新隐藏字段
+document.getElementById('search_field').addEventListener('change', function() {
+    updateHiddenFields();
+});
+
+// 搜索值变化时更新隐藏字段
+document.getElementById('search_value').addEventListener('input', function() {
+    updateHiddenFields();
+});
+
+// 更新隐藏字段
+function updateHiddenFields() {
+    const searchField = document.getElementById('search_field').value;
+    const searchValue = document.getElementById('search_value').value;
+
+    // 清空所有隐藏字段
+    document.getElementById('customer_name_hidden').value = '';
+    document.getElementById('plate_number_hidden').value = '';
+    document.getElementById('batch_no_hidden').value = '';
+    document.getElementById('inbound_type_hidden').value = '';
+    document.getElementById('order_type_hidden').value = '';
+    document.getElementById('export_mode_hidden').value = '';
+    document.getElementById('customs_broker_hidden').value = '';
+    document.getElementById('service_staff_hidden').value = '';
+    document.getElementById('location_hidden').value = '';
+    document.getElementById('source_warehouse_hidden').value = '';
+
+    // 根据选择的字段设置对应的隐藏字段值
+    if (searchValue) {
+        const hiddenField = document.getElementById(searchField + '_hidden');
+        if (hiddenField) {
+            hiddenField.value = searchValue;
+        }
+    }
+}
+
+// 重置按钮事件 - 默认显示昨天和今天的数据
+document.getElementById('reset_btn').addEventListener('click', function() {
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+
+    const todayStr = today.toISOString().split('T')[0];
+    const yesterdayStr = yesterday.toISOString().split('T')[0];
+
+    // 构建带有默认日期范围的URL
+    const url = new URL('{{ url_for("main.frontend_receive_list") }}', window.location.origin);
+    url.searchParams.set('date_start', yesterdayStr);
+    url.searchParams.set('date_end', todayStr);
+
+    location.href = url.toString();
+});
+
+// 批次删除函数
+function deleteBatch(batchNo) {
+    // 删除整个批次
+    if (confirm('确认要删除批次 "' + batchNo + '" 的所有接收记录吗？\n\n删除后，这些记录将退回到接收操作界面，可以重新进行接收操作。')) {
+        // 发送删除请求
+        fetch('{{ url_for("main.delete_batch_receive") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token() }}'
+            },
+            body: JSON.stringify({
+                batch_no: batchNo
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // 显示成功消息
+                showNotification('success', data.message || '批次删除成功');
+                // 刷新页面
+                setTimeout(() => {
+                    location.reload();
+                }, 1500);
+            } else {
+                // 显示错误消息
+                showNotification('error', data.message || '删除失败');
+            }
+        })
+        .catch(error => {
+            console.error('删除批次时出错:', error);
+            showNotification('error', '删除批次时出错，请重试');
+        });
+    }
+}
+
+// 显示通知消息
+function showNotification(type, message) {
+    // 创建通知元素
+    const notification = document.createElement('div');
+    notification.className = `alert alert-${type === 'success' ? 'success' : 'danger'} alert-dismissible fade show position-fixed`;
+    notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+    notification.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+
+    // 添加到页面
+    document.body.appendChild(notification);
+
+    // 3秒后自动移除
+    setTimeout(() => {
+        if (notification.parentNode) {
+            notification.parentNode.removeChild(notification);
+        }
+    }, 3000);
+}
+</script>
+{% endblock %}

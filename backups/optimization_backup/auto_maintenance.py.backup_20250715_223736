@@ -1,0 +1,164 @@
+#!/usr/bin/env python3
+"""
+自动化维护脚本
+整合所有维护任务，可以定期执行
+"""
+import os
+import sys
+import subprocess
+from datetime import datetime
+
+# 添加项目根目录到路径
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+class AutoMaintenance:
+    def __init__(self):
+        self.script_dir = os.path.dirname(os.path.abspath(__file__))
+        self.project_root = os.path.dirname(self.script_dir)
+        
+    def run_script(self, script_name):
+        """运行维护脚本"""
+        script_path = os.path.join(self.script_dir, script_name)
+        if not os.path.exists(script_path):
+            return False, f"脚本不存在: {script_path}"
+            
+        try:
+            result = subprocess.run([sys.executable, script_path], 
+                                  capture_output=True, text=True, 
+                                  cwd=self.project_root)
+            return result.returncode == 0, result.stdout + result.stderr
+        except Exception as e:
+            return False, str(e)
+    
+    def check_system_health(self):
+        """检查系统健康状态"""
+        print("检查系统健康状态...")
+        success, output = self.run_script('performance_monitor.py')
+        if success:
+            print("✓ 系统监控完成")
+        else:
+            print(f"✗ 系统监控失败: {output}")
+        return success
+    
+    def clean_logs(self):
+        """清理日志"""
+        print("清理日志文件...")
+        success, output = self.run_script('log_cleaner.py')
+        if success:
+            print("✓ 日志清理完成")
+        else:
+            print(f"✗ 日志清理失败: {output}")
+        return success
+    
+    def optimize_database(self):
+        """优化数据库"""
+        print("优化数据库...")
+        success, output = self.run_script('db_optimizer.py')
+        if success:
+            print("✓ 数据库优化完成")
+        else:
+            print(f"✗ 数据库优化失败: {output}")
+        return success
+    
+    def restart_if_needed(self):
+        """如果需要则重启服务"""
+        # 检查是否有多个Python进程
+        try:
+            import psutil
+            python_processes = []
+            for proc in psutil.process_iter(['pid', 'name', 'cmdline']):
+                if 'python' in proc.info['name'].lower():
+                    cmdline = ' '.join(proc.info['cmdline'] or [])
+                    if 'run.py' in cmdline:
+                        python_processes.append(proc.info['pid'])
+            
+            if len(python_processes) > 1:
+                print(f"发现{len(python_processes)}个应用进程，建议重启")
+                return False
+            else:
+                print("✓ 进程状态正常")
+                return True
+        except ImportError:
+            print("无法检查进程状态（需要psutil）")
+            return True
+        except Exception as e:
+            print(f"检查进程状态失败: {e}")
+            return True
+    
+    def generate_maintenance_report(self):
+        """生成维护报告"""
+        report_file = os.path.join(self.project_root, 'logs', 'maintenance_report.txt')
+        os.makedirs(os.path.dirname(report_file), exist_ok=True)
+        
+        with open(report_file, 'w', encoding='utf-8') as f:
+            f.write(f"系统维护报告\n")
+            f.write(f"生成时间: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
+            f.write("=" * 50 + "\n\n")
+            
+            # 运行各个检查脚本并记录结果
+            scripts = [
+                ('performance_monitor.py', '性能监控'),
+                ('log_cleaner.py', '日志清理'),
+                ('db_optimizer.py', '数据库优化')
+            ]
+            
+            for script, name in scripts:
+                f.write(f"{name}:\n")
+                success, output = self.run_script(script)
+                f.write(f"状态: {'成功' if success else '失败'}\n")
+                f.write(f"输出:\n{output}\n")
+                f.write("-" * 30 + "\n\n")
+        
+        print(f"维护报告已生成: {report_file}")
+    
+    def run_full_maintenance(self):
+        """执行完整的维护流程"""
+        print(f"开始自动维护 - {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+        print("=" * 60)
+        
+        maintenance_tasks = [
+            ("系统健康检查", self.check_system_health),
+            ("日志清理", self.clean_logs),
+            ("数据库优化", self.optimize_database),
+            ("进程状态检查", self.restart_if_needed)
+        ]
+        
+        results = []
+        for task_name, task_func in maintenance_tasks:
+            print(f"\n执行: {task_name}")
+            try:
+                success = task_func()
+                results.append((task_name, success))
+            except Exception as e:
+                print(f"✗ {task_name}失败: {e}")
+                results.append((task_name, False))
+        
+        # 生成报告
+        print(f"\n生成维护报告...")
+        self.generate_maintenance_report()
+        
+        # 总结
+        print(f"\n维护总结:")
+        success_count = sum(1 for _, success in results if success)
+        total_count = len(results)
+        
+        for task_name, success in results:
+            status = "✓" if success else "✗"
+            print(f"  {status} {task_name}")
+        
+        print(f"\n完成率: {success_count}/{total_count}")
+        
+        if success_count == total_count:
+            print("🎉 所有维护任务完成！")
+        else:
+            print("⚠️  部分维护任务失败，请检查日志")
+        
+        print("=" * 60)
+
+def main():
+    """主函数"""
+    maintenance = AutoMaintenance()
+    maintenance.run_full_maintenance()
+
+if __name__ == '__main__':
+    main()

@@ -1,0 +1,27 @@
+/* 可调整列宽的样式 */
+.table-resizable {
+  position: relative;
+  width: 100%;
+  overflow-x: auto;
+}
+
+.table-resizable th {
+  position: relative;
+  overflow: hidden;
+}
+
+.table-resizable .resizer {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 8px;
+  height: 100%;
+  cursor: col-resize;
+  user-select: none;
+  z-index: 1;
+}
+
+.table-resizable .resizer:hover,
+.table-resizable .resizing {
+  background-color: #ddd;
+} 
