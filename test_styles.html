@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>统计卡片样式测试</title>
+    <link href="https://cdn.bootcdn.net/ajax/libs/twitter-bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        /* 首页统计卡片样式 - 最高优先级 */
+        .card-body .row.text-center .col-md-3:nth-child(1) .bg-light.border.rounded.p-3.shadow-sm,
+        .card-body .row.text-center .col-md-3:nth-child(1) div {
+            background-color: #e3f2fd !important;
+            background: #e3f2fd !important;
+            border: 2px solid #2196f3 !important;
+            border-color: #2196f3 !important;
+            box-shadow: 0 4px 12px rgba(33, 150, 243, 0.3) !important;
+        }
+
+        .card-body .row.text-center .col-md-3:nth-child(2) .bg-success.bg-opacity-10.border.border-success.rounded.p-3.shadow-sm,
+        .card-body .row.text-center .col-md-3:nth-child(2) div {
+            background-color: #e8f5e8 !important;
+            background: #e8f5e8 !important;
+            border: 2px solid #4caf50 !important;
+            border-color: #4caf50 !important;
+            box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3) !important;
+        }
+
+        .card-body .row.text-center .col-md-3:nth-child(3) .bg-info.bg-opacity-10.border.border-info.rounded.p-3.shadow-sm,
+        .card-body .row.text-center .col-md-3:nth-child(3) div {
+            background-color: #fff3e0 !important;
+            background: #fff3e0 !important;
+            border: 2px solid #ff9800 !important;
+            border-color: #ff9800 !important;
+            box-shadow: 0 4px 12px rgba(255, 152, 0, 0.3) !important;
+        }
+
+        .card-body .row.text-center .col-md-3:nth-child(4) .bg-warning.bg-opacity-10.border.border-warning.rounded.p-3.shadow-sm,
+        .card-body .row.text-center .col-md-3:nth-child(4) div {
+            background-color: #fce4ec !important;
+            background: #fce4ec !important;
+            border: 2px solid #e91e63 !important;
+            border-color: #e91e63 !important;
+            box-shadow: 0 4px 12px rgba(233, 30, 99, 0.3) !important;
+        }
+
+        /* 统计卡片文字颜色 */
+        .card-body .row.text-center .col-md-3:nth-child(1) h4,
+        .card-body .row.text-center .col-md-3:nth-child(1) small {
+            color: #1976d2 !important;
+            font-weight: bold !important;
+        }
+
+        .card-body .row.text-center .col-md-3:nth-child(2) h4,
+        .card-body .row.text-center .col-md-3:nth-child(2) small {
+            color: #388e3c !important;
+            font-weight: bold !important;
+        }
+
+        .card-body .row.text-center .col-md-3:nth-child(3) h4,
+        .card-body .row.text-center .col-md-3:nth-child(3) small {
+            color: #f57c00 !important;
+            font-weight: bold !important;
+        }
+
+        .card-body .row.text-center .col-md-3:nth-child(4) h4,
+        .card-body .row.text-center .col-md-3:nth-child(4) small {
+            color: #c2185b !important;
+            font-weight: bold !important;
+        }
+    </style>
+</head>
+<body>
+    <div class="container mt-5">
+        <h1 class="text-center mb-4">统计卡片样式测试</h1>
+        
+        <div class="card">
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-md-3">
+                        <div class="bg-light border rounded p-3 shadow-sm">
+                            <h4 class="text-primary mb-2">17</h4>
+                            <small class="text-dark fw-bold">今日入库</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="bg-success bg-opacity-10 border border-success rounded p-3 shadow-sm">
+                            <h4 class="text-success mb-2">5</h4>
+                            <small class="text-success fw-bold">今日出库</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="bg-info bg-opacity-10 border border-info rounded p-3 shadow-sm">
+                            <h4 class="text-info mb-2">17</h4>
+                            <small class="text-info fw-bold">当前库存</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="bg-warning bg-opacity-10 border border-warning rounded p-3 shadow-sm">
+                            <h4 class="text-warning mb-2">2</h4>
+                            <small class="text-warning fw-bold">在途货物</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        $(document).ready(function() {
+            console.log('🎨 测试页面加载完成');
+            
+            // 强制应用样式
+            function applyStyles() {
+                $('.card-body .row.text-center .col-md-3:nth-child(1) div').css({
+                    'background-color': '#e3f2fd',
+                    'border': '2px solid #2196f3'
+                });
+                $('.card-body .row.text-center .col-md-3:nth-child(2) div').css({
+                    'background-color': '#e8f5e8',
+                    'border': '2px solid #4caf50'
+                });
+                $('.card-body .row.text-center .col-md-3:nth-child(3) div').css({
+                    'background-color': '#fff3e0',
+                    'border': '2px solid #ff9800'
+                });
+                $('.card-body .row.text-center .col-md-3:nth-child(4) div').css({
+                    'background-color': '#fce4ec',
+                    'border': '2px solid #e91e63'
+                });
+                console.log('✅ 样式应用完成');
+            }
+            
+            applyStyles();
+            setTimeout(applyStyles, 100);
+        });
+    </script>
+</body>
+</html>

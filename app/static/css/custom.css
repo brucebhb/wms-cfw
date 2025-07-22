@@ -352,13 +352,137 @@ h1.m-0 {
     background-color: #ffc107;
 }
 
-/* 数据统计卡片 */
+/* 数据统计卡片 - 基础样式 */
 .stats-card {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     color: white;
     border-radius: 0.5rem;
     padding: 20px;
     margin-bottom: 20px;
+}
+
+/* 今日进货卡片 - 蓝色 */
+.stats-card-inbound {
+    background: linear-gradient(135deg, #2196f3 0%, #1976d2 100%) !important;
+    border: 2px solid #1565c0 !important;
+    box-shadow: 0 10px 30px rgba(33, 150, 243, 0.3) !important;
+}
+
+/* 今日出货卡片 - 绿色 */
+.stats-card-outbound {
+    background: linear-gradient(135deg, #4caf50 0%, #388e3c 100%) !important;
+    border: 2px solid #2e7d32 !important;
+    box-shadow: 0 10px 30px rgba(76, 175, 80, 0.3) !important;
+}
+
+/* 库存总量卡片 - 橙色 */
+.stats-card-inventory {
+    background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%) !important;
+    border: 2px solid #ef6c00 !important;
+    box-shadow: 0 10px 30px rgba(255, 152, 0, 0.3) !important;
+}
+
+/* 在途货物卡片 - 粉色 */
+.stats-card-transit {
+    background: linear-gradient(135deg, #e91e63 0%, #c2185b 100%) !important;
+    border: 2px solid #ad1457 !important;
+    box-shadow: 0 10px 30px rgba(233, 30, 99, 0.3) !important;
+}
+
+/* 统计卡片内容样式增强 - 水平布局版本 */
+.stats-card {
+    min-height: 120px !important;
+    height: 120px !important;
+}
+
+.stats-card .card-body {
+    padding: 20px !important;
+    display: flex !important;
+    align-items: center !important;
+    height: 100% !important;
+}
+
+.stats-card .stats-icon {
+    width: 50px !important;
+    height: 50px !important;
+    border-radius: 12px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    flex-shrink: 0 !important;
+    font-size: 20px !important;
+}
+
+
+
+/* 统计卡片文字内容区域 */
+.stats-card .stats-content {
+    flex-grow: 1 !important;
+}
+
+.stats-card h6 {
+    font-size: 14px !important;
+    font-weight: 600 !important;
+    margin-bottom: 4px !important;
+    color: #6c757d !important;
+}
+
+.stats-card h3 {
+    font-size: 2rem !important;
+    font-weight: 700 !important;
+    margin-bottom: 0 !important;
+    line-height: 1.0 !important;
+    color: #2c3e50 !important;
+}
+
+.stats-card .text-muted {
+    font-size: 1.2rem !important;
+    font-weight: 700 !important;
+    color: white !important;
+    opacity: 0.9 !important;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.3) !important;
+    display: inline !important;
+    margin-left: 8px !important;
+}
+
+.stats-card small {
+    font-size: 16px !important;
+    font-weight: 600 !important;
+    color: white !important;
+    opacity: 0.9 !important;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.3) !important;
+}
+
+.stats-card .badge {
+    font-size: 16px !important;
+    padding: 10px 15px !important;
+    font-weight: 700 !important;
+    background: rgba(255, 255, 255, 0.2) !important;
+    color: white !important;
+    border: 2px solid rgba(255, 255, 255, 0.3) !important;
+}
+
+.stats-card .badge i {
+    font-size: 16px !important;
+    margin-right: 6px !important;
+}
+
+/* 重新排版 - 居中对齐 */
+.stats-card .card-body {
+    text-align: center !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+.stats-card .d-flex {
+    flex-direction: column !important;
+    align-items: center !important;
+    text-align: center !important;
+}
+
+.stats-card .d-flex.align-items-end {
+    align-items: center !important;
 }
 
 .stats-card h3 {
@@ -370,4 +494,103 @@ h1.m-0 {
 .stats-card p {
     margin-bottom: 0;
     opacity: 0.9;
+}
+
+/* 首页统计卡片样式 - 强制覆盖 - 多种选择器确保生效 */
+
+/* 第一个卡片 - 蓝色 */
+.card-body .row.text-center .col-md-3:nth-child(1) .border,
+.card-body .row.text-center .col-md-3:nth-child(1) div,
+.card-body .row .col-md-3:nth-child(1) .border,
+.card-body .row .col-md-3:nth-child(1) div,
+.col-md-3:nth-child(1) .border,
+.col-md-3:nth-child(1) div {
+    background-color: #e3f2fd !important;
+    background: #e3f2fd !important;
+    border: 2px solid #2196f3 !important;
+    border-color: #2196f3 !important;
+    box-shadow: 0 4px 12px rgba(33, 150, 243, 0.3) !important;
+}
+
+/* 第二个卡片 - 绿色 */
+.card-body .row.text-center .col-md-3:nth-child(2) .border,
+.card-body .row.text-center .col-md-3:nth-child(2) div,
+.card-body .row .col-md-3:nth-child(2) .border,
+.card-body .row .col-md-3:nth-child(2) div,
+.col-md-3:nth-child(2) .border,
+.col-md-3:nth-child(2) div {
+    background-color: #e8f5e8 !important;
+    background: #e8f5e8 !important;
+    border: 2px solid #4caf50 !important;
+    border-color: #4caf50 !important;
+    box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3) !important;
+}
+
+/* 第三个卡片 - 橙色 */
+.card-body .row.text-center .col-md-3:nth-child(3) .border,
+.card-body .row.text-center .col-md-3:nth-child(3) div,
+.card-body .row .col-md-3:nth-child(3) .border,
+.card-body .row .col-md-3:nth-child(3) div,
+.col-md-3:nth-child(3) .border,
+.col-md-3:nth-child(3) div {
+    background-color: #fff3e0 !important;
+    background: #fff3e0 !important;
+    border: 2px solid #ff9800 !important;
+    border-color: #ff9800 !important;
+    box-shadow: 0 4px 12px rgba(255, 152, 0, 0.3) !important;
+}
+
+/* 第四个卡片 - 粉色 */
+.card-body .row.text-center .col-md-3:nth-child(4) .border,
+.card-body .row.text-center .col-md-3:nth-child(4) div,
+.card-body .row .col-md-3:nth-child(4) .border,
+.card-body .row .col-md-3:nth-child(4) div,
+.col-md-3:nth-child(4) .border,
+.col-md-3:nth-child(4) div {
+    background-color: #fce4ec !important;
+    background: #fce4ec !important;
+    border: 2px solid #e91e63 !important;
+    border-color: #e91e63 !important;
+    box-shadow: 0 4px 12px rgba(233, 30, 99, 0.3) !important;
+}
+
+/* 统计卡片文字样式 */
+.card-body .row.text-center .col-md-3:nth-child(1) h4 {
+    color: #1976d2 !important;
+    font-weight: bold !important;
+}
+
+.card-body .row.text-center .col-md-3:nth-child(1) small {
+    color: #1976d2 !important;
+    font-weight: bold !important;
+}
+
+.card-body .row.text-center .col-md-3:nth-child(2) h4 {
+    color: #388e3c !important;
+    font-weight: bold !important;
+}
+
+.card-body .row.text-center .col-md-3:nth-child(2) small {
+    color: #388e3c !important;
+    font-weight: bold !important;
+}
+
+.card-body .row.text-center .col-md-3:nth-child(3) h4 {
+    color: #f57c00 !important;
+    font-weight: bold !important;
+}
+
+.card-body .row.text-center .col-md-3:nth-child(3) small {
+    color: #f57c00 !important;
+    font-weight: bold !important;
+}
+
+.card-body .row.text-center .col-md-3:nth-child(4) h4 {
+    color: #c2185b !important;
+    font-weight: bold !important;
+}
+
+.card-body .row.text-center .col-md-3:nth-child(4) small {
+    color: #c2185b !important;
+    font-weight: bold !important;
 }

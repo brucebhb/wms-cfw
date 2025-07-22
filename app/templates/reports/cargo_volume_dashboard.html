@@ -327,19 +327,19 @@
         <div class="col-xl-3 col-lg-6 col-md-6 mb-3">
             <div class="card stats-card stats-card-inbound border-0 shadow-sm">
                 <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-start">
-                        <div>
-                            <div class="stats-icon bg-primary bg-opacity-10 text-primary mb-3">
-                                <i class="fas fa-arrow-down"></i>
-                            </div>
+                    <div class="d-flex align-items-center">
+                        <div class="stats-icon bg-primary bg-opacity-10 text-primary me-3">
+                            <i class="fas fa-arrow-down"></i>
+                        </div>
+                        <div class="stats-content flex-grow-1">
                             <h6 class="text-muted mb-1">今日进货</h6>
-                            <div class="d-flex align-items-end">
+                            <div class="d-flex align-items-baseline">
                                 <h3 class="mb-0 me-2" id="todayInboundCount">-</h3>
                                 <span class="text-muted">票</span>
                             </div>
-                            <div class="mt-2">
+                            <div class="mt-1">
                                 <small class="text-muted">
-                                    <span id="todayInboundPallets">-</span>板 · 
+                                    <span id="todayInboundPallets">-</span>板 ·
                                     <span id="todayInboundPackages">-</span>件
                                 </small>
                             </div>
@@ -357,19 +357,19 @@
         <div class="col-xl-3 col-lg-6 col-md-6 mb-3">
             <div class="card stats-card stats-card-outbound border-0 shadow-sm">
                 <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-start">
-                        <div>
-                            <div class="stats-icon bg-success bg-opacity-10 text-success mb-3">
-                                <i class="fas fa-arrow-up"></i>
-                            </div>
+                    <div class="d-flex align-items-center">
+                        <div class="stats-icon bg-success bg-opacity-10 text-success me-3">
+                            <i class="fas fa-arrow-up"></i>
+                        </div>
+                        <div class="stats-content flex-grow-1">
                             <h6 class="text-muted mb-1">今日出货</h6>
-                            <div class="d-flex align-items-end">
+                            <div class="d-flex align-items-baseline">
                                 <h3 class="mb-0 me-2" id="todayOutboundCount">-</h3>
                                 <span class="text-muted">票</span>
                             </div>
-                            <div class="mt-2">
+                            <div class="mt-1">
                                 <small class="text-muted">
-                                    <span id="todayOutboundPallets">-</span>板 · 
+                                    <span id="todayOutboundPallets">-</span>板 ·
                                     <span id="todayOutboundPackages">-</span>件
                                 </small>
                             </div>
@@ -387,19 +387,19 @@
         <div class="col-xl-3 col-lg-6 col-md-6 mb-3">
             <div class="card stats-card stats-card-inventory border-0 shadow-sm">
                 <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-start">
-                        <div>
-                            <div class="stats-icon bg-info bg-opacity-10 text-info mb-3">
-                                <i class="fas fa-boxes"></i>
-                            </div>
+                    <div class="d-flex align-items-center">
+                        <div class="stats-icon bg-info bg-opacity-10 text-info me-3">
+                            <i class="fas fa-boxes"></i>
+                        </div>
+                        <div class="stats-content flex-grow-1">
                             <h6 class="text-muted mb-1">库存总量</h6>
-                            <div class="d-flex align-items-end">
+                            <div class="d-flex align-items-baseline">
                                 <h3 class="mb-0 me-2" id="inventoryCount">-</h3>
                                 <span class="text-muted">票</span>
                             </div>
-                            <div class="mt-2">
+                            <div class="mt-1">
                                 <small class="text-muted">
-                                    <span id="inventoryPallets">-</span>板 · 
+                                    <span id="inventoryPallets">-</span>板 ·
                                     <span id="inventoryPackages">-</span>件
                                 </small>
                             </div>
@@ -412,19 +412,19 @@
         <div class="col-xl-3 col-lg-6 col-md-6 mb-3">
             <div class="card stats-card stats-card-transit border-0 shadow-sm">
                 <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-start">
-                        <div>
-                            <div class="stats-icon bg-warning bg-opacity-10 text-warning mb-3">
-                                <i class="fas fa-truck"></i>
-                            </div>
+                    <div class="d-flex align-items-center">
+                        <div class="stats-icon bg-warning bg-opacity-10 text-warning me-3">
+                            <i class="fas fa-truck"></i>
+                        </div>
+                        <div class="stats-content flex-grow-1">
                             <h6 class="text-muted mb-1">在途货物</h6>
-                            <div class="d-flex align-items-end">
+                            <div class="d-flex align-items-baseline">
                                 <h3 class="mb-0 me-2" id="transitCount">-</h3>
                                 <span class="text-muted">票</span>
                             </div>
-                            <div class="mt-2">
+                            <div class="mt-1">
                                 <small class="text-muted">
-                                    <span id="transitPallets">-</span>板 · 
+                                    <span id="transitPallets">-</span>板 ·
                                     <span id="transitPackages">-</span>件
                                 </small>
                             </div>
@@ -651,7 +651,7 @@
 <!-- 仓库分组表格样式 - 强制刷新缓存 -->
 <link rel="stylesheet" href="{{ url_for('static', filename='css/warehouse-table-grouping.css') }}?v=20250720-2">
 <style>
-/* 现代化仪表板样式 */
+/* 现代化仪表板样式 - 更新卡片高度 v2 */
 .cargo-volume-dashboard {
     background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
     min-height: 100vh;
@@ -704,68 +704,68 @@
     background: linear-gradient(90deg, #667eea, #764ba2);
 }
 
-/* 平湖仓专属样式 - 紫色主题 */
+/* 平湖仓专属样式 - 蓝色主题 */
 .pinghu-card {
-    border: 2px solid rgba(102, 126, 234, 0.2);
-    background: linear-gradient(135deg, #f8f9ff 0%, #f0f4ff 100%);
+    border: 2px solid rgba(33, 150, 243, 0.3) !important;
+    background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%) !important;
 }
 
 .pinghu-card::before {
-    background: linear-gradient(90deg, #667eea, #764ba2);
-    box-shadow: 0 2px 10px rgba(102, 126, 234, 0.3);
+    background: linear-gradient(90deg, #2196f3, #1976d2) !important;
+    box-shadow: 0 2px 10px rgba(33, 150, 243, 0.3) !important;
 }
 
 .pinghu-card:hover {
-    border-color: rgba(102, 126, 234, 0.4);
-    box-shadow: 0 25px 50px rgba(102, 126, 234, 0.15);
+    border-color: rgba(33, 150, 243, 0.5) !important;
+    box-shadow: 0 25px 50px rgba(33, 150, 243, 0.2) !important;
 }
 
-/* 昆山仓专属样式 - 粉红色主题 */
+/* 昆山仓专属样式 - 绿色主题 */
 .kunshan-card {
-    border: 2px solid rgba(240, 147, 251, 0.2);
-    background: linear-gradient(135deg, #fff8fd 0%, #fef0ff 100%);
+    border: 2px solid rgba(76, 175, 80, 0.3) !important;
+    background: linear-gradient(135deg, #e8f5e8 0%, #c8e6c9 100%) !important;
 }
 
 .kunshan-card::before {
-    background: linear-gradient(90deg, #f093fb, #f5576c);
-    box-shadow: 0 2px 10px rgba(240, 147, 251, 0.3);
+    background: linear-gradient(90deg, #4caf50, #388e3c) !important;
+    box-shadow: 0 2px 10px rgba(76, 175, 80, 0.3) !important;
 }
 
 .kunshan-card:hover {
-    border-color: rgba(240, 147, 251, 0.4);
-    box-shadow: 0 25px 50px rgba(240, 147, 251, 0.15);
+    border-color: rgba(76, 175, 80, 0.5) !important;
+    box-shadow: 0 25px 50px rgba(76, 175, 80, 0.2) !important;
 }
 
-/* 成都仓专属样式 - 蓝色主题 */
+/* 成都仓专属样式 - 橙色主题 */
 .chengdu-card {
-    border: 2px solid rgba(79, 172, 254, 0.2);
-    background: linear-gradient(135deg, #f0fbff 0%, #e6f7ff 100%);
+    border: 2px solid rgba(255, 152, 0, 0.3) !important;
+    background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%) !important;
 }
 
 .chengdu-card::before {
-    background: linear-gradient(90deg, #4facfe, #00f2fe);
-    box-shadow: 0 2px 10px rgba(79, 172, 254, 0.3);
+    background: linear-gradient(90deg, #ff9800, #f57c00) !important;
+    box-shadow: 0 2px 10px rgba(255, 152, 0, 0.3) !important;
 }
 
 .chengdu-card:hover {
-    border-color: rgba(79, 172, 254, 0.4);
-    box-shadow: 0 25px 50px rgba(79, 172, 254, 0.15);
+    border-color: rgba(255, 152, 0, 0.5) !important;
+    box-shadow: 0 25px 50px rgba(255, 152, 0, 0.2) !important;
 }
 
-/* 凭祥北投仓专属样式 - 绿色主题 */
+/* 凭祥北投仓专属样式 - 粉色主题 */
 .pingxiang-card {
-    border: 2px solid rgba(67, 233, 123, 0.2);
-    background: linear-gradient(135deg, #f0fff4 0%, #e6ffed 100%);
+    border: 2px solid rgba(233, 30, 99, 0.3) !important;
+    background: linear-gradient(135deg, #fce4ec 0%, #f8bbd9 100%) !important;
 }
 
 .pingxiang-card::before {
-    background: linear-gradient(90deg, #43e97b, #38f9d7);
-    box-shadow: 0 2px 10px rgba(67, 233, 123, 0.3);
+    background: linear-gradient(90deg, #e91e63, #c2185b) !important;
+    box-shadow: 0 2px 10px rgba(233, 30, 99, 0.3) !important;
 }
 
 .pingxiang-card:hover {
-    border-color: rgba(67, 233, 123, 0.4);
-    box-shadow: 0 25px 50px rgba(67, 233, 123, 0.15);
+    border-color: rgba(233, 30, 99, 0.5) !important;
+    box-shadow: 0 25px 50px rgba(233, 30, 99, 0.2) !important;
 }
 
 .warehouse-card-header {
@@ -1112,9 +1112,27 @@
 .cargo-volume-dashboard .text-danger {
     color: #dc3545 !important;
 }
-.stats-card {
-    transition: transform 0.2s ease-in-out;
+div#overviewCards .card.stats-card {
+    transition: transform 0.2s ease-in-out !important;
     background: linear-gradient(135deg, #fafbfc 0%, #f0f2f5 100%) !important;
+    min-height: 280px !important;
+    height: 280px !important;
+}
+
+
+
+div#overviewCards .card.stats-card .card-body {
+    padding: 2rem 1.5rem !important;
+    display: flex !important;
+    align-items: center !important;
+    height: 100% !important;
+}
+
+.row#overviewCards .stats-card.card .card-body {
+    padding: 2rem 1.5rem !important;
+    display: flex !important;
+    align-items: center !important;
+    height: 100% !important;
 }
 
 .stats-card:hover {
@@ -1275,6 +1293,8 @@
     from { opacity: 0; transform: translateY(-10px); }
     to { opacity: 1; transform: translateY(0); }
 }
+
+
 
 /* 查询结果表格样式 - 仓库分组优化 */
 .query-result-table {
@@ -1459,45 +1479,65 @@
     padding: 10px 6px !important;
 }
 
-/* 仓库名称标题背景颜色 - 简洁明亮风格 */
-/* 平湖仓 - 第2列 (colspan=3) - 浅蓝色 */
+/* 仓库名称标题背景颜色 - 现代渐变风格 */
+/* 平湖仓 - 第2列 (colspan=3) - 蓝色渐变 */
 .query-result-table thead tr:first-child th:nth-child(2) {
-    background-color: #e3f2fd !important;
-    color: #000000 !important;
-    border: 3px solid #1976d2 !important;
-    font-weight: bold !important;
-    text-shadow: none !important;
-    box-shadow: 0 2px 4px rgba(25, 118, 210, 0.2) !important;
+    background: linear-gradient(135deg, #2196f3 0%, #1976d2 100%) !important;
+    color: #ffffff !important;
+    border: none !important;
+    font-weight: 800 !important;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3) !important;
+    box-shadow:
+        0 8px 24px rgba(33, 150, 243, 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
+    font-size: 1rem !important;
+    padding: 20px 16px !important;
+    position: relative !important;
 }
 
-/* 昆山仓 - 第3列 (colspan=3) - 浅绿色 */
+/* 昆山仓 - 第3列 (colspan=3) - 绿色渐变 */
 .query-result-table thead tr:first-child th:nth-child(3) {
-    background-color: #e8f5e8 !important;
-    color: #000000 !important;
-    border: 3px solid #388e3c !important;
-    font-weight: bold !important;
-    text-shadow: none !important;
-    box-shadow: 0 2px 4px rgba(56, 142, 60, 0.2) !important;
+    background: linear-gradient(135deg, #4caf50 0%, #388e3c 100%) !important;
+    color: #ffffff !important;
+    border: none !important;
+    font-weight: 800 !important;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3) !important;
+    box-shadow:
+        0 8px 24px rgba(76, 175, 80, 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
+    font-size: 1rem !important;
+    padding: 20px 16px !important;
+    position: relative !important;
 }
 
-/* 成都仓 - 第4列 (colspan=3) - 浅橙色 */
+/* 成都仓 - 第4列 (colspan=3) - 橙色渐变 */
 .query-result-table thead tr:first-child th:nth-child(4) {
-    background-color: #fff3e0 !important;
-    color: #000000 !important;
-    border: 3px solid #f57c00 !important;
-    font-weight: bold !important;
-    text-shadow: none !important;
-    box-shadow: 0 2px 4px rgba(245, 124, 0, 0.2) !important;
+    background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%) !important;
+    color: #ffffff !important;
+    border: none !important;
+    font-weight: 800 !important;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3) !important;
+    box-shadow:
+        0 8px 24px rgba(255, 152, 0, 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
+    font-size: 1rem !important;
+    padding: 20px 16px !important;
+    position: relative !important;
 }
 
-/* 凭祥北投仓 - 第5列 (colspan=3) - 浅紫色 */
+/* 凭祥北投仓 - 第5列 (colspan=3) - 紫色渐变 */
 .query-result-table thead tr:first-child th:nth-child(5) {
-    background-color: #f3e5f5 !important;
-    color: #000000 !important;
-    border: 3px solid #7b1fa2 !important;
-    font-weight: bold !important;
-    text-shadow: none !important;
-    box-shadow: 0 2px 4px rgba(123, 31, 162, 0.2) !important;
+    background: linear-gradient(135deg, #9c27b0 0%, #7b1fa2 100%) !important;
+    color: #ffffff !important;
+    border: none !important;
+    font-weight: 800 !important;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3) !important;
+    box-shadow:
+        0 8px 24px rgba(156, 39, 176, 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
+    font-size: 1rem !important;
+    padding: 20px 16px !important;
+    position: relative !important;
 }
 
 /* 合计 - 第6列 (colspan=3) - 浅红色 */
@@ -1853,9 +1893,64 @@ table.query-result-table thead tr:first-child th {
 {% endblock %}
 
 {% block extra_js %}
+<!-- 确保jQuery已加载 -->
+<script>
+if (typeof jQuery === 'undefined') {
+    console.warn('jQuery未加载，正在加载...');
+    document.write('<script src="https://cdn.bootcdn.net/ajax/libs/jquery/3.6.4/jquery.min.js"><\/script>');
+}
+</script>
+
 <!-- ECharts -->
 <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
-<script src="{{ url_for('static', filename='js/cargo_volume_dashboard.js') }}"></script>
+
+<!-- 等待jQuery加载完成后再加载其他脚本 -->
+<script>
+function waitForJQuery(callback) {
+    if (typeof jQuery !== 'undefined') {
+        callback();
+    } else {
+        setTimeout(function() {
+            waitForJQuery(callback);
+        }, 50);
+    }
+}
+
+waitForJQuery(function() {
+    // jQuery已加载，现在可以安全加载其他脚本
+    const script = document.createElement('script');
+    script.src = "{{ url_for('static', filename='js/cargo_volume_dashboard.js') }}";
+    script.onload = function() {
+        console.log('✅ 货量报表脚本加载完成');
+        initializeDashboard();
+    };
+    script.onerror = function() {
+        console.error('❌ 货量报表脚本加载失败');
+    };
+    document.head.appendChild(script);
+});
+
+function initializeDashboard() {
+    try {
+        // 初始化货量数据看板
+        if (typeof CargoVolumeDashboard !== 'undefined') {
+            new CargoVolumeDashboard();
+            console.log('✅ 货量数据看板初始化成功');
+        }
+
+        // 初始化现代化仓库卡片
+        initializeWarehouseCards();
+
+        // 应用仓库标题颜色
+        if (typeof applyWarehouseHeaderColors === 'function') {
+            applyWarehouseHeaderColors();
+        }
+    } catch (error) {
+        console.error('❌ 仪表板初始化失败:', error);
+    }
+}
+</script>
+
 <script>
 // 优化的仓库标题背景颜色应用
 let stylesApplied = false;
@@ -1958,41 +2053,42 @@ function renderSummaryData(type, data) {
     summaryBody.innerHTML = summaryHtml;
 }
 
-document.addEventListener('DOMContentLoaded', function() {
-    // 初始化货量数据看板
-    const dashboard = new CargoVolumeDashboard();
-
-    // 初始化现代化仓库卡片
-    initializeWarehouseCards();
-
-    // 立即应用一次
-    applyWarehouseHeaderColors();
+// 移除重复的初始化代码，现在由上面的 initializeDashboard() 函数统一处理
+// document.addEventListener('DOMContentLoaded', function() {
+//     // 初始化货量数据看板
+//     const dashboard = new CargoVolumeDashboard();
+//
+//     // 初始化现代化仓库卡片
+//     initializeWarehouseCards();
+//
+//     // 立即应用一次
+//     applyWarehouseHeaderColors();
 
     // 使用MutationObserver监听DOM变化，只在表格更新时应用样式
-    observer = new MutationObserver(function(mutations) {
-        let shouldApply = false;
-        mutations.forEach(function(mutation) {
-            if (mutation.type === 'childList' &&
-                (mutation.target.classList.contains('query-result-table') ||
-                 mutation.target.querySelector('.query-result-table'))) {
-                shouldApply = true;
-            }
-        });
-
-        if (shouldApply) {
-            setTimeout(function() {
-                applyWarehouseHeaderColors();
-                initializeWarehouseCards();
-            }, 100);
-        }
-    });
-
-    // 监听整个文档的变化
-    observer.observe(document.body, {
-        childList: true,
-        subtree: true
-    });
-});
+//     observer = new MutationObserver(function(mutations) {
+//         let shouldApply = false;
+//         mutations.forEach(function(mutation) {
+//             if (mutation.type === 'childList' &&
+//                 (mutation.target.classList.contains('query-result-table') ||
+//                  mutation.target.querySelector('.query-result-table'))) {
+//                 shouldApply = true;
+//             }
+//         });
+//
+//         if (shouldApply) {
+//             setTimeout(function() {
+//                 applyWarehouseHeaderColors();
+//                 initializeWarehouseCards();
+//             }, 100);
+//         }
+//     });
+//
+//     // 监听整个文档的变化
+//     observer.observe(document.body, {
+//         childList: true,
+//         subtree: true
+//     });
+// });
 
 function applyWarehouseHeaderColors() {
     const tables = document.querySelectorAll('.query-result-table');
@@ -2049,5 +2145,64 @@ function applyWarehouseHeaderColors() {
         console.log(`✅ 应用了 ${applied} 个仓库标题背景颜色`);
     }
 }
+
+// 调试卡片高度
+$(document).ready(function() {
+    setTimeout(function() {
+        console.log('🔍 开始检查卡片高度...');
+
+        const statsCards = document.querySelectorAll('#overviewCards .stats-card');
+        console.log(`📊 找到 ${statsCards.length} 个统计卡片`);
+
+        statsCards.forEach((card, index) => {
+            const computedStyle = window.getComputedStyle(card);
+            const height = computedStyle.height;
+            const minHeight = computedStyle.minHeight;
+            const border = computedStyle.border;
+
+            console.log(`📋 卡片 ${index + 1}:`);
+            console.log(`   - 高度: ${height}`);
+            console.log(`   - 最小高度: ${minHeight}`);
+            console.log(`   - 边框: ${border}`);
+            console.log(`   - 元素:`, card);
+        });
+
+        // 检查CSS规则是否存在
+        const styleSheets = document.styleSheets;
+        let foundRule = false;
+
+        for (let i = 0; i < styleSheets.length; i++) {
+            try {
+                const rules = styleSheets[i].cssRules || styleSheets[i].rules;
+                for (let j = 0; j < rules.length; j++) {
+                    if (rules[j].selectorText && (
+                        rules[j].selectorText.includes('#overviewCards') ||
+                        rules[j].selectorText.includes('.stats-card')
+                    )) {
+                        console.log('✅ 找到CSS规则:', rules[j].cssText);
+                        foundRule = true;
+                    }
+                }
+            } catch (e) {
+                // 跨域样式表无法访问
+            }
+        }
+
+        if (!foundRule) {
+            console.log('❌ 未找到 #overviewCards .stats-card CSS规则');
+        }
+
+        // 强制设置卡片高度
+        statsCards.forEach((card, index) => {
+            card.style.setProperty('min-height', '280px', 'important');
+            card.style.setProperty('height', '280px', 'important');
+        });
+
+    }, 1000);
+});
+
+
+
+
 </script>
 {% endblock %}

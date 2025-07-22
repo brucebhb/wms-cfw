@@ -1,0 +1,36 @@
+{
+  "cache": {
+    "l1_cache_size_mb": 100,
+    "l2_cache_ttl_seconds": 3600,
+    "preload_items_count": 10,
+    "auto_cleanup_interval": 300,
+    "enable_compression": true
+  },
+  "background_tasks": {
+    "maintenance_interval": 300,
+    "optimization_interval": 180,
+    "cleanup_interval": 600,
+    "max_concurrent_tasks": 2,
+    "enable_smart_scheduling": true
+  },
+  "performance_monitor": {
+    "monitor_frequency": 30,
+    "metrics_retention_hours": 24,
+    "alert_thresholds": {
+      "cpu_percent": 80.0,
+      "memory_percent": 85.0,
+      "response_time": 2.0,
+      "error_rate": 5.0
+    },
+    "enable_auto_optimization": true,
+    "detailed_logging": false
+  },
+  "database": {
+    "connection_pool_size": 10,
+    "query_timeout": 30,
+    "enable_query_cache": true,
+    "auto_index_optimization": true,
+    "slow_query_threshold": 1.0
+  },
+  "last_updated": "2025-07-22T22:57:37.735883"
+}

@@ -15,6 +15,8 @@
     <!-- DateRangePicker CSS -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <!-- 自定义样式 -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/custom.css') }}">
     <!-- 表格列宽调整样式 -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/table-column-resizer.css') }}">
     <!-- 后端仓入库页面优化样式 -->
@@ -765,8 +767,24 @@ window.addEventListener('beforeunload', function() {
     <!-- ========== 优化后的脚本加载顺序 ========== -->
 
     <!-- 1. 核心依赖库 -->
-    <!-- jQuery必须在所有其他脚本之前加载 -->
+    <!-- jQuery必须在所有其他脚本之前加载 - 使用多个CDN备用 -->
     <script src="https://cdn.bootcdn.net/ajax/libs/jquery/3.6.4/jquery.min.js"></script>
+    <script>
+    // jQuery加载失败时的备用方案
+    if (typeof jQuery === 'undefined') {
+        console.warn('主CDN jQuery加载失败，尝试备用CDN...');
+        document.write('<script src="https://code.jquery.com/jquery-3.6.4.min.js"><\/script>');
+    }
+    </script>
+    <script>
+    // 再次检查jQuery是否加载成功
+    if (typeof jQuery === 'undefined') {
+        console.error('所有CDN jQuery加载失败，尝试本地备用...');
+        document.write('<script src="https://cdn.jsdelivr.net/npm/jquery@3.6.4/dist/jquery.min.js"><\/script>');
+    } else {
+        console.log('✅ jQuery加载成功:', jQuery.fn.jquery);
+    }
+    </script>
     <!-- Bootstrap Bundle with Popper -->
     <script src="https://cdn.bootcdn.net/ajax/libs/twitter-bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
 
@@ -786,9 +804,9 @@ window.addEventListener('beforeunload', function() {
     <!-- 4. 整合性能管理器 - 替代所有性能优化脚本 -->
     <script src="{{ url_for('static', filename='js/integrated-performance-manager.js') }}"></script>
 
-    <!-- 5. 页面特定增强脚本 -->
+    <!-- 5. 页面特定增强脚本 - 临时禁用以解决卡顿问题 -->
     <!-- 后端仓入库页面增强脚本 -->
-    <script src="{{ url_for('static', filename='js/backend-inbound-enhancements.js') }}"></script>
+    <!-- <script src="{{ url_for('static', filename='js/backend-inbound-enhancements.js') }}"></script> -->
 
     <!-- ========== 已整合的脚本（不再单独加载） ========== -->
     <!-- 以下脚本功能已整合到 integrated-performance-manager.js 中 -->
@@ -1348,6 +1366,11 @@ window.addEventListener('beforeunload', function() {
     </script>
     {% block scripts %}{% endblock %}
     {% block extra_js %}{% endblock %}
+
+    <!-- 性能监控脚本 -->
+    <script src="{{ url_for('static', filename='js/performance-monitor.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/performance-optimizer.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/integrated-performance-manager.js') }}"></script>
 
     <!-- 性能监控按钮事件处理 -->
     <script>

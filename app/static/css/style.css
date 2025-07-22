@@ -641,3 +641,93 @@ body {
     border-color: #80bdff;
     box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
 }
+
+/* 首页统计卡片样式 - 最高优先级 */
+.card-body .row.text-center .col-md-3:nth-child(1) .bg-light.border.rounded.p-3.shadow-sm,
+.card-body .row.text-center .col-md-3:nth-child(1) .border,
+.card-body .row.text-center .col-md-3:nth-child(1) .bg-light,
+.card-body .row.text-center .col-md-3:nth-child(1) .bg-success,
+.card-body .row.text-center .col-md-3:nth-child(1) .bg-info,
+.card-body .row.text-center .col-md-3:nth-child(1) .bg-warning,
+.card-body .row.text-center .col-md-3:nth-child(1) div[class*="bg-"],
+.card-body .row.text-center .col-md-3:nth-child(1) div[class*="border"] {
+    background-color: #e3f2fd !important;
+    background: #e3f2fd !important;
+    border: 2px solid #2196f3 !important;
+    border-color: #2196f3 !important;
+    box-shadow: 0 4px 12px rgba(33, 150, 243, 0.3) !important;
+    transition: all 0.3s ease !important;
+}
+
+.card-body .row.text-center .col-md-3:nth-child(2) .bg-success.bg-opacity-10.border.border-success.rounded.p-3.shadow-sm,
+.card-body .row.text-center .col-md-3:nth-child(2) .border,
+.card-body .row.text-center .col-md-3:nth-child(2) .bg-light,
+.card-body .row.text-center .col-md-3:nth-child(2) .bg-success,
+.card-body .row.text-center .col-md-3:nth-child(2) .bg-info,
+.card-body .row.text-center .col-md-3:nth-child(2) .bg-warning,
+.card-body .row.text-center .col-md-3:nth-child(2) div[class*="bg-"],
+.card-body .row.text-center .col-md-3:nth-child(2) div[class*="border"] {
+    background-color: #e8f5e8 !important;
+    background: #e8f5e8 !important;
+    border: 2px solid #4caf50 !important;
+    border-color: #4caf50 !important;
+    box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3) !important;
+    transition: all 0.3s ease !important;
+}
+
+.card-body .row.text-center .col-md-3:nth-child(3) .bg-info.bg-opacity-10.border.border-info.rounded.p-3.shadow-sm,
+.card-body .row.text-center .col-md-3:nth-child(3) .border,
+.card-body .row.text-center .col-md-3:nth-child(3) .bg-light,
+.card-body .row.text-center .col-md-3:nth-child(3) .bg-success,
+.card-body .row.text-center .col-md-3:nth-child(3) .bg-info,
+.card-body .row.text-center .col-md-3:nth-child(3) .bg-warning,
+.card-body .row.text-center .col-md-3:nth-child(3) div[class*="bg-"],
+.card-body .row.text-center .col-md-3:nth-child(3) div[class*="border"] {
+    background-color: #fff3e0 !important;
+    background: #fff3e0 !important;
+    border: 2px solid #ff9800 !important;
+    border-color: #ff9800 !important;
+    box-shadow: 0 4px 12px rgba(255, 152, 0, 0.3) !important;
+    transition: all 0.3s ease !important;
+}
+
+.card-body .row.text-center .col-md-3:nth-child(4) .bg-warning.bg-opacity-10.border.border-warning.rounded.p-3.shadow-sm,
+.card-body .row.text-center .col-md-3:nth-child(4) .border,
+.card-body .row.text-center .col-md-3:nth-child(4) .bg-light,
+.card-body .row.text-center .col-md-3:nth-child(4) .bg-success,
+.card-body .row.text-center .col-md-3:nth-child(4) .bg-info,
+.card-body .row.text-center .col-md-3:nth-child(4) .bg-warning,
+.card-body .row.text-center .col-md-3:nth-child(4) div[class*="bg-"],
+.card-body .row.text-center .col-md-3:nth-child(4) div[class*="border"] {
+    background-color: #fce4ec !important;
+    background: #fce4ec !important;
+    border: 2px solid #e91e63 !important;
+    border-color: #e91e63 !important;
+    box-shadow: 0 4px 12px rgba(233, 30, 99, 0.3) !important;
+    transition: all 0.3s ease !important;
+}
+
+/* 统计卡片文字颜色 */
+.card-body .row.text-center .col-md-3:nth-child(1) h4,
+.card-body .row.text-center .col-md-3:nth-child(1) small {
+    color: #1976d2 !important;
+    font-weight: bold !important;
+}
+
+.card-body .row.text-center .col-md-3:nth-child(2) h4,
+.card-body .row.text-center .col-md-3:nth-child(2) small {
+    color: #388e3c !important;
+    font-weight: bold !important;
+}
+
+.card-body .row.text-center .col-md-3:nth-child(3) h4,
+.card-body .row.text-center .col-md-3:nth-child(3) small {
+    color: #f57c00 !important;
+    font-weight: bold !important;
+}
+
+.card-body .row.text-center .col-md-3:nth-child(4) h4,
+.card-body .row.text-center .col-md-3:nth-child(4) small {
+    color: #c2185b !important;
+    font-weight: bold !important;
+}

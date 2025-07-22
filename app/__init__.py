@@ -247,6 +247,14 @@ def create_app(config_class=None):
     # 立即启动自动初始化
     init_system_cache_auto()
 
+    # 🧠 初始化智能优化系统
+    try:
+        from app.intelligent_optimization_integrator import init_intelligent_optimization
+        init_intelligent_optimization(app)
+        app.logger.info("🧠 智能优化系统已启动")
+    except Exception as e:
+        app.logger.warning(f"智能优化系统启动失败: {e}")
+
     # 保留原有接口以兼容CLI命令
     app.cache_init_func = lambda: app.logger.info("缓存系统已在后台初始化")
 

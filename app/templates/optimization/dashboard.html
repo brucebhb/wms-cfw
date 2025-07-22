@@ -1,0 +1,468 @@
+{% extends "base.html" %}
+
+{% block title %}智能优化控制面板{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="fas fa-tachometer-alt"></i> 智能优化控制面板</h2>
+                <div>
+                    <button id="refreshBtn" class="btn btn-outline-primary btn-sm">
+                        <i class="fas fa-sync-alt"></i> 刷新
+                    </button>
+                    <button id="toggleMonitoringBtn" class="btn btn-outline-success btn-sm">
+                        <i class="fas fa-play"></i> <span id="monitoringText">启动监控</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 系统健康状态 -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-heartbeat"></i> 系统健康状态</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <div class="text-center">
+                                <div id="healthScore" class="display-4 font-weight-bold text-success">--</div>
+                                <div id="healthStatus" class="text-muted">检查中...</div>
+                            </div>
+                        </div>
+                        <div class="col-md-9">
+                            <div id="healthMetrics" class="row">
+                                <div class="col-md-3">
+                                    <div class="metric-card">
+                                        <div class="metric-label">CPU使用率</div>
+                                        <div id="cpuPercent" class="metric-value">--%</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="metric-card">
+                                        <div class="metric-label">内存使用率</div>
+                                        <div id="memoryPercent" class="metric-value">--%</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="metric-card">
+                                        <div class="metric-label">响应时间</div>
+                                        <div id="responseTime" class="metric-value">--ms</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="metric-card">
+                                        <div class="metric-label">活跃连接</div>
+                                        <div id="activeConnections" class="metric-value">--</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div id="healthIssues" class="mt-3"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 优化级别控制 -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-sliders-h"></i> 优化级别</h5>
+                </div>
+                <div class="card-body">
+                    <div class="form-group">
+                        <label for="optimizationLevel">当前优化级别：</label>
+                        <select id="optimizationLevel" class="form-control">
+                            <option value="minimal">最小优化 - 仅核心功能</option>
+                            <option value="balanced">平衡模式 - 性能与功能平衡</option>
+                            <option value="aggressive">激进优化 - 最大性能</option>
+                            <option value="adaptive">自适应 - 根据负载动态调整</option>
+                        </select>
+                    </div>
+                    <button id="applyLevelBtn" class="btn btn-primary">
+                        <i class="fas fa-check"></i> 应用设置
+                    </button>
+                    <div id="levelStatus" class="mt-2"></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-lightbulb"></i> 优化建议</h5>
+                </div>
+                <div class="card-body">
+                    <div id="recommendations">
+                        <div class="text-muted">加载中...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 配置详情 -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-cogs"></i> 当前配置</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <h6>缓存配置</h6>
+                            <ul class="list-unstyled">
+                                <li>内存缓存: <span id="cacheMemorySize">--</span>MB</li>
+                                <li>Redis TTL: <span id="cacheRedisTtl">--</span>小时</li>
+                                <li>预加载项: <span id="cachePreloadItems">--</span>个</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-3">
+                            <h6>后台任务</h6>
+                            <ul class="list-unstyled">
+                                <li>维护间隔: <span id="maintenanceInterval">--</span>分钟</li>
+                                <li>最大并发: <span id="maxConcurrent">--</span>个</li>
+                                <li>智能调度: <span id="smartScheduling">--</span></li>
+                            </ul>
+                        </div>
+                        <div class="col-md-3">
+                            <h6>性能监控</h6>
+                            <ul class="list-unstyled">
+                                <li>监控频率: <span id="monitorFrequency">--</span>秒</li>
+                                <li>自动优化: <span id="autoOptimization">--</span></li>
+                                <li>详细日志: <span id="detailedLogging">--</span></li>
+                            </ul>
+                        </div>
+                        <div class="col-md-3">
+                            <h6>数据库</h6>
+                            <ul class="list-unstyled">
+                                <li>连接池: <span id="dbPoolSize">--</span>个</li>
+                                <li>查询缓存: <span id="dbQueryCache">--</span></li>
+                                <li>自动索引: <span id="dbAutoIndex">--</span></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 性能图表 -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-chart-line"></i> 性能趋势</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="performanceChart" width="400" height="100"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 优化历史 -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-history"></i> 优化历史</h5>
+                </div>
+                <div class="card-body">
+                    <div id="optimizationHistory">
+                        <div class="text-muted">加载中...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.metric-card {
+    text-align: center;
+    padding: 15px;
+    border: 1px solid #e9ecef;
+    border-radius: 5px;
+    margin-bottom: 10px;
+}
+
+.metric-label {
+    font-size: 12px;
+    color: #6c757d;
+    margin-bottom: 5px;
+}
+
+.metric-value {
+    font-size: 18px;
+    font-weight: bold;
+    color: #495057;
+}
+
+.health-excellent { color: #28a745; }
+.health-good { color: #17a2b8; }
+.health-warning { color: #ffc107; }
+.health-critical { color: #dc3545; }
+
+.recommendation-item {
+    padding: 8px 12px;
+    margin: 5px 0;
+    border-left: 3px solid #007bff;
+    background-color: #f8f9fa;
+    border-radius: 3px;
+}
+
+.history-item {
+    padding: 10px;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.history-item:last-child {
+    border-bottom: none;
+}
+
+.level-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+.level-minimal { background-color: #ffc107; color: #212529; }
+.level-balanced { background-color: #17a2b8; color: white; }
+.level-aggressive { background-color: #dc3545; color: white; }
+.level-adaptive { background-color: #28a745; color: white; }
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+$(document).ready(function() {
+    let performanceChart;
+    let isMonitoring = false;
+    
+    // 初始化图表
+    function initChart() {
+        const ctx = document.getElementById('performanceChart').getContext('2d');
+        performanceChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [{
+                    label: 'CPU使用率',
+                    data: [],
+                    borderColor: 'rgb(255, 99, 132)',
+                    backgroundColor: 'rgba(255, 99, 132, 0.1)',
+                    tension: 0.1
+                }, {
+                    label: '内存使用率',
+                    data: [],
+                    borderColor: 'rgb(54, 162, 235)',
+                    backgroundColor: 'rgba(54, 162, 235, 0.1)',
+                    tension: 0.1
+                }, {
+                    label: '响应时间(x10ms)',
+                    data: [],
+                    borderColor: 'rgb(255, 205, 86)',
+                    backgroundColor: 'rgba(255, 205, 86, 0.1)',
+                    tension: 0.1
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 100
+                    }
+                }
+            }
+        });
+    }
+    
+    // 加载状态
+    function loadStatus() {
+        $.get('/optimization/api/status')
+            .done(function(response) {
+                if (response.success) {
+                    updateStatus(response.data);
+                }
+            })
+            .fail(function() {
+                showMessage('加载状态失败', 'error');
+            });
+    }
+    
+    // 更新状态显示
+    function updateStatus(data) {
+        // 更新优化级别
+        $('#optimizationLevel').val(data.status.optimization_level);
+        isMonitoring = data.status.is_monitoring;
+        updateMonitoringButton();
+        
+        // 更新配置信息
+        const config = data.config;
+        $('#cacheMemorySize').text(config.cache.memory_size_mb);
+        $('#cacheRedisTtl').text(config.cache.redis_ttl_hours.toFixed(1));
+        $('#cachePreloadItems').text(config.cache.preload_items);
+        
+        $('#maintenanceInterval').text(config.background_tasks.maintenance_interval_min.toFixed(1));
+        $('#maxConcurrent').text(config.background_tasks.max_concurrent);
+        $('#smartScheduling').text(config.background_tasks.smart_scheduling ? '启用' : '禁用');
+        
+        $('#monitorFrequency').text(config.monitoring.frequency_sec);
+        $('#autoOptimization').text(config.monitoring.auto_optimization ? '启用' : '禁用');
+        $('#detailedLogging').text(config.monitoring.detailed_logging ? '启用' : '禁用');
+        
+        $('#dbPoolSize').text(config.database.pool_size);
+        $('#dbQueryCache').text(config.database.query_cache ? '启用' : '禁用');
+        $('#dbAutoIndex').text(config.database.auto_index ? '启用' : '禁用');
+        
+        // 更新建议
+        updateRecommendations(data.recommendations);
+    }
+    
+    // 更新建议
+    function updateRecommendations(recommendations) {
+        const container = $('#recommendations');
+        container.empty();
+        
+        if (recommendations.length === 0) {
+            container.html('<div class="text-muted">暂无建议</div>');
+            return;
+        }
+        
+        recommendations.forEach(function(rec) {
+            container.append(`<div class="recommendation-item">${rec}</div>`);
+        });
+    }
+    
+    // 加载系统健康状态
+    function loadSystemHealth() {
+        $.get('/optimization/api/system_health')
+            .done(function(response) {
+                if (response.success) {
+                    updateSystemHealth(response.data);
+                }
+            });
+    }
+    
+    // 更新系统健康状态
+    function updateSystemHealth(data) {
+        $('#healthScore').text(data.score).removeClass().addClass(`display-4 font-weight-bold health-${data.status}`);
+        $('#healthStatus').text(data.status_text);
+        
+        if (data.metrics) {
+            $('#cpuPercent').text(data.metrics.cpu_percent.toFixed(1) + '%');
+            $('#memoryPercent').text(data.metrics.memory_percent.toFixed(1) + '%');
+            $('#responseTime').text((data.metrics.response_time * 1000).toFixed(0) + 'ms');
+            $('#activeConnections').text(data.metrics.active_connections);
+        }
+        
+        // 更新问题列表
+        const issuesContainer = $('#healthIssues');
+        issuesContainer.empty();
+        if (data.issues && data.issues.length > 0) {
+            data.issues.forEach(function(issue) {
+                issuesContainer.append(`<div class="alert alert-warning alert-sm">${issue}</div>`);
+            });
+        }
+    }
+    
+    // 更新监控按钮
+    function updateMonitoringButton() {
+        const btn = $('#toggleMonitoringBtn');
+        const text = $('#monitoringText');
+        
+        if (isMonitoring) {
+            btn.removeClass('btn-outline-success').addClass('btn-outline-danger');
+            btn.find('i').removeClass('fa-play').addClass('fa-stop');
+            text.text('停止监控');
+        } else {
+            btn.removeClass('btn-outline-danger').addClass('btn-outline-success');
+            btn.find('i').removeClass('fa-stop').addClass('fa-play');
+            text.text('启动监控');
+        }
+    }
+    
+    // 显示消息
+    function showMessage(message, type = 'info') {
+        const alertClass = type === 'error' ? 'alert-danger' : 'alert-success';
+        const alert = $(`<div class="alert ${alertClass} alert-dismissible fade show" role="alert">
+            ${message}
+            <button type="button" class="close" data-dismiss="alert">
+                <span>&times;</span>
+            </button>
+        </div>`);
+        
+        $('.container-fluid').prepend(alert);
+        setTimeout(() => alert.alert('close'), 3000);
+    }
+    
+    // 事件处理
+    $('#refreshBtn').click(function() {
+        loadStatus();
+        loadSystemHealth();
+    });
+    
+    $('#applyLevelBtn').click(function() {
+        const level = $('#optimizationLevel').val();
+        $.post('/optimization/api/set_level', {
+            level: level
+        })
+        .done(function(response) {
+            if (response.success) {
+                showMessage(response.message, 'success');
+                loadStatus();
+            } else {
+                showMessage(response.error, 'error');
+            }
+        })
+        .fail(function() {
+            showMessage('设置优化级别失败', 'error');
+        });
+    });
+    
+    $('#toggleMonitoringBtn').click(function() {
+        $.post('/optimization/api/toggle_monitoring', {
+            enable: !isMonitoring
+        })
+        .done(function(response) {
+            if (response.success) {
+                isMonitoring = response.monitoring;
+                updateMonitoringButton();
+                showMessage(response.message, 'success');
+            } else {
+                showMessage(response.error, 'error');
+            }
+        })
+        .fail(function() {
+            showMessage('切换监控状态失败', 'error');
+        });
+    });
+    
+    // 初始化
+    initChart();
+    loadStatus();
+    loadSystemHealth();
+    
+    // 定期刷新
+    setInterval(function() {
+        if (isMonitoring) {
+            loadSystemHealth();
+        }
+    }, 30000); // 30秒刷新一次
+});
+</script>
+{% endblock %}

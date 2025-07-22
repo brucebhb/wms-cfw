@@ -2750,7 +2750,113 @@ class CargoVolumeDashboard {
     }
 }
 
+// 应用仓库卡片自定义样式
+function applyWarehouseCardStyles() {
+    console.log('🎨 开始应用仓库卡片自定义样式...');
+
+    // 定义每个仓库卡片的颜色方案
+    const cardStyles = {
+        'pinghu-card': {
+            background: 'linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%)',
+            borderColor: '#2196f3',
+            shadowColor: 'rgba(33, 150, 243, 0.3)'
+        },
+        'kunshan-card': {
+            background: 'linear-gradient(135deg, #e8f5e8 0%, #c8e6c9 100%)',
+            borderColor: '#4caf50',
+            shadowColor: 'rgba(76, 175, 80, 0.3)'
+        },
+        'chengdu-card': {
+            background: 'linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%)',
+            borderColor: '#ff9800',
+            shadowColor: 'rgba(255, 152, 0, 0.3)'
+        },
+        'pingxiang-card': {
+            background: 'linear-gradient(135deg, #fce4ec 0%, #f8bbd9 100%)',
+            borderColor: '#e91e63',
+            shadowColor: 'rgba(233, 30, 99, 0.3)'
+        }
+    };
+
+    // 应用样式到每个卡片
+    Object.keys(cardStyles).forEach(cardClass => {
+        const cards = document.querySelectorAll(`.${cardClass}`);
+        const style = cardStyles[cardClass];
+
+        console.log(`🎯 应用样式到 ${cardClass}，找到 ${cards.length} 个卡片`);
+
+        cards.forEach((card, index) => {
+            console.log(`- 处理卡片 ${index + 1}:`, card);
+
+            // 应用背景渐变 (使用 setProperty 和 important)
+            card.style.setProperty('background', style.background, 'important');
+            card.style.setProperty('background-image', style.background, 'important');
+            card.style.setProperty('border-color', style.borderColor, 'important');
+            card.style.setProperty('border', `2px solid ${style.borderColor}`, 'important');
+            card.style.setProperty('box-shadow', `0 10px 30px ${style.shadowColor}`, 'important');
+            card.style.setProperty('transition', 'all 0.3s ease', 'important');
+
+            // 强制移除可能冲突的类
+            card.classList.remove('bg-primary', 'bg-secondary', 'bg-success', 'bg-info', 'bg-warning', 'bg-danger');
+
+            // 移除原有的悬停事件监听器（避免重复绑定）
+            card.removeEventListener('mouseenter', card._hoverEnter);
+            card.removeEventListener('mouseleave', card._hoverLeave);
+
+            // 创建新的悬停效果函数
+            card._hoverEnter = function() {
+                this.style.setProperty('box-shadow', `0 25px 50px ${style.shadowColor}`, 'important');
+                this.style.setProperty('transform', 'translateY(-8px)', 'important');
+            };
+
+            card._hoverLeave = function() {
+                this.style.setProperty('box-shadow', `0 10px 30px ${style.shadowColor}`, 'important');
+                this.style.setProperty('transform', 'translateY(0)', 'important');
+            };
+
+            // 绑定悬停效果
+            card.addEventListener('mouseenter', card._hoverEnter);
+            card.addEventListener('mouseleave', card._hoverLeave);
+
+            console.log(`✅ 卡片 ${cardClass} 样式已应用 (使用 !important)`);
+        });
+    });
+
+    console.log('🎨 仓库卡片样式应用完成！');
+}
+
 // 页面加载完成后初始化
 document.addEventListener('DOMContentLoaded', function() {
     new CargoVolumeDashboard();
+
+    // 延迟应用样式，确保数据加载完成
+    setTimeout(function() {
+        console.log('🚀 开始应用仓库卡片样式...');
+        applyWarehouseCardStyles();
+
+        // 监听数据更新，重新应用样式
+        const observer = new MutationObserver(function(mutations) {
+            let shouldReapplyStyles = false;
+            mutations.forEach(function(mutation) {
+                if (mutation.type === 'childList' &&
+                    mutation.target.id &&
+                    mutation.target.id.includes('warehouse-') &&
+                    mutation.target.id.includes('-data')) {
+                    shouldReapplyStyles = true;
+                }
+            });
+
+            if (shouldReapplyStyles) {
+                console.log('🔄 检测到仓库数据更新，重新应用样式...');
+                setTimeout(applyWarehouseCardStyles, 100);
+            }
+        });
+
+        // 监听仓库卡片数据区域的变化
+        const warehouseDataElements = document.querySelectorAll('[id^="warehouse-"][id$="-data"]');
+        warehouseDataElements.forEach(element => {
+            observer.observe(element, { childList: true, subtree: true });
+        });
+
+    }, 1000); // 延迟1秒确保数据加载完成
 });
