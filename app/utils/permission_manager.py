@@ -40,19 +40,31 @@ class PermissionManager:
         """检查用户是否有页面权限"""
         if not user_id or not page_code:
             return False
-            
+
         # 超级管理员拥有所有权限
         user = User.query.get(user_id)
         if user and user.is_super_admin():
             return True
-            
+
+        # 如果page_code是列表，检查是否有任何一个权限
+        if isinstance(page_code, list):
+            for code in page_code:
+                permission = UserPagePermission.query.filter_by(
+                    user_id=user_id,
+                    page_code=code,
+                    is_granted=True
+                ).first()
+                if permission:
+                    return True
+            return False
+
         # 检查用户页面权限
         permission = UserPagePermission.query.filter_by(
             user_id=user_id,
             page_code=page_code,
             is_granted=True
         ).first()
-        
+
         return permission is not None
     
     @staticmethod

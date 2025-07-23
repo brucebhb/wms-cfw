@@ -1436,7 +1436,7 @@ $(document).ready(function() {
                     resetForm();
                     // 清空已选择的货物，确保下次重新加载最新数据
                     selectedCargo = [];
-                    updateSelectedCargoDisplay();
+                    renderSelectedCargoTable();
                 } else {
                     showMessage('保存失败：' + response.message, 'error');
                 }

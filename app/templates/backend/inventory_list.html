@@ -63,8 +63,8 @@
 }   /* 订单类型 - 较小 */
 
 .table th:nth-child(6), .table td:nth-child(6) {
-    max-width: 200px; min-width: 150px; width: 180px;
-}  /* 识别编码 - 最宽，内容最长 */
+    max-width: 140px; min-width: 120px; width: 130px;
+}  /* 识别编码 - 缩小宽度 */
 
 .table th:nth-child(7), .table td:nth-child(7) {
     max-width: 55px; min-width: 55px; width: 55px;
@@ -111,8 +111,8 @@
 } /* 库位 - 较小 */
 
 .table th:nth-child(18), .table td:nth-child(18) {
-    max-width: 75px; min-width: 70px; width: 72px;
-} /* 所属仓库 - 中等 */
+    max-width: 120px; min-width: 100px; width: 110px;
+} /* 所属仓库 - 扩大宽度 */
 
 .table th:nth-child(19), .table td:nth-child(19) {
     max-width: 140px; min-width: 130px; width: 135px;
@@ -333,7 +333,18 @@
                                                 {% endif %}
                                             </td>
                                             <td>{{ record.customer_name }}</td>
-                                            <td>{{ record.order_type or '' }}</td>
+                                            {# 订单类型：PX开头是后端自行入库，其他是前端仓转移 #}
+                                            <td>
+                                                {% if record.identification_code and record.identification_code.startswith('PX/') %}
+                                                    {{ record.order_type or '' }}
+                                                {% else %}
+                                                    {% if frontend_inbound and frontend_inbound.order_type %}
+                                                        {{ frontend_inbound.order_type }}
+                                                    {% else %}
+                                                        {{ record.order_type or '' }}
+                                                    {% endif %}
+                                                {% endif %}
+                                            </td>
                                             <td>{{ record.identification_code or '' }}</td>
                                             {# 入库板数：前端仓转入显示前端仓入库数量，后端仓直接入库显示当前库存数量 #}
                                             <td>
@@ -375,9 +386,42 @@
                                                     {% endif %}
                                                 {% endif %}
                                             </td>
-                                            <td>{{ record.export_mode or '' }}</td>
-                                            <td>{{ record.customs_broker or '' }}</td>
-                                            <td>{{ record.documents or '' }}</td>
+                                            {# 出境模式：PX开头是后端自行入库，其他是前端仓转移 #}
+                                            <td>
+                                                {% if record.identification_code and record.identification_code.startswith('PX/') %}
+                                                    {{ record.export_mode or '' }}
+                                                {% else %}
+                                                    {% if frontend_inbound and frontend_inbound.export_mode %}
+                                                        {{ frontend_inbound.export_mode }}
+                                                    {% else %}
+                                                        {{ record.export_mode or '' }}
+                                                    {% endif %}
+                                                {% endif %}
+                                            </td>
+                                            {# 报关行：PX开头是后端自行入库，其他是前端仓转移 #}
+                                            <td>
+                                                {% if record.identification_code and record.identification_code.startswith('PX/') %}
+                                                    {{ record.customs_broker or '' }}
+                                                {% else %}
+                                                    {% if frontend_inbound and frontend_inbound.customs_broker %}
+                                                        {{ frontend_inbound.customs_broker }}
+                                                    {% else %}
+                                                        {{ record.customs_broker or '' }}
+                                                    {% endif %}
+                                                {% endif %}
+                                            </td>
+                                            {# 单据：PX开头是后端自行入库，其他是前端仓转移 #}
+                                            <td>
+                                                {% if record.identification_code and record.identification_code.startswith('PX/') %}
+                                                    {{ record.documents or '' }}
+                                                {% else %}
+                                                    {% if frontend_inbound and frontend_inbound.documents %}
+                                                        {{ frontend_inbound.documents }}
+                                                    {% else %}
+                                                        {{ record.documents or '' }}
+                                                    {% endif %}
+                                                {% endif %}
+                                            </td>
                                             <td>{{ record.service_staff or '' }}</td>
                                             <td>{{ record.location or '' }}</td>
                                             <td>

@@ -22,9 +22,9 @@ class ProductionConfig:
     # MySQL数据库配置 - 生产环境优化
     MYSQL_HOST = os.environ.get('MYSQL_HOST') or 'localhost'
     MYSQL_PORT = int(os.environ.get('MYSQL_PORT') or 3306)
-    MYSQL_USER = os.environ.get('MYSQL_USER') or 'warehouse_user'
-    MYSQL_PASSWORD = os.environ.get('MYSQL_PASSWORD') or 'your_secure_password_here'
-    MYSQL_DATABASE = os.environ.get('MYSQL_DATABASE') or 'warehouse_production'
+    MYSQL_USER = os.environ.get('MYSQL_USER') or 'root'
+    MYSQL_PASSWORD = os.environ.get('MYSQL_PASSWORD') or ''
+    MYSQL_DATABASE = os.environ.get('MYSQL_DATABASE') or 'warehouse_db'
     
     # 数据库连接字符串 - 生产环境优化
     SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or \

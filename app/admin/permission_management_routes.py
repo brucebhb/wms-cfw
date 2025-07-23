@@ -14,8 +14,8 @@ from app.models import (
 )
 from app.decorators import require_permission
 
-# 创建蓝图
-permission_bp = Blueprint('permission', __name__)
+# 使用主admin蓝图
+from app.admin import bp as permission_bp
 
 @permission_bp.route('/permissions')
 @login_required
@@ -33,7 +33,7 @@ def permission_management():
 @permission_bp.route('/user/<int:user_id>/permissions')
 @login_required
 @require_permission('ADMIN_MANAGEMENT')
-def get_user_permissions(user_id):
+def get_user_permissions_legacy(user_id):
     """获取用户权限"""
     user = User.query.get_or_404(user_id)
     
@@ -56,7 +56,7 @@ def get_user_permissions(user_id):
 @permission_bp.route('/user/<int:user_id>/permissions', methods=['POST'])
 @login_required
 @require_permission('ADMIN_MANAGEMENT')
-def update_user_permissions(user_id):
+def update_user_permissions_legacy(user_id):
     """更新用户权限"""
     try:
         user = User.query.get_or_404(user_id)

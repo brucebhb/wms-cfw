@@ -509,6 +509,13 @@ if __name__ == '__main__':
         print("🔧 启动优化: 异步初始化已启用")
         print("-" * 50)
 
+        # 调试：打印admin API路由
+        print("\n=== Admin API 路由 ===")
+        for rule in app.url_map.iter_rules():
+            if 'admin/api' in rule.rule:
+                print(f"{rule.rule} -> {rule.endpoint}")
+        print("=====================\n")
+
         # 开发环境配置
         # 可以通过环境变量控制是否使用多进程测试
         dev_processes = int(os.environ.get('DEV_PROCESSES', 1))

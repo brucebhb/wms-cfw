@@ -6,7 +6,7 @@
 class AutoPerformanceFixer {
     constructor() {
         this.isEnabled = true;
-        this.checkInterval = 15000; // 15秒检查一次（更频繁）
+        this.checkInterval = 60000; // 60秒检查一次（减少频率）
         this.fixHistory = [];
         this.performanceData = {
             loadTimes: [],
@@ -73,12 +73,17 @@ class AutoPerformanceFixer {
         // 立即执行一次检查
         this.performFullCheck();
         
-        // 定期检查
-        setInterval(() => {
+        // 定期检查 - 添加清理机制
+        this.checkTimer = setInterval(() => {
             if (this.isEnabled && document.visibilityState === 'visible') {
                 this.performFullCheck();
             }
         }, this.checkInterval);
+
+        // 页面卸载时清理定时器
+        window.addEventListener('beforeunload', () => {
+            this.cleanup();
+        });
         
         // 监控资源加载错误
         this.monitorResourceErrors();
@@ -777,7 +782,21 @@ class AutoPerformanceFixer {
     
     disable() {
         this.isEnabled = false;
+        this.cleanup();
         console.log('⏸️ 自动性能修复已禁用');
+    }
+
+    // 清理资源
+    cleanup() {
+        if (this.checkTimer) {
+            clearInterval(this.checkTimer);
+            this.checkTimer = null;
+        }
+        if (this.memoryTimer) {
+            clearInterval(this.memoryTimer);
+            this.memoryTimer = null;
+        }
+        console.log('🧹 性能修复器资源已清理');
     }
     
     forceCheck() {

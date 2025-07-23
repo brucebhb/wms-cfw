@@ -35,6 +35,9 @@ def login():
             # 设置永久会话，6小时后自动过期
             session.permanent = True
 
+            # 设置登录时间用于会话管理
+            session['login_time'] = datetime.now().isoformat()
+
             # 更新最后登录时间
             user.last_login_at = datetime.now()
             db.session.commit()
@@ -65,7 +68,11 @@ def login():
             # 存储用户信息到session，包括登录时间
             session['user_id'] = user.id
             session['warehouse_id'] = user.warehouse_id
-            session['warehouse_name'] = user.warehouse.warehouse_name if user.warehouse else None
+            # 安全地获取仓库名称，admin用户没有绑定仓库
+            if user.warehouse_id and user.warehouse:
+                session['warehouse_name'] = user.warehouse.warehouse_name
+            else:
+                session['warehouse_name'] = None
             session['login_time'] = datetime.now().isoformat()
             
             flash(f'欢迎回来，{user.real_name}！', 'success')

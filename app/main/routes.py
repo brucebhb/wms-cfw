@@ -1019,7 +1019,7 @@ from openpyxl import Workbook
 import win32print
 from collections import defaultdict
 
-def _get_operation_warehouse_id(is_backend_final_outbound=False):
+def _get_operation_warehouse_id(is_backend_final_outbound=False, operation_type=None):
     """智能获取操作仓库ID"""
     # 如果是超级管理员，根据业务逻辑判断
     if hasattr(current_user, 'is_super_admin') and current_user.is_super_admin():
@@ -1027,11 +1027,36 @@ def _get_operation_warehouse_id(is_backend_final_outbound=False):
             # 后端仓最终出库属于后端仓操作
             return 4  # 凭祥北投仓
         else:
-            # 其他情况默认使用后端仓（因为admin通常管理后端仓）
-            return 4
+            # admin用户根据操作类型智能选择仓库
+            if operation_type == 'backend_operation':
+                return 4  # 后端仓操作
+            elif operation_type == 'frontend_operation':
+                # 前端仓操作，使用第一个前端仓库
+                frontend_warehouse = Warehouse.query.filter_by(warehouse_type='frontend').first()
+                return frontend_warehouse.id if frontend_warehouse else 1  # 默认平湖仓
+            else:
+                # 默认使用后端仓（因为admin通常管理后端仓）
+                return 4
     else:
         # 普通用户使用自己的仓库ID
         return current_user.warehouse_id if hasattr(current_user, 'warehouse_id') else None
+
+def get_admin_warehouse_id(operation_context='general'):
+    """为admin用户获取合适的仓库ID"""
+    if not (hasattr(current_user, 'is_super_admin') and current_user.is_super_admin()):
+        return current_user.warehouse_id if hasattr(current_user, 'warehouse_id') else None
+
+    # admin用户根据操作上下文确定仓库
+    if operation_context == 'frontend':
+        # 前端仓操作
+        frontend_warehouse = Warehouse.query.filter_by(warehouse_type='frontend').first()
+        return frontend_warehouse.id if frontend_warehouse else 1
+    elif operation_context == 'backend':
+        # 后端仓操作
+        return 4  # 凭祥北投仓
+    else:
+        # 通用操作，默认使用后端仓
+        return 4
 
 def apply_inventory_filters(inventory_data, search_field, search_value, warehouse_id, start_date, end_date, stock_status, cargo_status):
     """应用库存筛选条件"""
@@ -1342,6 +1367,7 @@ def utility_processor():
 
 @bp.route('/')
 @bp.route('/index')
+@login_required  # 添加登录要求
 def index():
     """首页"""
     # 检查用户是否已登录
@@ -1858,7 +1884,7 @@ def export_inbound():
                 for i, record in enumerate(records, 1):
                     row_idx = i + 1
                     ws.cell(row=row_idx, column=1).value = i
-                    ws.cell(row=row_idx, column=2).value = record.inbound_time.strftime('%Y-%m-%d') if record.inbound_time else ''
+                    ws.cell(row=row_idx, column=2).value = record.outbound_time.strftime('%Y-%m-%d') if record.outbound_time else ''
                     ws.cell(row=row_idx, column=3).value = record.plate_number
                     ws.cell(row=row_idx, column=4).value = record.customer_name
                     ws.cell(row=row_idx, column=5).value = record.identification_code or ''
@@ -1870,7 +1896,7 @@ def export_inbound():
                     ws.cell(row=row_idx, column=11).value = record.customs_broker
                     ws.cell(row=row_idx, column=12).value = record.documents
                     ws.cell(row=row_idx, column=13).value = record.service_staff
-                    ws.cell(row=row_idx, column=14).value = record.inbound_time.strftime('%Y-%m-%d %H:%M:%S') if record.inbound_time else ''
+                    ws.cell(row=row_idx, column=14).value = record.outbound_time.strftime('%Y-%m-%d %H:%M:%S') if record.outbound_time else ''
 
                 # 调整列宽
                 for col_idx, header in enumerate(headers, 1):
@@ -2047,7 +2073,7 @@ def edit_inbound(id):
                 return redirect(url_for('main.edit_inbound', id=id))
 
             # 更新记录
-            record.inbound_time = inbound_time_obj
+            record.outbound_time = inbound_time_obj
             record.plate_number = plate_number
             record.customer_name = customer_name
             record.pallet_count = pallet_count
@@ -2067,7 +2093,7 @@ def edit_inbound(id):
             # 如果客户名称、车牌号或日期变更了，则重新生成识别编码
             if (old_customer_name != customer_name or
                 record.plate_number != plate_number or
-                record.inbound_time.strftime('%Y-%m-%d') != inbound_time_obj.strftime('%Y-%m-%d')):
+                record.outbound_time.strftime('%Y-%m-%d') != inbound_time_obj.strftime('%Y-%m-%d')):
 
                 # 生成新的识别编码 - 使用新规则：仓库前缀/客户全称/车牌/日期/序号
                 new_identification_code = IdentificationCodeGenerator.generate_unique_identification_code(
@@ -2205,7 +2231,7 @@ def edit_inbound(id):
 
         # GET请求，显示编辑表单
         form = InboundRecordEditForm2()
-        form.inbound_time.data = record.inbound_time
+        form.inbound_time.data = record.outbound_time
         form.plate_number.data = record.plate_number
         form.customer_name.data = record.customer_name
         form.identification_code.data = record.identification_code
@@ -2299,8 +2325,15 @@ def api_inbound_batch():
 
     # 获取当前用户的仓库ID
     operated_warehouse_id = current_user.warehouse_id if current_user.warehouse_id else None
+
+    # admin用户特殊处理：如果没有绑定仓库，需要从请求数据中确定仓库
     if not operated_warehouse_id:
-        return jsonify({'status': 'error', 'message': '用户未绑定仓库，无法进行入库操作'}), 400
+        if current_user.is_super_admin():
+            # admin用户可以根据业务逻辑自动匹配仓库
+            # 这里可以根据具体需求来确定仓库ID，暂时允许继续执行
+            current_app.logger.info(f"Admin用户 {current_user.username} 执行入库操作，将根据业务逻辑确定仓库")
+        else:
+            return jsonify({'status': 'error', 'message': '用户未绑定仓库，无法进行入库操作'}), 400
 
     # 按照客户名称和日期分组，用于生成识别编码序号
     date_customer_counts = {}
@@ -2445,9 +2478,15 @@ def api_inbound_batch():
             customer_name = item['customer_name']
             plate_number = item['plate_number']
 
+            # 确定实际的操作仓库ID
+            actual_warehouse_id = operated_warehouse_id or get_admin_warehouse_id('frontend')
+            if not actual_warehouse_id:
+                current_app.logger.error(f"无法确定操作仓库ID，用户: {current_user.username}")
+                continue
+
             # 使用IdentificationCodeGenerator生成标准格式的识别编码
             identification_code = IdentificationCodeGenerator.generate_unique_identification_code(
-                warehouse_id=operated_warehouse_id,
+                warehouse_id=actual_warehouse_id,
                 customer_name=customer_name,
                 plate_number=plate_number,
                 operation_type='inbound',
@@ -2474,7 +2513,7 @@ def api_inbound_batch():
                 record_type='direct',  # 直接入库记录
                 # 添加操作追踪信息
                 operated_by_user_id=current_user.id,
-                operated_warehouse_id=current_user.warehouse_id
+                operated_warehouse_id=actual_warehouse_id or current_user.warehouse_id
             )
 
             db.session.add(record)
@@ -2504,7 +2543,7 @@ def api_inbound_batch():
                     service_staff=item.get('service_staff', ''),
                     # 添加操作追踪信息
                     operated_by_user_id=current_user.id,
-                    operated_warehouse_id=current_user.warehouse_id
+                    operated_warehouse_id=actual_warehouse_id or current_user.warehouse_id
                 )
                 db.session.add(inventory)
             else:
@@ -2955,6 +2994,24 @@ def delete_outbound(id):
                 inventory.pallet_count += record.pallet_count
                 inventory.package_count += record.package_count
 
+                # 对于PX开头的自行入库数据，需要恢复业务字段
+                if record.identification_code and record.identification_code.startswith('PX/'):
+                    # 查找原始入库记录来恢复业务字段
+                    inbound_record = InboundRecord.query.filter_by(
+                        identification_code=record.identification_code
+                    ).first()
+
+                    if inbound_record:
+                        inventory.order_type = inbound_record.order_type
+                        inventory.export_mode = inbound_record.export_mode
+                        inventory.customs_broker = inbound_record.customs_broker
+                        inventory.documents = inbound_record.documents
+
+                        current_app.logger.info(f"恢复PX自行入库数据的业务字段: {record.identification_code}, "
+                                               f"订单类型: {inbound_record.order_type}, "
+                                               f"出境模式: {inbound_record.export_mode}, "
+                                               f"报关行: {inbound_record.customs_broker}")
+
                 current_app.logger.info(f"删除出库记录时恢复库存: {record.identification_code} (仓库ID: {record.operated_warehouse_id}), "
                                        f"板数恢复: +{record.pallet_count}, 新库存: {inventory.pallet_count}, "
                                        f"件数恢复: +{record.package_count}, 新库存: {inventory.package_count}")
@@ -3197,12 +3254,19 @@ def api_outbound_batch():
         # 获取当前用户的仓库ID
         current_warehouse_id = current_user.warehouse_id if hasattr(current_user, 'warehouse_id') else None
         if not current_warehouse_id:
-            return jsonify({'success': False, 'message': '无法确定当前仓库，请联系管理员'}), 400
+            if current_user.is_super_admin():
+                # admin用户可以根据业务逻辑自动匹配仓库
+                current_app.logger.info(f"Admin用户 {current_user.username} 执行出库操作，将根据业务逻辑确定仓库")
+            else:
+                return jsonify({'success': False, 'message': '无法确定当前仓库，请联系管理员'}), 400
+
+        # 确定实际的仓库ID
+        actual_warehouse_id = current_warehouse_id or get_admin_warehouse_id('frontend')
 
         # 使用统一的批次号生成器
         from app.utils.batch_generator import generate_batch_number
         batch_number = generate_batch_number(
-            warehouse_id=current_warehouse_id,
+            warehouse_id=actual_warehouse_id,
             destination_prefix=None,
             db_session=db.session
         )
@@ -3368,7 +3432,7 @@ def api_outbound_batch():
                 receiver_id=receiver_id,
                 # 添加操作追踪信息
                 operated_by_user_id=current_user.id,
-                operated_warehouse_id=current_user.warehouse_id
+                operated_warehouse_id=actual_warehouse_id
             )
             records_to_save.append(record)
 
@@ -3814,8 +3878,8 @@ def export_inventory():
         ws.cell(row=row_num+1, column=1).value = row_num
 
         # 入库日期
-        if record.inbound_time:
-            ws.cell(row=row_num+1, column=2).value = record.inbound_time.strftime('%Y-%m-%d')
+        if record.outbound_time:
+            ws.cell(row=row_num+1, column=2).value = record.outbound_time.strftime('%Y-%m-%d')
         else:
             ws.cell(row=row_num+1, column=2).value = ''
 
@@ -4457,7 +4521,7 @@ def api_inventory_list():
         inventory_data = []
         for record in inventory_records:
             # 格式化时间
-            inbound_time_str = record.inbound_time.strftime("%Y-%m-%d") if record.inbound_time else ""
+            inbound_time_str = record.outbound_time.strftime("%Y-%m-%d") if record.outbound_time else ""
 
             inventory_data.append({
                 'id': record.id,
@@ -5696,8 +5760,8 @@ def outbound_exit_plan():
         if search_params['customer_name']:
             query = query.filter(OutboundRecord.customer_name.like(f"%{search_params['customer_name']}%"))
 
-        # 先按出库日期降序排序，再按批次号降序排序，最后按操作顺序降序排序
-        query = query.order_by(OutboundRecord.outbound_time.desc(), OutboundRecord.batch_no.desc(), OutboundRecord.batch_sequence.desc())
+        # 按记录生成时间降序排序（最新创建的记录在前），再按批次号降序排序，最后按操作顺序降序排序
+        query = query.order_by(OutboundRecord.created_at.desc(), OutboundRecord.batch_no.desc(), OutboundRecord.batch_sequence.desc())
 
         # 限制记录数量，避免超时
         records = query.limit(max_records).all()
@@ -5924,7 +5988,7 @@ def api_inbound_records():
                 'id': record.id,
                 'customer_name': record.customer_name,
                 'identification_code': record.identification_code,
-                'inbound_time': record.inbound_time.strftime('%Y-%m-%d') if record.inbound_time else '',
+                'inbound_time': record.outbound_time.strftime('%Y-%m-%d') if record.outbound_time else '',
                 'pallet_count': record.pallet_count,
                 'package_count': record.package_count
             })
@@ -6998,8 +7062,8 @@ def frontend_receive_list():
                     'total_weight': 0,
                     'total_volume': 0,
                     'record_count': 0,
-                    'first_receive_time': record.inbound_time,
-                    'last_receive_time': record.inbound_time
+                    'first_receive_time': record.outbound_time,
+                    'last_receive_time': record.outbound_time
                 },
                 'records': []
             }
@@ -7013,11 +7077,11 @@ def frontend_receive_list():
         batch_info['record_count'] += 1
 
         # 更新时间范围
-        if record.inbound_time:
-            if not batch_info['first_receive_time'] or record.inbound_time < batch_info['first_receive_time']:
-                batch_info['first_receive_time'] = record.inbound_time
-            if not batch_info['last_receive_time'] or record.inbound_time > batch_info['last_receive_time']:
-                batch_info['last_receive_time'] = record.inbound_time
+        if record.outbound_time:
+            if not batch_info['first_receive_time'] or record.outbound_time < batch_info['first_receive_time']:
+                batch_info['first_receive_time'] = record.outbound_time
+            if not batch_info['last_receive_time'] or record.outbound_time > batch_info['last_receive_time']:
+                batch_info['last_receive_time'] = record.outbound_time
 
         # 添加记录到批次组
         batch_groups[batch_no]['records'].append(record)
@@ -7482,7 +7546,7 @@ def export_frontend_receive():
         data = []
         for record in records:
             data.append({
-                '接收时间': record.inbound_time.strftime('%Y-%m-%d %H:%M:%S') if record.inbound_time else '',
+                '接收时间': record.outbound_time.strftime('%Y-%m-%d %H:%M:%S') if record.outbound_time else '',
                 '批次号': record.batch_no or '',
                 '识别编码': record.identification_code or '',
                 '客户名称': record.customer_name or '',
@@ -7500,7 +7564,7 @@ def export_frontend_receive():
                 '单据': record.documents or '',
                 '操作仓库': record.operated_warehouse.warehouse_name if record.operated_warehouse else '',
                 '操作用户': record.operated_by_user.username if record.operated_by_user else '',
-                '创建时间': record.inbound_time.strftime('%Y-%m-%d %H:%M:%S') if record.inbound_time else ''
+                '创建时间': record.outbound_time.strftime('%Y-%m-%d %H:%M:%S') if record.outbound_time else ''
             })
 
         # 使用pandas导出Excel
@@ -7693,7 +7757,7 @@ def export_frontend_inbound():
         for i, record in enumerate(records):
             try:
                 data.append({
-                    '入库时间': record.inbound_time.strftime('%Y-%m-%d %H:%M:%S') if record.inbound_time else '',
+                    '入库时间': record.outbound_time.strftime('%Y-%m-%d %H:%M:%S') if record.outbound_time else '',
                     '批次号': record.batch_no or '',
                     '客户名称': record.customer_name or '',
                     '车牌号': record.plate_number or '',
@@ -7710,7 +7774,7 @@ def export_frontend_inbound():
                     '跟单客服': record.service_staff or '',
                     '操作仓库': record.operated_warehouse.warehouse_name if record.operated_warehouse else '',
                     '操作用户': record.operated_by_user.username if record.operated_by_user else '',
-                    '创建时间': record.inbound_time.strftime('%Y-%m-%d %H:%M:%S') if record.inbound_time else ''
+                    '创建时间': record.outbound_time.strftime('%Y-%m-%d %H:%M:%S') if record.outbound_time else ''
                 })
 
                 # 每处理100条记录输出一次日志
@@ -9280,7 +9344,7 @@ def export_backend_inbound():
             for i, record in enumerate(records, 1):
                 data.append({
                     '序号': i,
-                    '入库时间': record.inbound_time.strftime('%Y-%m-%d') if record.inbound_time else '',
+                    '入库时间': record.outbound_time.strftime('%Y-%m-%d') if record.outbound_time else '',
                     '入库车牌': record.plate_number or '',
                     '客户名称': record.customer_name or '',
                     '识别编码': record.identification_code or '',
@@ -9295,7 +9359,7 @@ def export_backend_inbound():
                     '单据': record.documents or '',
                     '跟单客服': record.service_staff or '',
                     '操作仓库': record.operated_warehouse.warehouse_name if record.operated_warehouse else '',
-                    '创建时间': record.inbound_time.strftime('%Y-%m-%d %H:%M:%S') if record.inbound_time else ''
+                    '创建时间': record.outbound_time.strftime('%Y-%m-%d %H:%M:%S') if record.outbound_time else ''
                 })
 
             df = pd.DataFrame(data)
@@ -9913,7 +9977,7 @@ def debug_inbound_data():
                 'identification_code': record.identification_code,
                 'weight': record.weight,
                 'volume': record.volume,
-                'inbound_time': record.inbound_time.strftime('%Y-%m-%d %H:%M:%S') if record.inbound_time else None
+                'inbound_time': record.outbound_time.strftime('%Y-%m-%d %H:%M:%S') if record.outbound_time else None
             })
 
         return jsonify({
@@ -12640,8 +12704,8 @@ def export_frontend_inventory():
             ws.cell(row=row_num+1, column=1).value = row_num
 
             # 入库日期
-            if record.inbound_time:
-                ws.cell(row=row_num+1, column=2).value = record.inbound_time.strftime('%Y-%m-%d')
+            if record.outbound_time:
+                ws.cell(row=row_num+1, column=2).value = record.outbound_time.strftime('%Y-%m-%d')
             else:
                 ws.cell(row=row_num+1, column=2).value = ''
 
@@ -12891,8 +12955,8 @@ def export_backend_inventory():
             ws.cell(row=row_num+1, column=1).value = row_num
 
             # 入库日期
-            if record.inbound_time:
-                ws.cell(row=row_num+1, column=2).value = record.inbound_time.strftime('%Y-%m-%d')
+            if record.outbound_time:
+                ws.cell(row=row_num+1, column=2).value = record.outbound_time.strftime('%Y-%m-%d')
             else:
                 ws.cell(row=row_num+1, column=2).value = ''
 
@@ -13051,7 +13115,7 @@ def api_backend_inventory():
                     'customs_broker': record.customs_broker or '',
                     'delivery_plate_number': delivery_plate_number,  # 从入库记录获取
                     'service_staff': record.service_staff or '',
-                    'inbound_time': record.inbound_time.strftime('%Y-%m-%d') if record.inbound_time else '',
+                    'inbound_time': record.outbound_time.strftime('%Y-%m-%d') if record.outbound_time else '',
                     'location': record.location or '',
                     'documents': record.documents or ''
                 })
@@ -15053,6 +15117,25 @@ def api_backend_outbound_delete(record_id):
             inventory.package_count = (inventory.package_count or 0) + package_count
             inventory.weight = (inventory.weight or 0) + weight
             inventory.volume = (inventory.volume or 0) + volume
+
+            # 对于PX开头的自行入库数据，需要恢复业务字段
+            if identification_code and identification_code.startswith('PX/'):
+                # 查找原始入库记录来恢复业务字段
+                inbound_record = InboundRecord.query.filter_by(
+                    identification_code=identification_code
+                ).first()
+
+                if inbound_record:
+                    inventory.order_type = inbound_record.order_type
+                    inventory.export_mode = inbound_record.export_mode
+                    inventory.customs_broker = inbound_record.customs_broker
+                    inventory.documents = inbound_record.documents
+
+                    current_app.logger.info(f"批量删除时恢复PX自行入库数据的业务字段: {identification_code}, "
+                                           f"订单类型: {inbound_record.order_type}, "
+                                           f"出境模式: {inbound_record.export_mode}, "
+                                           f"报关行: {inbound_record.customs_broker}")
+
             current_app.logger.info(f"更新现有库存记录: 新板数={inventory.pallet_count}, 新件数={inventory.package_count}")
         else:
             # 库存记录不存在，创建新的库存记录
@@ -15164,6 +15247,25 @@ def api_backend_outbound_batch_delete():
                     inventory.package_count = (inventory.package_count or 0) + package_count
                     inventory.weight = (inventory.weight or 0) + weight
                     inventory.volume = (inventory.volume or 0) + volume
+
+                    # 对于PX开头的自行入库数据，需要恢复业务字段
+                    if identification_code and identification_code.startswith('PX/'):
+                        # 查找原始入库记录来恢复业务字段
+                        inbound_record = InboundRecord.query.filter_by(
+                            identification_code=identification_code
+                        ).first()
+
+                        if inbound_record:
+                            inventory.order_type = inbound_record.order_type
+                            inventory.export_mode = inbound_record.export_mode
+                            inventory.customs_broker = inbound_record.customs_broker
+                            inventory.documents = inbound_record.documents
+
+                            current_app.logger.info(f"批量删除时恢复PX自行入库数据的业务字段: {identification_code}, "
+                                                   f"订单类型: {inbound_record.order_type}, "
+                                                   f"出境模式: {inbound_record.export_mode}, "
+                                                   f"报关行: {inbound_record.customs_broker}")
+
                     current_app.logger.info(f"批量删除: 更新现有库存记录: 新板数={inventory.pallet_count}, 新件数={inventory.package_count}")
                 else:
                     # 库存记录不存在，创建新的库存记录
@@ -15276,6 +15378,25 @@ def api_backend_outbound_delete_batch(batch_no):
                     inventory.package_count = (inventory.package_count or 0) + package_count
                     inventory.weight = (inventory.weight or 0) + weight
                     inventory.volume = (inventory.volume or 0) + volume
+
+                    # 对于PX开头的自行入库数据，需要恢复业务字段
+                    if identification_code and identification_code.startswith('PX/'):
+                        # 查找原始入库记录来恢复业务字段
+                        inbound_record = InboundRecord.query.filter_by(
+                            identification_code=identification_code
+                        ).first()
+
+                        if inbound_record:
+                            inventory.order_type = inbound_record.order_type
+                            inventory.export_mode = inbound_record.export_mode
+                            inventory.customs_broker = inbound_record.customs_broker
+                            inventory.documents = inbound_record.documents
+
+                            current_app.logger.info(f"批次删除时恢复PX自行入库数据的业务字段: {identification_code}, "
+                                                   f"订单类型: {inbound_record.order_type}, "
+                                                   f"出境模式: {inbound_record.export_mode}, "
+                                                   f"报关行: {inbound_record.customs_broker}")
+
                     current_app.logger.info(f"批次删除: 更新现有库存记录: 新板数={inventory.pallet_count}, 新件数={inventory.package_count}")
                 else:
                     # 库存记录不存在，创建新的库存记录 - 必须设置正确的仓库ID
@@ -15839,9 +15960,9 @@ def backend_outbound_print():
     page = request.args.get('page', 1, type=int)
     per_page = 15  # 每页显示15个批次记录
 
-    # 获取搜索参数
+    # 获取搜索参数 - 默认显示最近7天的数据
     search_params = {
-        'date_start': request.args.get('date_start', (datetime.now() - timedelta(days=1)).strftime('%Y-%m-%d')),
+        'date_start': request.args.get('date_start', (datetime.now() - timedelta(days=7)).strftime('%Y-%m-%d')),
         'date_end': request.args.get('date_end', datetime.now().strftime('%Y-%m-%d')),
         'plate_number': request.args.get('plate_number', '').strip(),
         'batch_no': request.args.get('batch_no', '').strip(),
@@ -15858,31 +15979,38 @@ def backend_outbound_print():
         search_params['customer_name']
     ])
 
-    # 如果没有额外的搜索参数，默认只取最近2天的数据以提高速度
+    # 如果没有额外的搜索参数，默认只取最近7天的数据以提高速度
     if not has_search_params:
         start_date = datetime.strptime(search_params['date_start'], '%Y-%m-%d')
         end_date = datetime.strptime(search_params['date_end'], '%Y-%m-%d')
         date_diff = (end_date - start_date).days
 
-        if date_diff > 2:
-            current_app.logger.info("日期范围超过2天且无其他筛选条件，默认只取最近2天的数据")
-            search_params['date_start'] = (datetime.now() - timedelta(days=1)).strftime('%Y-%m-%d')
+        if date_diff > 7:
+            current_app.logger.info("日期范围超过7天且无其他筛选条件，默认只取最近7天的数据")
+            search_params['date_start'] = (datetime.now() - timedelta(days=7)).strftime('%Y-%m-%d')
 
     # 构建查询 - 专门查询后端仓返回前端仓的数据
     try:
         # 限制最大记录数以防止加载过多数据导致页面卡顿
         max_records = 1000
 
-        # 构建查询 - 只显示后端仓返回前端仓的记录
-        # 通过备注字段识别返回前端仓的记录
+        # 构建查询 - 显示后端仓转前端仓的出库记录
+        # 获取所有前端仓库ID
+        frontend_warehouses = Warehouse.query.filter_by(warehouse_type='frontend').all()
+        frontend_warehouse_ids = [w.id for w in frontend_warehouses]
+        frontend_warehouse_names = [w.warehouse_name for w in frontend_warehouses]
+
         query = OutboundRecord.query.join(
             Warehouse, OutboundRecord.operated_warehouse_id == Warehouse.id
         ).filter(
             db.and_(
                 # 只显示后端仓的记录
                 Warehouse.warehouse_type == 'backend',
-                # 只显示返回前端仓的记录
-                OutboundRecord.remarks.like('%后端仓返回前端仓%')
+                # 目标是前端仓库的记录
+                db.or_(
+                    OutboundRecord.destination_warehouse_id.in_(frontend_warehouse_ids),
+                    OutboundRecord.destination.in_(frontend_warehouse_names)
+                )
             )
         )
 
@@ -16067,10 +16195,7 @@ def backend_outbound_print_document():
         db.joinedload(OutboundRecord.destination_warehouse),
         db.joinedload(OutboundRecord.receiver)  # 添加收货人信息关联
     ).filter(
-        db.and_(
-            OutboundRecord.id.in_(record_ids),
-            OutboundRecord.remarks.like('%后端仓返回前端仓%')  # 确保只打印后端仓返回前端仓的记录
-        )
+        OutboundRecord.id.in_(record_ids)
     ).all()
     current_app.logger.info(f"查询到的后端仓出库记录数: {len(records)}")
 

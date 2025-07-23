@@ -46,7 +46,7 @@ window.PerformanceConfig = {
     // 自动修复配置
     autoFix: {
         enabled: true,
-        checkInterval: 30000,  // 30秒检查一次
+        checkInterval: 120000,  // 120秒检查一次（减少频率）
         
         // 修复策略开关
         strategies: {
@@ -134,8 +134,11 @@ window.PerformanceConfig = {
             gzip: true,
             brotli: true,
             minifyHTML: false,
-            minifyCSS: false,               // CSS压缩 - 已禁用
-            minifyJS: false
+            minifyCSS: true,                // CSS压缩 - 重新启用（安全模式）
+            minifyJS: false,                // JS压缩保持禁用
+            safeMode: true,                 // 安全模式：只压缩空白字符，不删除重要样式
+            preserveImportant: true,        // 保留!important声明
+            preserveCustomProperties: true  // 保留CSS自定义属性
         }
     },
     

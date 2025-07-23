@@ -241,6 +241,7 @@ class Inventory(db.Model):
     service_staff = db.Column(db.String(50))  # 服务人员
     # 后端仓库合并字段（不显示在界面中）
     original_identification_code = db.Column(db.String(100), comment='原始识别编码，用于后端仓库合并同一票货物')
+    inventory_type = db.Column(db.String(20), default='normal', comment='库存类型')
     # 操作追踪字段
     operated_by_user_id = db.Column(db.Integer, db.ForeignKey('user.id'), comment='操作用户ID')
     operated_warehouse_id = db.Column(db.Integer, db.ForeignKey('warehouse.id'), comment='操作仓库ID')

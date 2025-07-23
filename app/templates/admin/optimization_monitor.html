@@ -175,13 +175,25 @@
 <script>
 let refreshInterval;
 
-$(document).ready(function() {
-    // 初始加载
-    refreshStatus();
-    
-    // 设置自动刷新（每30秒）
-    refreshInterval = setInterval(refreshStatus, 30000);
-});
+// 确保jQuery加载完成后再执行
+function initOptimizationMonitor() {
+    if (typeof $ === 'undefined') {
+        console.warn('jQuery未加载，延迟初始化优化监控器...');
+        setTimeout(initOptimizationMonitor, 100);
+        return;
+    }
+
+    $(document).ready(function() {
+        // 初始加载
+        refreshStatus();
+
+        // 设置自动刷新（每30秒）
+        refreshInterval = setInterval(refreshStatus, 30000);
+    });
+}
+
+// 启动初始化
+initOptimizationMonitor();
 
 function refreshStatus() {
     loadOptimizationStatus();
@@ -349,51 +361,60 @@ function getLogTypeName(type) {
 
 function triggerOptimization() {
     if (confirm('确定要立即执行系统优化吗？')) {
-        $.post('/api/optimization/optimization/trigger')
-            .done(function(response) {
-                if (response.success) {
-                    alert('系统优化已执行');
-                    refreshStatus();
-                } else {
-                    alert('优化失败: ' + response.message);
-                }
-            })
-            .fail(function() {
-                alert('优化请求失败');
-            });
+        // 使用异步处理，避免阻塞UI
+        setTimeout(() => {
+            $.post('/api/optimization/optimization/trigger')
+                .done(function(response) {
+                    if (response.success) {
+                        alert('系统优化已执行');
+                        setTimeout(refreshStatus, 1000); // 延迟刷新
+                    } else {
+                        alert('优化失败: ' + response.message);
+                    }
+                })
+                .fail(function() {
+                    alert('优化请求失败');
+                });
+        }, 10);
     }
 }
 
 function clearCache() {
     if (confirm('确定要清空所有缓存吗？这将影响系统性能直到缓存重新建立。')) {
-        $.post('/api/optimization/cache/clear')
-            .done(function(response) {
-                if (response.success) {
-                    alert('缓存已清空');
-                    refreshStatus();
-                } else {
-                    alert('清空缓存失败: ' + response.message);
-                }
-            })
-            .fail(function() {
-                alert('清空缓存请求失败');
-            });
+        // 使用异步处理
+        setTimeout(() => {
+            $.post('/api/optimization/cache/clear')
+                .done(function(response) {
+                    if (response.success) {
+                        alert('缓存已清空');
+                        setTimeout(refreshStatus, 1000);
+                    } else {
+                        alert('清空缓存失败: ' + response.message);
+                    }
+                })
+                .fail(function() {
+                    alert('清空缓存请求失败');
+                });
+        }, 10);
     }
 }
 
 function warmupCache() {
-    $.post('/api/optimization/cache/warmup')
-        .done(function(response) {
-            if (response.success) {
-                alert('缓存预热完成');
-                refreshStatus();
-            } else {
-                alert('缓存预热失败: ' + response.message);
-            }
-        })
-        .fail(function() {
-            alert('缓存预热请求失败');
-        });
+    // 使用异步处理
+    setTimeout(() => {
+        $.post('/api/optimization/cache/warmup')
+            .done(function(response) {
+                if (response.success) {
+                    alert('缓存预热完成');
+                    setTimeout(refreshStatus, 1000);
+                } else {
+                    alert('缓存预热失败: ' + response.message);
+                }
+            })
+            .fail(function() {
+                alert('缓存预热请求失败');
+            });
+    }, 10);
 }
 
 // 页面卸载时清除定时器

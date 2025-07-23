@@ -17,7 +17,8 @@ from app.auth.decorators import check_permission
 from datetime import datetime
 import json
 
-bp = Blueprint('user_permissions', __name__)
+# 使用主admin蓝图
+from app.admin import bp
 
 
 @bp.route('/admin/user-permissions')
@@ -29,7 +30,7 @@ def user_permissions_index():
     return render_template('admin/user_permissions.html', users=users)
 
 
-@bp.route('/admin/api/user-permissions/<int:user_id>')
+@bp.route('/api/user-permissions/<int:user_id>')
 @csrf.exempt
 @login_required
 @check_permission('ADMIN_VIEW')
@@ -137,7 +138,7 @@ def get_user_permissions(user_id):
         return jsonify({'success': False, 'message': str(e)}), 500
 
 
-@bp.route('/admin/api/user-permissions/<int:user_id>/menu', methods=['POST'])
+@bp.route('/api/user-permissions/<int:user_id>/menu', methods=['POST'])
 @csrf.exempt
 @login_required
 @check_permission('ADMIN_EDIT')
@@ -173,7 +174,7 @@ def update_user_menu_permissions(user_id):
         return jsonify({'success': False, 'message': str(e)}), 500
 
 
-@bp.route('/admin/api/user-permissions/<int:user_id>/page', methods=['POST'])
+@bp.route('/api/user-permissions/<int:user_id>/page', methods=['POST'])
 @csrf.exempt
 @login_required
 @check_permission('ADMIN_EDIT')
@@ -209,7 +210,7 @@ def update_user_page_permissions(user_id):
         return jsonify({'success': False, 'message': str(e)}), 500
 
 
-@bp.route('/admin/api/user-permissions/<int:user_id>/operation', methods=['POST'])
+@bp.route('/api/user-permissions/<int:user_id>/operation', methods=['POST'])
 @csrf.exempt
 @login_required
 @check_permission('ADMIN_EDIT')
@@ -245,7 +246,7 @@ def update_user_operation_permissions(user_id):
         return jsonify({'success': False, 'message': str(e)}), 500
 
 
-@bp.route('/admin/api/user-permissions/<int:user_id>/warehouse', methods=['POST'])
+@bp.route('/api/user-permissions/<int:user_id>/warehouse', methods=['POST'])
 @csrf.exempt
 @login_required
 @check_permission('ADMIN_EDIT')
@@ -282,7 +283,7 @@ def update_user_warehouse_permissions(user_id):
         return jsonify({'success': False, 'message': str(e)}), 500
 
 
-@bp.route('/admin/api/user-permissions/<int:user_id>/batch', methods=['POST'])
+@bp.route('/api/user-permissions/<int:user_id>/batch', methods=['POST'])
 @csrf.exempt
 @login_required
 @check_permission('ADMIN_EDIT')
@@ -354,7 +355,7 @@ def update_user_all_permissions(user_id):
         return jsonify({'success': False, 'message': str(e)}), 500
 
 
-@bp.route('/admin/api/permissions/definitions')
+@bp.route('/api/permissions/definitions')
 @csrf.exempt
 @login_required
 @check_permission('ADMIN_VIEW')

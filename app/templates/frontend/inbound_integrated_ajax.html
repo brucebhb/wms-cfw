@@ -163,69 +163,7 @@
                 </div>
             </div>
 
-            <!-- 快速统计 -->
-            <div class="row mb-4">
-                <div class="col-md-3">
-                    <div class="card text-white bg-success">
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between">
-                                <div>
-                                    <h6 class="card-title">今日接收</h6>
-                                    <h4 class="mb-0" id="todayReceiveCount">--</h4>
-                                </div>
-                                <div class="align-self-center">
-                                    <i class="fas fa-truck-loading fa-2x"></i>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="card text-white bg-warning">
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between">
-                                <div>
-                                    <h6 class="card-title">待接收</h6>
-                                    <h4 class="mb-0" id="pendingReceiveCount">--</h4>
-                                </div>
-                                <div class="align-self-center">
-                                    <i class="fas fa-clock fa-2x"></i>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="card text-white bg-info">
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between">
-                                <div>
-                                    <h6 class="card-title">本月接收</h6>
-                                    <h4 class="mb-0" id="monthReceiveCount">--</h4>
-                                </div>
-                                <div class="align-self-center">
-                                    <i class="fas fa-calendar fa-2x"></i>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="card text-white bg-secondary">
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between">
-                                <div>
-                                    <h6 class="card-title">库存总数</h6>
-                                    <h4 class="mb-0" id="totalInventoryCount">--</h4>
-                                </div>
-                                <div class="align-self-center">
-                                    <i class="fas fa-boxes fa-2x"></i>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+
 
             <!-- 待接收货物列表 -->
             <div class="row">
@@ -534,7 +472,7 @@ $(document).ready(function() {
             `);
             $('#pendingCount').text('0');
             $('#dataCount').text('0');
-            $('#pendingReceiveCount').text('0');
+
             return;
         }
 
@@ -579,7 +517,7 @@ $(document).ready(function() {
         $('#pendingReceiveTableBody').html(html);
         $('#pendingCount').text(data.length);
         $('#dataCount').text(data.length);
-        $('#pendingReceiveCount').text(data.length);
+
 
         // 绑定行选择事件
         $('.row-checkbox').on('change', function() {

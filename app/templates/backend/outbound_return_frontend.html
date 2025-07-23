@@ -61,6 +61,14 @@
         min-width: 180px !important;
     }
 
+    /* 库存模态框表头字体颜色修复 */
+    #inventoryTable thead th {
+        color: #000 !important;
+        font-weight: bold !important;
+        background-color: #f8f9fa !important;
+        border-bottom: 2px solid #dee2e6 !important;
+    }
+
     /* 全出按钮样式 */
     #inventoryTable .full-out-btn {
         font-size: 12px !important;
@@ -590,12 +598,12 @@ function loadInventoryData() {
         success: function(response) {
             console.log('✅ 库存数据加载成功:', response);
             if (response.success) {
-                if (response.data && response.data.length > 0) {
-                    showMessage('success', `加载到 ${response.data.length} 条库存记录`);
-                    showInventorySelector(response.data);
-                } else if (response.inventory && response.inventory.length > 0) {
-                    showMessage('success', `加载到 ${response.inventory.length} 条库存记录`);
-                    showInventorySelector(response.inventory);
+                // API返回的是data字段，不是inventory字段
+                const inventoryData = response.data || response.inventory || [];
+                if (inventoryData.length > 0) {
+                    console.log('🔍 检查第一条记录的单据字段:', inventoryData[0].documents);
+                    showMessage('success', `加载到 ${inventoryData.length} 条库存记录`);
+                    showInventorySelector(inventoryData);
                 } else {
                     showMessage('warning', '当前没有可用的库存数据');
                 }
@@ -720,7 +728,8 @@ function renderInventoryTable(data) {
             console.log(`  - 重量: ${item.weight} (类型: ${typeof item.weight})`);
             console.log(`  - 体积: ${item.volume} (类型: ${typeof item.volume})`);
             console.log(`  - 库位: ${item.location} (类型: ${typeof item.location})`);
-            console.log(`  - 单据: ${item.documents} (类型: ${typeof item.documents})`);
+            console.log(`  - 单据: '${item.documents}' (类型: ${typeof item.documents}, 长度: ${item.documents ? item.documents.length : 'N/A'})`);
+            console.log(`  - 跟单客服: ${item.service_staff} (类型: ${typeof item.service_staff})`);
             console.log('---');
         });
     }
@@ -759,7 +768,7 @@ function renderInventoryTable(data) {
             </td>
             <td class="text-end">${item.weight || ''}</td>
             <td class="text-end">${item.volume || ''}</td>
-            <td class="text-center">${item.documents || ''}</td>
+            <td class="text-center">${getDocumentsDisplay(item)}</td>
             <td class="text-truncate" title="${item.service_staff || ''}">
                 ${item.service_staff || ''}
             </td>
@@ -839,6 +848,107 @@ function updateSelectedCount() {
     const count = $('.inventory-checkbox:checked').length;
     // 由于模态框中没有selectedCount元素，这里只记录日志
     console.log(`已选择 ${count} 条库存记录`);
+}
+
+// 搜索库存（全局函数）
+function searchInventory() {
+    const customerName = $('#searchCustomer').val().trim();
+
+    let filteredData = window.currentInventoryData || [];
+
+    if (customerName) {
+        filteredData = filteredData.filter(item =>
+            item.customer_name && item.customer_name.includes(customerName)
+        );
+    }
+
+    console.log(`🔍 搜索结果: ${filteredData.length} 条记录`);
+    renderInventoryTable(filteredData);
+}
+
+// 重置库存搜索（全局函数）
+function resetInventorySearch() {
+    $('#searchCustomer').val('');
+    if (window.currentInventoryData) {
+        renderInventoryTable(window.currentInventoryData);
+        console.log('🔄 已重置搜索，显示所有库存记录');
+    }
+}
+
+// 确认库存选择（全局函数）
+function confirmInventorySelection() {
+    const selectedCheckboxes = $('.inventory-checkbox:checked');
+
+    if (selectedCheckboxes.length === 0) {
+        showMessage('warning', '请至少选择一条库存记录');
+        return;
+    }
+
+    const selectedItems = [];
+    selectedCheckboxes.each(function() {
+        const index = $(this).data('index');
+        const item = window.currentInventoryData[index];
+
+        if (item) {
+            // 获取用户输入的出库数量
+            const row = $(this).closest('tr');
+            const outboundPallets = parseInt(row.find('.outbound-pallets').val()) || 0;
+            const outboundPackages = parseInt(row.find('.outbound-packages').val()) || 0;
+            const remarks = row.find('.inventory-remarks').val() || '';
+
+            // 验证出库数量
+            if (outboundPallets === 0 && outboundPackages === 0) {
+                showMessage('error', `客户 ${item.customer_name} 的出库数量不能为0`);
+                return false;
+            }
+
+            // 添加出库数量到项目中
+            const selectedItem = Object.assign({}, item);
+            selectedItem.outbound_pallet_count = outboundPallets;
+            selectedItem.outbound_package_count = outboundPackages;
+            selectedItem.remarks = remarks;
+
+            selectedItems.push(selectedItem);
+        }
+    });
+
+    if (selectedItems.length > 0) {
+        console.log(`✅ 确认选择 ${selectedItems.length} 条库存记录`);
+        fillInventoryToTable(selectedItems);
+
+        // 关闭模态框
+        const modal = bootstrap.Modal.getInstance(document.getElementById('inventoryModal'));
+        if (modal) {
+            modal.hide();
+        }
+
+        showMessage('success', `已选择 ${selectedItems.length} 条库存记录`);
+    }
+}
+
+// 设置全出数量（全局函数）
+function setFullOut(button) {
+    const pallets = parseInt($(button).data('pallets')) || 0;
+    const packages = parseInt($(button).data('packages')) || 0;
+
+    const row = $(button).closest('tr');
+    row.find('.outbound-pallets').val(pallets);
+    row.find('.outbound-packages').val(packages);
+
+    console.log(`✅ 设置全出: 板数=${pallets}, 件数=${packages}`);
+}
+
+// 验证出库数量（全局函数）
+function validateOutboundQuantity(input, maxValue) {
+    const value = parseInt($(input).val()) || 0;
+
+    if (value < 0) {
+        $(input).val(0);
+        showMessage('warning', '出库数量不能为负数');
+    } else if (value > maxValue) {
+        $(input).val(maxValue);
+        showMessage('warning', `出库数量不能超过库存数量 ${maxValue}`);
+    }
 }
 
 // 将选中的库存数据填充到表格

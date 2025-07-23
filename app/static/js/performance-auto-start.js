@@ -21,8 +21,8 @@
     setupAutoFixTriggers();
     
     function applyImmediateOptimizations() {
-        // 优化CSS加载 - 已禁用
-        // optimizeCSSImmediate();
+        // 优化CSS加载 - 重新启用（安全模式）
+        optimizeCSSImmediate();
 
         // 优化字体加载
         optimizeFonts();
@@ -33,28 +33,46 @@
         // 优化图片加载
         optimizeImages();
 
-        console.log('✅ 立即优化已应用 (CSS优化已禁用)');
+        console.log('✅ 立即优化已应用 (包含安全CSS优化)');
     }
     
     function optimizeCSSImmediate() {
-        // 为CSS添加font-display: swap
+        // 检查是否已经有类似的优化
+        const existingOptimization = document.querySelector('style[data-performance-optimizer="safe"]');
+        if (existingOptimization) {
+            console.log('⚠️ CSS优化已存在，跳过重复应用');
+            return;
+        }
+
+        // 安全的CSS优化 - 只添加性能提升样式，不覆盖现有样式
         const style = document.createElement('style');
+        style.setAttribute('data-performance-optimizer', 'safe');
         style.textContent = `
-            * {
-                font-display: swap !important;
+            /* 安全的字体优化 - 不使用!important避免覆盖现有样式 */
+            @font-face {
+                font-display: swap;
             }
-            img {
+
+            /* 图片懒加载优化 - 只对没有loading属性且未被优化的图片生效 */
+            img:not([loading]):not([data-optimized]) {
                 loading: lazy;
                 decoding: async;
             }
-            iframe {
+
+            /* iframe懒加载优化 */
+            iframe:not([loading]):not([data-optimized]) {
                 loading: lazy;
+            }
+
+            /* 预加载关键资源提示 - 不强制覆盖 */
+            link[rel="stylesheet"][href*="bootstrap"]:not([importance]),
+            link[rel="stylesheet"][href*="fontawesome"]:not([importance]) {
+                importance: high;
             }
         `;
         document.head.appendChild(style);
-        
-        // 不预加载可能不存在的CSS，避免404错误
-        console.debug('跳过CSS预加载以避免404错误');
+
+        console.log('✅ 安全CSS优化已应用');
     }
     
     function optimizeFonts() {

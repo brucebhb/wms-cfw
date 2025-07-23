@@ -24,7 +24,7 @@ class IntegratedPerformanceManager {
             enableSmartPreload: true,
             enableLoadingFix: true, // 新增：页面加载修复
             debugMode: false,
-            eventCheckInterval: 5000, // 5秒检查一次
+            eventCheckInterval: 30000, // 30秒检查一次（减少频率）
             maxEventChecks: 3, // 最多检查3次
             loadingTimeout: 2000, // 页面加载超时时间（2秒）
             loadingCheckInterval: 1000 // 加载状态检查间隔
@@ -135,23 +135,66 @@ class IntegratedPerformanceManager {
     // 3. 事件保护机制 - 优化版本
     initEventProtection() {
         if (!this.config.enableEventProtection) return;
-        
+
+        // 保护模态框事件
+        this.protectModalEvents();
+
         // 智能事件检查，避免过度频繁
         this.startSmartEventCheck();
-        
+
         // 页面可见性变化监听
         document.addEventListener('visibilitychange', () => {
             if (!document.hidden) {
                 this.checkAndRebindEvents();
             }
         });
-        
+
         console.log('✅ 智能事件保护已启用');
+    }
+
+    // 保护模态框事件不被优化器干扰
+    protectModalEvents() {
+        console.log('🛡️ 保护模态框事件');
+
+        // 监听模态框显示事件
+        document.addEventListener('show.bs.modal', (event) => {
+            console.log('🔓 模态框即将显示:', event.target.id);
+            // 暂时停止事件检查，避免干扰
+            this.pauseEventCheck();
+        });
+
+        // 监听模态框隐藏事件
+        document.addEventListener('hidden.bs.modal', (event) => {
+            console.log('🔒 模态框已隐藏:', event.target.id);
+            // 延迟恢复事件检查
+            setTimeout(() => {
+                this.resumeEventCheck();
+            }, 500);
+        });
+    }
+
+    // 暂停事件检查
+    pauseEventCheck() {
+        if (this.eventCheckTimer) {
+            clearInterval(this.eventCheckTimer);
+            this.eventCheckTimer = null;
+        }
+        this.state.eventProtectionPaused = true;
+        console.log('⏸️ 事件检查已暂停');
+    }
+
+    // 恢复事件检查
+    resumeEventCheck() {
+        if (this.state.eventProtectionPaused) {
+            this.state.eventProtectionPaused = false;
+            this.startSmartEventCheck();
+            console.log('▶️ 事件检查已恢复');
+        }
     }
     
     // 智能事件检查
     startSmartEventCheck() {
-        if (this.state.eventProtectionActive) return;
+        if (this.state.eventProtectionActive || this.state.eventProtectionPaused) return;
         
         this.state.eventProtectionActive = true;
         this.state.eventCheckCount = 0;
@@ -243,12 +286,16 @@ class IntegratedPerformanceManager {
     
     // 绑定单个选择按钮
     bindSelectButton(button, type) {
-        // 移除旧事件
-        const newButton = button.cloneNode(true);
-        button.parentNode.replaceChild(newButton, button);
-        
+        // 检查按钮是否已经有事件监听器
+        if (button.hasAttribute('data-event-bound')) {
+            console.log(`✅ ${type}按钮已绑定事件，跳过重复绑定`);
+            return;
+        }
+
+        // 不使用cloneNode，直接添加事件监听器
+
         // 绑定新事件
-        newButton.addEventListener('click', () => {
+        button.addEventListener('click', () => {
             if (this.config.debugMode) {
                 console.log(`${type}按钮被点击`);
             }
@@ -277,9 +324,9 @@ class IntegratedPerformanceManager {
                 }
             }
         });
-        
+
         // 标记已绑定
-        newButton.setAttribute('data-event-bound', 'true');
+        button.setAttribute('data-event-bound', 'true');
         
         if (this.config.debugMode) {
             console.log(`✅ ${type}按钮事件已绑定`);
@@ -380,21 +427,53 @@ class IntegratedPerformanceManager {
         ];
 
         criticalCSS.forEach(href => {
-            // 检查CSS文件是否存在再预加载
+            // 检查CSS文件是否存在且页面需要
+            const needsCSS = this.checkIfCSSNeeded(href);
+            if (!needsCSS) {
+                console.log(`⚠️ 跳过不需要的CSS预加载: ${href}`);
+                return;
+            }
+
             fetch(href, { method: 'HEAD' })
                 .then(response => {
                     if (response.ok) {
+                        // 检查是否已经有相同的CSS链接
+                        const existingLink = document.querySelector(`link[href="${href}"]`);
+                        if (existingLink) {
+                            console.log(`✅ CSS已存在，跳过预加载: ${href}`);
+                            return;
+                        }
+
                         const link = document.createElement('link');
                         link.rel = 'preload';
                         link.as = 'style';
                         link.href = href;
+                        link.onload = () => {
+                            // 预加载完成后，转换为实际的样式表
+                            link.rel = 'stylesheet';
+                            console.log(`✅ CSS预加载并应用: ${href}`);
+                        };
                         document.head.appendChild(link);
                     }
                 })
                 .catch(() => {
                     // 文件不存在，忽略错误
+                    console.log(`⚠️ CSS文件不存在: ${href}`);
                 });
         });
+    }
+
+    // 检查页面是否需要特定的CSS
+    checkIfCSSNeeded(href) {
+        if (href.includes('inventory-table.css')) {
+            // 只在有表格的页面预加载表格CSS
+            return document.querySelector('table') !== null;
+        }
+        if (href.includes('style.css')) {
+            // 检查是否是需要特殊样式的页面
+            return document.querySelector('.custom-styled') !== null;
+        }
+        return false; // 默认不预加载
     }
 
     // 脚本执行优化
@@ -642,7 +721,18 @@ class IntegratedPerformanceManager {
 
     // 处理加载卡住的情况
     handleStuckLoading() {
-        console.log('🔧 检测到页面加载卡住，尝试修复...');
+        // 增加检查次数，避免无限循环
+        this.state.loadingCheckCount = (this.state.loadingCheckCount || 0) + 1;
+
+        if (this.state.loadingCheckCount > 10) {
+            console.log('⚠️ 页面加载检查达到最大次数，停止检查');
+            this.state.pageLoadingState = 'complete';
+            return;
+        }
+
+        if (this.config.debugMode) {
+            console.log('🔧 检测到页面加载卡住，尝试修复...');
+        }
 
         // 强制隐藏加载指示器
         this.hideLoadingIndicators();
@@ -650,8 +740,10 @@ class IntegratedPerformanceManager {
         // 尝试重新初始化页面功能
         this.reinitializePageFunctions();
 
-        // 显示用户友好的提示
-        this.showLoadingFixMessage();
+        // 显示用户友好的提示（只显示一次）
+        if (this.state.loadingCheckCount === 1) {
+            this.showLoadingFixMessage();
+        }
     }
 
     // 处理加载超时
@@ -728,17 +820,45 @@ class IntegratedPerformanceManager {
         }
     }
 
-    // 重新加载关键资源
+    // 重新加载关键资源 - 修复版本，避免重复加载
     reloadCriticalResources() {
-        // 重新加载CSS
+        console.log('🔄 检查关键资源状态...');
+
+        // 检查CSS是否正常加载，而不是盲目重新加载
         const cssLinks = document.querySelectorAll('link[rel="stylesheet"]');
+        let cssIssues = 0;
+
         cssLinks.forEach(link => {
             if (link.href.includes('bootstrap') || link.href.includes('custom')) {
-                const newLink = link.cloneNode();
-                newLink.href = link.href + '?reload=' + Date.now();
-                link.parentNode.insertBefore(newLink, link.nextSibling);
+                try {
+                    // 检查CSS是否真的有问题
+                    if (link.sheet === null || (link.sheet && link.sheet.cssRules.length === 0)) {
+                        if (this.config.debugMode) {
+                            console.log(`⚠️ CSS可能有问题: ${link.href}`);
+                        }
+                        cssIssues++;
+                    } else {
+                        if (this.config.debugMode) {
+                            console.log(`✅ CSS正常: ${link.href}`);
+                        }
+                    }
+                } catch (e) {
+                    // 跨域CSS文件无法访问cssRules，这是正常的
+                    if (this.config.debugMode && !e.message.includes('Cannot access rules')) {
+                        console.log(`⚠️ CSS检查失败: ${link.href}`, e.message);
+                    }
+                }
             }
         });
+
+        // 只有在确实有问题时才重新加载
+        if (cssIssues === 0) {
+            console.log('✅ 所有CSS文件正常，无需重新加载');
+            return;
+        }
+
+        console.log(`🔧 发现 ${cssIssues} 个CSS问题，尝试修复...`);
+        // 这里可以添加具体的修复逻辑，但要避免重复加载
     }
 
     // 加载jQuery

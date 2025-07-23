@@ -218,36 +218,36 @@ class CargoVolumeService:
                            second_year=None, second_month=None, second_week=None):
         """获取周范围统计数据"""
         try:
-            # 计算第一周的日期范围
-            first_start_date, first_end_date = self._calculate_week_dates(first_year, first_month, first_week)
+            # 计算第一周的日期范围（使用年度周次）
+            first_start_date, first_end_date = self._calculate_year_week_dates(first_year, first_week)
 
             # 计算第二周的日期范围（如果有）
             second_start_date = None
             second_end_date = None
             if all([second_year, second_month, second_week]):
-                second_start_date, second_end_date = self._calculate_week_dates(second_year, second_month, second_week)
+                second_start_date, second_end_date = self._calculate_year_week_dates(second_year, second_week)
 
         except ValueError as e:
             raise ValueError(f'日期计算错误: {str(e)}')
 
         accessible_warehouses = self._get_accessible_warehouses(user)
 
-        # 获取第一周数据
+        # 获取第一周数据 - 使用年周次格式
         first_week_data = self._get_week_data(
             accessible_warehouses,
             first_start_date,
             first_end_date,
-            f"{first_year}年{first_month}月第{first_week}周"
+            f"{first_year}年第{first_week}周"
         )
 
-        # 获取第二周数据（如果有）
+        # 获取第二周数据（如果有）- 使用年周次格式
         second_week_data = None
         if second_start_date and second_end_date:
             second_week_data = self._get_week_data(
                 accessible_warehouses,
                 second_start_date,
                 second_end_date,
-                f"{second_year}年{second_month}月第{second_week}周"
+                f"{second_year}年第{second_week}周"
             )
 
         # 计算汇总数据
@@ -278,10 +278,31 @@ class CargoVolumeService:
             result['week_info']['second_month'] = second_month
             result['week_info']['second_week'] = second_week
 
+            # 添加图表数据
+            result['chart_data'] = {
+                'categories': [first_week_data['name'], second_week_data['name']],
+                'inbound': [
+                    first_week_data['summary']['total_count'],
+                    second_week_data['summary']['total_count']
+                ],
+                'outbound': [
+                    first_week_data['summary']['total_count'],
+                    second_week_data['summary']['total_count']
+                ],
+                'pallets': [
+                    first_week_data['summary']['total_pallets'],
+                    second_week_data['summary']['total_pallets']
+                ],
+                'packages': [
+                    first_week_data['summary']['total_packages'],
+                    second_week_data['summary']['total_packages']
+                ]
+            }
+
         return result
 
     def _calculate_week_dates(self, year, month, week_number):
-        """计算指定年月第几周的开始和结束日期"""
+        """计算指定年月第几周的开始和结束日期（月度周次）"""
         # 获取该月第一天
         first_day = date(year, month, 1)
 
@@ -297,6 +318,25 @@ class CargoVolumeService:
         # 确保日期在合理范围内
         if week_start.year < year - 1 or week_start.year > year + 1:
             raise ValueError(f'周次超出合理范围')
+
+        return week_start, week_end
+
+    def _calculate_year_week_dates(self, year, week_number):
+        """计算指定年份第几周的开始和结束日期（年度周次，ISO标准）"""
+        # 使用ISO周标准：第一周是包含1月4日的那一周
+        jan_4 = date(year, 1, 4)
+
+        # 找到1月4日所在周的周一
+        days_since_monday = jan_4.weekday()  # 0=周一, 6=周日
+        first_monday = jan_4 - timedelta(days=days_since_monday)
+
+        # 计算指定周的周一
+        week_start = first_monday + timedelta(weeks=week_number - 1)
+        week_end = week_start + timedelta(days=6)
+
+        # 验证周次范围
+        if week_number < 1 or week_number > 53:
+            raise ValueError(f'周次必须在1-53之间')
 
         return week_start, week_end
 

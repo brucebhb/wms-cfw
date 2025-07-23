@@ -12,7 +12,7 @@ class SafePerformanceOptimizer {
             resourcePreload: false,     // 禁用资源预加载
             domOptimization: false,     // 禁用DOM优化
             eventOptimization: false,   // 禁用事件优化
-            cssOptimization: false      // 禁用CSS优化
+            cssOptimization: true       // 启用安全CSS优化
         };
         
         this.init();
@@ -43,7 +43,11 @@ class SafePerformanceOptimizer {
         if (this.optimizations.cacheOptimization) {
             this.optimizeCache();
         }
-        
+
+        if (this.optimizations.cssOptimization) {
+            this.optimizeCSSLoading();
+        }
+
         // 定期进行轻量级优化
         setInterval(() => {
             this.performLightOptimization();
@@ -230,6 +234,66 @@ class SafePerformanceOptimizer {
         }
         
         return report;
+    }
+
+    optimizeCSSLoading() {
+        console.log('🎨 开始安全CSS优化...');
+
+        try {
+            // 1. 为CSS添加加载优先级（不修改内容）
+            const cssLinks = document.querySelectorAll('link[rel="stylesheet"]');
+            cssLinks.forEach(link => {
+                const href = link.href;
+
+                // 为关键CSS添加高优先级
+                if (href.includes('bootstrap') || href.includes('fontawesome') || href.includes('custom.css')) {
+                    link.setAttribute('importance', 'high');
+                    console.log(`✅ 设置关键CSS高优先级: ${href.split('/').pop()}`);
+                }
+            });
+
+            // 2. 优化字体显示（检查是否已存在类似优化）
+            const existingOptimizer = document.querySelector('style[data-safe-optimizer="true"]');
+            if (!existingOptimizer) {
+                const style = document.createElement('style');
+                style.textContent = `
+                    /* 安全字体优化 - 不覆盖现有样式 */
+                    @font-face {
+                        font-display: swap;
+                    }
+                    /* 图片懒加载优化 - 仅对未设置的图片生效 */
+                    img:not([loading]):not([data-optimized]) {
+                        loading: lazy;
+                    }
+                `;
+                style.setAttribute('data-safe-optimizer', 'true');
+                document.head.appendChild(style);
+                console.log('✅ 添加安全字体优化样式');
+            } else {
+                console.log('⚠️ 安全优化样式已存在，跳过重复添加');
+            }
+
+            // 3. 预连接字体服务（提升性能但不影响显示）
+            const fontPreconnects = [
+                'https://fonts.googleapis.com',
+                'https://fonts.gstatic.com'
+            ];
+
+            fontPreconnects.forEach(href => {
+                if (!document.querySelector(`link[href="${href}"]`)) {
+                    const link = document.createElement('link');
+                    link.rel = 'preconnect';
+                    link.href = href;
+                    link.crossOrigin = 'anonymous';
+                    document.head.appendChild(link);
+                }
+            });
+
+            console.log('✅ 安全CSS优化完成');
+
+        } catch (error) {
+            console.warn('⚠️ CSS优化过程中出现错误:', error);
+        }
     }
 }
 

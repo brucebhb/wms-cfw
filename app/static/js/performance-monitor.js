@@ -41,8 +41,20 @@
         }
     });
     
-    // 监控Handsontable加载
+    // 监控Handsontable加载 - 只在需要的页面上检查
     var checkHandsontable = function() {
+        // 检查页面是否真的需要Handsontable
+        var needsHandsontable = document.querySelector('#handsontable-container') ||
+                               document.querySelector('.handsontable') ||
+                               document.querySelector('[data-handsontable]') ||
+                               window.location.pathname.includes('/outbound') ||
+                               window.location.pathname.includes('/inbound');
+
+        if (!needsHandsontable) {
+            console.log('当前页面不需要Handsontable，跳过检查');
+            return;
+        }
+
         if (typeof Handsontable !== 'undefined') {
             console.log('Handsontable加载完成');
         } else {
@@ -50,7 +62,7 @@
             setTimeout(checkHandsontable, 100);
         }
     };
-    
+
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', checkHandsontable);
     } else {

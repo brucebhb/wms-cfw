@@ -77,7 +77,7 @@
                             </thead>
                             <tbody>
                                 {% for warehouse in warehouses %}
-                                <tr>
+                                <tr data-warehouse-id="{{ warehouse.id }}">
                                     <td style="text-align: center; vertical-align: middle;">{{ warehouse.id }}</td>
                                     <td style="text-align: left; vertical-align: middle; padding-left: 12px;"><strong>{{ warehouse.warehouse_name }}</strong></td>
                                     <td style="text-align: center; vertical-align: middle;"><code>{{ warehouse.warehouse_code }}</code></td>
@@ -140,7 +140,7 @@
     </div>
 
     <!-- 仓库统计信息 -->
-    <div class="row mt-4">
+    <!-- <div class="row mt-4">
         <div class="col-md-3">
             <div class="card bg-primary text-white">
                 <div class="card-body">
@@ -202,7 +202,7 @@
             </div>
         </div>
     </div>
-</div>
+</div> -->
 
 <!-- 新增仓库模态框 -->
 <div class="modal fade" id="createWarehouseModal" tabindex="-1">
@@ -648,7 +648,7 @@ function createWarehouse() {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
-            'X-CSRFToken': '{{ csrf_token() }}'
+            'X-CSRFToken': document.querySelector('meta[name=csrf-token]')?.getAttribute('content') || ''
         },
         body: JSON.stringify(data)
     })
@@ -684,7 +684,10 @@ function createWarehouse() {
 }
 
 function editWarehouse(warehouseId) {
-    console.log('编辑仓库 - 仓库ID:', warehouseId);
+    console.log('📝 编辑仓库 - 仓库ID:', warehouseId);
+
+    // 确保所有其他模态框都已关闭
+    closeAllModals();
 
     // 隐藏之前的提示
     hideEditAlerts();
@@ -706,8 +709,8 @@ function editWarehouse(warehouseId) {
                 document.getElementById('editContactPerson').value = warehouse.contact_person || '';
                 document.getElementById('editContactPhone').value = warehouse.contact_phone || '';
 
-                // 显示模态框
-                new bootstrap.Modal(document.getElementById('editWarehouseModal')).show();
+                // 安全显示编辑模态框
+                safeShowModal('editWarehouseModal');
             } else {
                 alert('获取仓库信息失败: ' + data.error);
             }
@@ -719,33 +722,67 @@ function editWarehouse(warehouseId) {
 }
 
 function updateWarehouse() {
-    const warehouseId = document.getElementById('editWarehouseId').value;
-    const formData = new FormData(document.getElementById('editWarehouseForm'));
+    console.log('🔧 开始更新仓库...');
 
-    // 转换为JSON对象
-    const data = {};
-    formData.forEach((value, key) => {
-        if (key !== 'warehouse_id') {  // 排除隐藏的ID字段
-            data[key] = value;
+    try {
+        const warehouseId = document.getElementById('editWarehouseId').value;
+        console.log('📋 仓库ID:', warehouseId);
+
+        if (!warehouseId) {
+            console.error('❌ 仓库ID为空');
+            showEditAlert('error', '仓库ID不能为空');
+            return;
         }
-    });
 
-    console.log('更新仓库数据:', data);
+        const formData = new FormData(document.getElementById('editWarehouseForm'));
 
-    // 隐藏之前的提示
-    hideEditAlerts();
+        // 转换为JSON对象
+        const data = {};
+        formData.forEach((value, key) => {
+            if (key !== 'warehouse_id') {  // 排除隐藏的ID字段
+                data[key] = value;
+            }
+        });
+
+        console.log('📤 更新仓库数据:', data);
+
+        // 隐藏之前的提示
+        hideEditAlerts();
+
+        // 显示加载状态
+        const saveButton = document.querySelector('#editWarehouseModal .btn-primary');
+        if (!saveButton) {
+            console.error('❌ 找不到保存按钮');
+            return;
+        }
+
+        const originalText = saveButton.innerHTML;
+        saveButton.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>保存中...';
+        saveButton.disabled = true;
 
     // 发送更新请求
     fetch(`/admin/api/warehouses/${warehouseId}`, {
         method: 'PUT',
         headers: {
             'Content-Type': 'application/json',
-            'X-CSRFToken': '{{ csrf_token() }}'
+            'X-CSRFToken': document.querySelector('meta[name=csrf-token]')?.getAttribute('content') || ''
         },
         body: JSON.stringify(data)
     })
-    .then(response => response.json())
+    .then(response => {
+        console.log('📥 响应状态码:', response.status);
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        return response.json();
+    })
     .then(data => {
+        console.log('📥 响应数据:', data);
+
+        // 恢复按钮状态
+        saveButton.innerHTML = originalText;
+        saveButton.disabled = false;
+
         if (data.success) {
             // 显示成功提示
             showEditAlert('success', data.message || '仓库信息更新成功');
@@ -761,9 +798,19 @@ function updateWarehouse() {
         }
     })
     .catch(error => {
-        console.error('更新仓库失败:', error);
-        showEditAlert('error', '更新仓库信息失败，请重试');
+        console.error('❌ 更新仓库失败:', error);
+
+        // 恢复按钮状态
+        saveButton.innerHTML = originalText;
+        saveButton.disabled = false;
+
+        showEditAlert('error', `更新仓库信息失败: ${error.message}`);
     });
+
+    } catch (error) {
+        console.error('❌ updateWarehouse函数异常:', error);
+        showEditAlert('error', '更新仓库时发生异常，请重试');
+    }
 }
 
 function hideEditAlerts() {
@@ -862,14 +909,20 @@ function updateWarehouseInTable(warehouseId, warehouseData) {
 }
 
 function viewWarehouseDetails(warehouseId) {
-    console.log('查看仓库详情 - 仓库ID:', warehouseId);
+    console.log('👁️ 查看仓库详情 - 仓库ID:', warehouseId);
 
-    // 显示模态框
-    const modal = new bootstrap.Modal(document.getElementById('viewWarehouseModal'));
-    modal.show();
+    // 安全显示查看详情模态框
+    safeShowModal('viewWarehouseModal', () => {
+        // 显示加载状态
+        showViewLoading();
 
-    // 显示加载状态
-    showViewLoading();
+        // 获取仓库详细信息
+        fetchWarehouseDetails(warehouseId);
+    });
+}
+
+function fetchWarehouseDetails(warehouseId) {
+    console.log('📡 获取仓库详细信息:', warehouseId);
 
     // 获取仓库详细信息
     fetch(`/admin/api/warehouses/${warehouseId}/details`)
@@ -949,26 +1002,207 @@ function displayWarehouseDetails(warehouse, statistics) {
 }
 
 function editWarehouseFromView() {
-    // 关闭查看详情模态框
-    bootstrap.Modal.getInstance(document.getElementById('viewWarehouseModal')).hide();
+    console.log('🔄 从查看详情切换到编辑模式');
 
-    // 延迟一点时间后打开编辑模态框，确保查看模态框完全关闭
-    setTimeout(() => {
-        if (window.currentViewWarehouseId) {
-            editWarehouse(window.currentViewWarehouseId);
-        }
-    }, 300);
+    // 获取当前仓库ID
+    const warehouseId = window.currentViewWarehouseId;
+    if (!warehouseId) {
+        console.error('❌ 没有找到当前仓库ID');
+        alert('无法获取仓库信息，请重试');
+        return;
+    }
+
+    // 直接调用编辑函数，它会自动关闭所有模态框并打开编辑模态框
+    editWarehouse(warehouseId);
 }
 
 function toggleWarehouseStatus(warehouseId, newStatus) {
     const statusText = newStatus === 'active' ? '启用' : '停用';
-    if (confirm(`确定要${statusText}这个仓库吗？`)) {
-        alert(`${statusText}仓库功能开发中... 仓库ID: ${warehouseId}`);
+    const confirmText = newStatus === 'active' ?
+        '确定要启用这个仓库吗？启用后该仓库的用户将可以正常使用系统。' :
+        '确定要停用这个仓库吗？停用后该仓库的所有用户将无法登录系统。';
+
+    if (confirm(confirmText)) {
+        // 显示加载状态
+        const button = event.target.closest('button');
+        const originalHTML = button.innerHTML;
+        button.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+        button.disabled = true;
+
+        // 发送API请求
+        fetch(`/admin/api/warehouses/${warehouseId}/toggle-status`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('meta[name=csrf-token]')?.getAttribute('content') || ''
+            },
+            body: JSON.stringify({
+                status: newStatus
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // 显示成功消息
+                showStatusAlert('success', data.message);
+
+                // 更新表格中的状态显示
+                updateWarehouseStatusInTable(warehouseId, data.warehouse);
+
+                // 2秒后隐藏提示
+                setTimeout(() => {
+                    hideStatusAlerts();
+                }, 3000);
+            } else {
+                // 显示错误消息
+                showStatusAlert('error', data.error);
+
+                // 恢复按钮状态
+                button.innerHTML = originalHTML;
+                button.disabled = false;
+            }
+        })
+        .catch(error => {
+            console.error('切换仓库状态失败:', error);
+            showStatusAlert('error', '操作失败，请重试');
+
+            // 恢复按钮状态
+            button.innerHTML = originalHTML;
+            button.disabled = false;
+        });
+    }
+}
+
+function updateWarehouseStatusInTable(warehouseId, warehouseData) {
+    // 找到对应的表格行
+    const row = document.querySelector(`tr[data-warehouse-id="${warehouseId}"]`);
+    if (!row) {
+        console.warn('未找到仓库行:', warehouseId);
+        return;
+    }
+
+    // 更新状态列
+    const statusCell = row.querySelector('td:nth-child(7)'); // 状态是第7列
+    if (statusCell) {
+        if (warehouseData.status === 'active') {
+            statusCell.innerHTML = '<span class="badge bg-success">活跃</span>';
+        } else {
+            statusCell.innerHTML = '<span class="badge bg-danger">停用</span>';
+        }
+    }
+
+    // 更新操作按钮
+    const actionCell = row.querySelector('td:nth-child(8)'); // 操作是第8列
+    if (actionCell) {
+        const buttonGroup = actionCell.querySelector('.btn-group');
+        if (buttonGroup) {
+            // 重新生成操作按钮
+            let actionButtons = `
+                <button class="btn btn-sm btn-outline-primary" onclick="editWarehouse(${warehouseData.id})" title="编辑">
+                    <i class="fas fa-edit"></i>
+                </button>
+                <button class="btn btn-sm btn-outline-info" onclick="viewWarehouseDetails(${warehouseData.id})" title="查看详情">
+                    <i class="fas fa-eye"></i>
+                </button>
+            `;
+
+            if (warehouseData.status === 'active') {
+                actionButtons += `
+                    <button class="btn btn-sm btn-outline-warning" onclick="toggleWarehouseStatus(${warehouseData.id}, 'inactive')" title="停用">
+                        <i class="fas fa-pause"></i>
+                    </button>
+                `;
+            } else {
+                actionButtons += `
+                    <button class="btn btn-sm btn-outline-success" onclick="toggleWarehouseStatus(${warehouseData.id}, 'active')" title="启用">
+                        <i class="fas fa-play"></i>
+                    </button>
+                `;
+            }
+
+            buttonGroup.innerHTML = actionButtons;
+        }
+    }
+
+    console.log('仓库状态已更新:', warehouseData);
+}
+
+function showStatusAlert(type, message) {
+    // 创建或更新状态提示
+    let alertContainer = document.getElementById('status-alert-container');
+    if (!alertContainer) {
+        alertContainer = document.createElement('div');
+        alertContainer.id = 'status-alert-container';
+        alertContainer.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+            max-width: 400px;
+        `;
+        document.body.appendChild(alertContainer);
+    }
+
+    const alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
+    const icon = type === 'success' ? 'fa-check-circle' : 'fa-exclamation-triangle';
+
+    alertContainer.innerHTML = `
+        <div class="alert ${alertClass} alert-dismissible fade show" role="alert">
+            <i class="fas ${icon} me-2"></i>
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    `;
+}
+
+function hideStatusAlerts() {
+    const alertContainer = document.getElementById('status-alert-container');
+    if (alertContainer) {
+        alertContainer.innerHTML = '';
     }
 }
 
 function refreshWarehouseList() {
     location.reload();
+}
+
+// 关闭所有模态框的函数
+function closeAllModals() {
+    console.log('🔒 关闭所有模态框');
+
+    const modalIds = ['createWarehouseModal', 'editWarehouseModal', 'viewWarehouseModal'];
+
+    modalIds.forEach(modalId => {
+        const modalElement = document.getElementById(modalId);
+        if (modalElement) {
+            const modalInstance = bootstrap.Modal.getInstance(modalElement);
+            if (modalInstance) {
+                console.log(`🔒 关闭模态框: ${modalId}`);
+                modalInstance.hide();
+            }
+        }
+    });
+}
+
+// 防止模态框事件冲突的函数
+function safeShowModal(modalId, callback) {
+    console.log(`🔓 安全显示模态框: ${modalId}`);
+
+    // 先关闭所有其他模态框
+    closeAllModals();
+
+    // 等待一段时间确保模态框完全关闭
+    setTimeout(() => {
+        const modalElement = document.getElementById(modalId);
+        if (modalElement) {
+            const modal = new bootstrap.Modal(modalElement);
+            modal.show();
+
+            if (callback) {
+                callback();
+            }
+        }
+    }, 200);
 }
 
 // 强制设置表头样式
@@ -985,6 +1219,12 @@ function forceWarehouseTableHeaderStyle() {
 // 页面加载完成后的初始化
 document.addEventListener('DOMContentLoaded', function() {
     console.log('仓库管理页面初始化完成');
+
+    // 测试函数是否存在
+    console.log('🔍 函数检查:');
+    console.log('- editWarehouse:', typeof editWarehouse);
+    console.log('- updateWarehouse:', typeof updateWarehouse);
+    console.log('- toggleWarehouseStatus:', typeof toggleWarehouseStatus);
 
     // 强制设置表头样式
     setTimeout(forceWarehouseTableHeaderStyle, 100);
@@ -1011,6 +1251,50 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // 定期检查表头样式
     setInterval(forceWarehouseTableHeaderStyle, 30000);
+
+    // 添加模态框事件监听器，防止冲突
+    setupModalEventListeners();
 });
+
+// 设置模态框事件监听器
+function setupModalEventListeners() {
+    console.log('🎭 设置模态框事件监听器');
+
+    const modalIds = ['createWarehouseModal', 'editWarehouseModal', 'viewWarehouseModal'];
+
+    modalIds.forEach(modalId => {
+        const modalElement = document.getElementById(modalId);
+        if (modalElement) {
+            // 监听模态框显示事件
+            modalElement.addEventListener('show.bs.modal', function(e) {
+                console.log(`🔓 模态框即将显示: ${modalId}`);
+
+                // 确保其他模态框都已关闭
+                modalIds.forEach(otherId => {
+                    if (otherId !== modalId) {
+                        const otherElement = document.getElementById(otherId);
+                        if (otherElement) {
+                            const otherInstance = bootstrap.Modal.getInstance(otherElement);
+                            if (otherInstance) {
+                                console.log(`🔒 关闭其他模态框: ${otherId}`);
+                                otherInstance.hide();
+                            }
+                        }
+                    }
+                });
+            });
+
+            // 监听模态框隐藏事件
+            modalElement.addEventListener('hidden.bs.modal', function(e) {
+                console.log(`🔒 模态框已隐藏: ${modalId}`);
+
+                // 清理可能的全局状态
+                if (modalId === 'viewWarehouseModal') {
+                    window.currentViewWarehouseId = null;
+                }
+            });
+        }
+    });
+}
 </script>
 {% endblock %}

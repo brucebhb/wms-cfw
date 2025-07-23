@@ -1,21 +1,16 @@
 /**
- * 货量报表仪表板 JavaScript
+ * 货量报表仪表板 JavaScript - 简化版本
  */
 
 class CargoVolumeDashboard {
     constructor() {
-        this.currentPeriod = 'day';
         this.charts = {};
-        this.loginPromptShown = false;
         this.init();
     }
 
     init() {
-        this.initTimeSelectors();
         this.bindEvents();
-        this.updateInitialPeriodLabels(); // 先显示基本的日期信息
-        this.showInitialContent(); // 先显示基本内容
-        this.loadData(); // 异步加载数据
+        this.loadData();
         this.updateLastUpdateTime();
 
         // 每5分钟自动刷新数据
@@ -27,6 +22,24 @@ class CargoVolumeDashboard {
     showInitialContent() {
         // 显示基本的页面结构，避免白屏
         this.updateLastUpdateTime();
+
+        // 检查关键DOM元素是否存在和可见
+        const overviewCards = document.getElementById('overviewCards');
+        const warehouseGrid = document.getElementById('warehouseCardsGrid');
+        const comparisonChart = document.getElementById('comparisonChart');
+
+        // 强制显示主要容器
+        if (overviewCards) {
+            overviewCards.style.display = 'grid';
+            overviewCards.style.visibility = 'visible';
+            overviewCards.style.opacity = '1';
+        }
+
+        if (warehouseGrid) {
+            warehouseGrid.style.display = 'grid';
+            warehouseGrid.style.visibility = 'visible';
+            warehouseGrid.style.opacity = '1';
+        }
 
         // 显示默认的空状态卡片
         this.showDefaultCards();
@@ -67,7 +80,7 @@ class CargoVolumeDashboard {
         const endYear = currentYear + 1;
 
         const yearSelectors = [
-            'weekYear', 'yearStartYear', 'yearEndYear'
+            'weekYear', 'yearFirst', 'yearSecond'
         ];
 
         yearSelectors.forEach(selectorId => {
@@ -113,8 +126,7 @@ class CargoVolumeDashboard {
         // 初始化年份选项
         this.initYearOptions();
 
-        // 绑定周选择器事件
-        this.bindWeekSelectors();
+        // 周选择器事件已在initWeekSelectOptions中绑定
 
         // 绑定快捷按钮事件
         this.bindWeekQuickButtons();
@@ -132,34 +144,58 @@ class CargoVolumeDashboard {
             years.push(i);
         }
 
-        // 填充第一周年份选项
-        const weekFirstYear = document.getElementById('weekFirstYear');
-        if (weekFirstYear) {
-            weekFirstYear.innerHTML = '';
+        // 填充周对比的年份选项
+        const weekYear = document.getElementById('weekYear');
+        if (weekYear) {
+            weekYear.innerHTML = '';
             years.forEach(year => {
                 const option = document.createElement('option');
                 option.value = year;
                 option.textContent = year + '年';
                 if (year === currentYear) option.selected = true;
-                weekFirstYear.appendChild(option);
+                weekYear.appendChild(option);
             });
-        }
 
-        // 填充第二周年份选项
-        const weekSecondYear = document.getElementById('weekSecondYear');
-        if (weekSecondYear) {
-            weekSecondYear.innerHTML = '';
-            years.forEach(year => {
-                const option = document.createElement('option');
-                option.value = year;
-                option.textContent = year + '年';
-                if (year === currentYear) option.selected = true;
-                weekSecondYear.appendChild(option);
-            });
+            // 初始化周选项
+            this.initWeekSelectOptions(currentYear);
+        }
+    }
+
+    initWeekSelectOptions(year) {
+        const weekFirst = document.getElementById('weekFirst');
+        const weekSecond = document.getElementById('weekSecond');
+
+        if (weekFirst && weekSecond) {
+            // 清空现有选项
+            weekFirst.innerHTML = '<option value="">请选择第一周</option>';
+            weekSecond.innerHTML = '<option value="">请选择第二周</option>';
+
+            // 生成当年的周选项（简化版本，生成52周）
+            for (let week = 1; week <= 52; week++) {
+                // 第一周选项 - 值使用纯数字，显示文本使用"第X周"
+                const option1 = document.createElement('option');
+                option1.value = week.toString();
+                option1.textContent = `第${week}周`;
+                weekFirst.appendChild(option1);
+
+                // 第二周选项 - 值使用纯数字，显示文本使用"第X周"
+                const option2 = document.createElement('option');
+                option2.value = week.toString();
+                option2.textContent = `第${week}周`;
+                weekSecond.appendChild(option2);
+            }
+
+            // 绑定年份变化事件
+            const yearSelect = document.getElementById('weekYear');
+            if (yearSelect) {
+                yearSelect.addEventListener('change', (e) => {
+                    this.initWeekSelectOptions(parseInt(e.target.value));
+                });
+            }
         }
 
         // 填充年对比的年份选项
-        ['yearStartYear', 'yearEndYear'].forEach(id => {
+        ['yearFirst', 'yearSecond'].forEach(id => {
             const select = document.getElementById(id);
             if (select) {
                 select.innerHTML = '';
@@ -180,38 +216,47 @@ class CargoVolumeDashboard {
     }
 
     initCustomMonthPicker() {
-        const currentDate = new Date();
-        const currentYear = currentDate.getFullYear();
-        const currentMonth = currentDate.getMonth() + 1;
+        // 简化的月份选择器初始化
+        // 不再使用复杂的模态框，直接使用HTML中的下拉选择框
+        console.log('月份选择器已简化，使用HTML下拉选择框');
 
-        // 初始化选择器状态
-        this.monthPickerState = {
-            startYear: currentYear,
-            endYear: currentYear,
-            startMonth: null,  // 初始为null，表示未选择
-            endMonth: null,    // 初始为null，表示未选择
-            isOpen: false,
-            startSelected: false,
-            endSelected: false
-        };
+        // 初始化年份选择器
+        this.initMonthYearOptions();
+    }
 
-        // 绑定事件
-        this.bindMonthPickerEvents();
+    initMonthYearOptions() {
+        const yearSelect = document.getElementById('monthYear');
+        if (yearSelect) {
+            const currentYear = new Date().getFullYear();
+            yearSelect.innerHTML = '';
 
-        // 初始化显示
-        this.updateMonthRangeDisplay();
+            // 添加最近5年的选项
+            for (let year = currentYear; year >= currentYear - 4; year--) {
+                const option = document.createElement('option');
+                option.value = year;
+                option.textContent = year + '年';
+                if (year === currentYear) {
+                    option.selected = true;
+                }
+                yearSelect.appendChild(option);
+            }
+        }
     }
 
     bindMonthPickerEvents() {
+        // 先移除旧的事件监听器
+        this.unbindMonthPickerEvents();
+
         const monthRangeInput = document.getElementById('monthRangeInput');
         const monthPickerModal = document.getElementById('monthPickerModal');
 
         // 点击输入框显示选择器
         if (monthRangeInput) {
-            monthRangeInput.addEventListener('click', (e) => {
+            this.monthRangeInputHandler = (e) => {
                 e.stopPropagation();
                 this.showMonthPicker();
-            });
+            };
+            monthRangeInput.addEventListener('click', this.monthRangeInputHandler);
         }
 
         // 年份切换按钮
@@ -251,25 +296,21 @@ class CargoVolumeDashboard {
         });
 
         // 点击外部关闭选择器（但只有在没有选择或已完成选择时才关闭）
-        document.addEventListener('click', (e) => {
+        this.globalClickHandler = (e) => {
             if (this.monthPickerState.isOpen &&
                 !monthPickerModal?.contains(e.target) &&
                 !monthRangeInput?.contains(e.target)) {
-
-                console.log('点击外部，当前状态:', this.monthPickerState);
 
                 // 只有在没有开始选择或已经完成选择时才允许点击外部关闭
                 const noSelection = !this.monthPickerState.startSelected && !this.monthPickerState.endSelected;
                 const bothSelected = this.monthPickerState.startSelected && this.monthPickerState.endSelected;
 
                 if (noSelection || bothSelected) {
-                    console.log('允许关闭选择器');
                     this.hideMonthPicker();
-                } else {
-                    console.log('阻止关闭选择器，需要完成选择');
                 }
             }
-        });
+        };
+        document.addEventListener('click', this.globalClickHandler);
     }
 
     showMonthPicker() {
@@ -342,8 +383,6 @@ class CargoVolumeDashboard {
     }
 
     selectMonth(type, year, month) {
-        console.log(`选择月份: ${type} - ${year}年${month}月`);
-
         this.monthPickerState[type + 'Year'] = year;
         this.monthPickerState[type + 'Month'] = month;
         this.monthPickerState[type + 'Selected'] = true;
@@ -353,8 +392,6 @@ class CargoVolumeDashboard {
 
         // 检查是否两个月份都已选择，更新确定按钮状态
         this.updateConfirmButton();
-
-        console.log('当前状态:', this.monthPickerState);
     }
 
     updateConfirmButton() {
@@ -756,25 +793,21 @@ class CargoVolumeDashboard {
     // 移除enableSecondWeek和disableSecondWeek方法，因为第二周现在总是显示
 
     showTimeSelector(period) {
-        console.log('显示时间选择器:', period);
+
         // 隐藏所有时间选择器
         const selectors = ['daySelection', 'weekSelection', 'monthSelection', 'yearSelection'];
         selectors.forEach(id => {
             const element = document.getElementById(id);
             if (element) {
                 element.style.display = 'none';
-                console.log('隐藏选择器:', id);
+
             }
         });
 
         // 显示对应的时间选择器
         const targetSelector = document.getElementById(period + 'Selection');
-        console.log('目标选择器:', period + 'Selection', '元素存在:', !!targetSelector);
         if (targetSelector) {
             targetSelector.style.display = 'block';
-            console.log('显示选择器:', period + 'Selection');
-        } else {
-            console.error('未找到目标选择器:', period + 'Selection');
         }
 
         // 隐藏查询结果
@@ -785,25 +818,68 @@ class CargoVolumeDashboard {
     }
 
     bindEvents() {
+        // 先移除旧的事件监听器，避免重复绑定
+        this.unbindEvents();
+
         // 时间维度选择器
         document.querySelectorAll('input[name="timePeriod"]').forEach(radio => {
-            radio.addEventListener('change', (e) => {
+            // 移除旧的监听器
+            radio.removeEventListener('change', this.periodChangeHandler);
+            // 创建新的处理器并保存引用
+            this.periodChangeHandler = (e) => {
                 this.currentPeriod = e.target.value;
                 this.showTimeSelector(e.target.value);
                 this.updateComparisonTitle();
-            });
+            };
+            radio.addEventListener('change', this.periodChangeHandler);
         });
 
         // 查询按钮事件
         this.bindQueryEvents();
 
         // 刷新按钮
-        document.getElementById('refreshBtn').addEventListener('click', () => {
-            this.loadData();
-        });
+        const refreshBtn = document.getElementById('refreshBtn');
+        if (refreshBtn) {
+            refreshBtn.removeEventListener('click', this.refreshHandler);
+            this.refreshHandler = () => this.loadData();
+            refreshBtn.addEventListener('click', this.refreshHandler);
+        }
     }
 
+    // 移除事件监听器
+    unbindEvents() {
+        // 移除时间类型选择器事件
+        document.querySelectorAll('input[name="period"]').forEach(radio => {
+            if (this.periodChangeHandler) {
+                radio.removeEventListener('change', this.periodChangeHandler);
+            }
+        });
 
+        // 移除刷新按钮事件
+        const refreshBtn = document.getElementById('refreshBtn');
+        if (refreshBtn && this.refreshHandler) {
+            refreshBtn.removeEventListener('click', this.refreshHandler);
+        }
+
+        // 移除查询相关事件
+        this.unbindQueryEvents();
+
+        // 移除月份选择器事件
+        this.unbindMonthPickerEvents();
+    }
+
+    // 移除月份选择器事件监听器
+    unbindMonthPickerEvents() {
+        const monthRangeInput = document.getElementById('monthRangeInput');
+        if (monthRangeInput && this.monthRangeInputHandler) {
+            monthRangeInput.removeEventListener('click', this.monthRangeInputHandler);
+        }
+
+        // 移除全局点击事件监听器
+        if (this.globalClickHandler) {
+            document.removeEventListener('click', this.globalClickHandler);
+        }
+    }
 
     updateLastUpdateTime() {
         const now = new Date();
@@ -818,7 +894,18 @@ class CargoVolumeDashboard {
             'month': '月对比分析',
             'year': '年对比分析'
         };
-        document.getElementById('comparisonTitle').textContent = titles[this.currentPeriod] || '对比分析';
+
+        // 更新对比结果区域的标题
+        const comparisonBadge = document.getElementById('comparisonPeriodBadge');
+        if (comparisonBadge) {
+            const badges = {
+                'day': '日对比',
+                'week': '周对比',
+                'month': '月对比',
+                'year': '年对比'
+            };
+            comparisonBadge.textContent = badges[this.currentPeriod] || '对比';
+        }
     }
 
     updateInitialPeriodLabels() {
@@ -867,11 +954,18 @@ class CargoVolumeDashboard {
 
     async loadData() {
         try {
-            console.log('开始加载数据...');
+            // 开始加载数据
+
+            // 检查关键DOM元素
+            const overviewCards = document.getElementById('overviewCards');
+            const warehouseGrid = document.getElementById('warehouseCardsGrid');
+            const comparisonChart = document.getElementById('comparisonChart');
+
+            // 检查关键DOM元素
 
             // 先单独测试仓库数据
+            // 获取仓库数据
             const warehouseData = await this.fetchWarehouseData();
-            console.log('仓库数据加载完成:', warehouseData);
 
             // 更新仓库卡片
             this.updateWarehouseCards(warehouseData);
@@ -886,21 +980,17 @@ class CargoVolumeDashboard {
             if (overviewData.status === 'fulfilled') {
                 this.updateOverviewCards(overviewData.value);
             } else {
-                console.warn('总览数据加载失败:', overviewData.reason);
             }
 
             if (comparisonData.status === 'fulfilled') {
                 this.updateComparisonCharts(comparisonData.value);
             } else {
-                console.warn('对比数据加载失败:', comparisonData.reason);
             }
 
             this.updateLastUpdateTime();
 
         } catch (error) {
-            console.error('数据加载失败:', error);
             // 不显示错误提示，避免影响用户体验
-            console.warn('部分数据加载失败，页面将显示默认内容');
         }
     }
 
@@ -922,13 +1012,17 @@ class CargoVolumeDashboard {
 
     async fetchOverviewData() {
         try {
-            const response = await fetch('/reports/api/cargo_volume/overview');
+            const response = await fetch('/reports/api/cargo_volume/overview', {
+                credentials: 'same-origin',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            });
             if (!response.ok) {
                 if (response.status === 401) {
                     this.showLoginRequired();
                     return this.getDefaultOverviewData();
                 }
-                console.error('总览数据获取失败:', response.status);
                 return this.getDefaultOverviewData();
             }
             const result = await response.json();
@@ -937,12 +1031,10 @@ class CargoVolumeDashboard {
                     this.showLoginRequired();
                     return this.getDefaultOverviewData();
                 }
-                console.error('总览数据业务逻辑失败:', result.message);
                 return this.getDefaultOverviewData();
             }
             return result.data;
         } catch (error) {
-            console.error('总览数据网络请求失败:', error);
             return this.getDefaultOverviewData();
         }
     }
@@ -996,7 +1088,12 @@ class CargoVolumeDashboard {
     }
 
     async fetchTrendsData() {
-        const response = await fetch(`/reports/api/cargo_volume/trends?period=${this.currentPeriod}`);
+        const response = await fetch(`/reports/api/cargo_volume/trends?period=${this.currentPeriod}`, {
+            credentials: 'same-origin',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        });
         if (!response.ok) throw new Error('获取趋势数据失败');
         const result = await response.json();
         if (!result.success) throw new Error(result.message);
@@ -1005,31 +1102,31 @@ class CargoVolumeDashboard {
 
     async fetchWarehouseData() {
         try {
-            console.log('开始获取仓库数据...');
-            const response = await fetch('/reports/api/cargo_volume/warehouse_stats');
-            console.log('仓库数据响应状态:', response.status);
-
+            const response = await fetch('/reports/api/cargo_volume/warehouse_stats', {
+                credentials: 'same-origin',  // 包含cookies
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            });
             if (!response.ok) {
                 if (response.status === 401) {
                     this.showLoginRequired();
                     return this.getDefaultWarehouseData();
                 }
+                if (response.status === 403) {
+                    alert('权限不足：您没有查看统计数据的权限，请联系管理员');
+                    return this.getDefaultWarehouseData();
+                }
                 const errorText = await response.text();
-                console.error('仓库数据获取失败:', errorText);
                 return this.getDefaultWarehouseData();
             }
-
             const result = await response.json();
-            console.log('仓库数据结果:', result);
-
             if (!result.success) {
-                console.error('仓库数据业务逻辑失败:', result.message);
                 return this.getDefaultWarehouseData();
             }
 
             return result.data;
         } catch (error) {
-            console.error('仓库数据网络请求失败:', error);
             return this.getDefaultWarehouseData();
         }
     }
@@ -1045,23 +1142,25 @@ class CargoVolumeDashboard {
 
     async fetchComparisonData() {
         try {
-            const response = await fetch(`/reports/api/cargo_volume/comparison?type=${this.currentPeriod}`);
+            const response = await fetch(`/reports/api/cargo_volume/comparison?type=${this.currentPeriod}`, {
+                credentials: 'same-origin',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            });
             if (!response.ok) {
                 if (response.status === 401) {
                     this.showLoginRequired();
                     return this.getDefaultComparisonData();
                 }
-                console.error('对比数据获取失败:', response.status);
                 return this.getDefaultComparisonData();
             }
             const result = await response.json();
             if (!result.success) {
-                console.error('对比数据业务逻辑失败:', result.message);
                 return this.getDefaultComparisonData();
             }
             return result.data;
         } catch (error) {
-            console.error('对比数据网络请求失败:', error);
             return this.getDefaultComparisonData();
         }
     }
@@ -1075,24 +1174,49 @@ class CargoVolumeDashboard {
 
     updateOverviewCards(data) {
         // 今日进货
-        document.getElementById('todayInboundCount').textContent = data.today_inbound.count;
-        document.getElementById('todayInboundPallets').textContent = this.formatNumber(data.today_inbound.pallets);
-        document.getElementById('todayInboundPackages').textContent = this.formatNumber(data.today_inbound.packages);
+        const todayInboundCountEl = document.getElementById('todayInboundCount');
+        const todayInboundPalletsEl = document.getElementById('todayInboundPallets');
+        const todayInboundPackagesEl = document.getElementById('todayInboundPackages');
+        // 检查元素的实际状态
+        if (todayInboundCountEl) {
+        }
+
+        if (todayInboundCountEl) {
+            todayInboundCountEl.textContent = data.today_inbound.count;
+        }
+        if (todayInboundPalletsEl) {
+            todayInboundPalletsEl.textContent = this.formatNumber(data.today_inbound.pallets);
+        }
+        if (todayInboundPackagesEl) {
+            todayInboundPackagesEl.textContent = this.formatNumber(data.today_inbound.packages);
+        }
 
         // 今日出货
-        document.getElementById('todayOutboundCount').textContent = data.today_outbound.count;
-        document.getElementById('todayOutboundPallets').textContent = this.formatNumber(data.today_outbound.pallets);
-        document.getElementById('todayOutboundPackages').textContent = this.formatNumber(data.today_outbound.packages);
+        const todayOutboundCountEl = document.getElementById('todayOutboundCount');
+        const todayOutboundPalletsEl = document.getElementById('todayOutboundPallets');
+        const todayOutboundPackagesEl = document.getElementById('todayOutboundPackages');
+
+        if (todayOutboundCountEl) todayOutboundCountEl.textContent = data.today_outbound.count;
+        if (todayOutboundPalletsEl) todayOutboundPalletsEl.textContent = this.formatNumber(data.today_outbound.pallets);
+        if (todayOutboundPackagesEl) todayOutboundPackagesEl.textContent = this.formatNumber(data.today_outbound.packages);
 
         // 库存总量
-        document.getElementById('inventoryCount').textContent = data.inventory_stats.count;
-        document.getElementById('inventoryPallets').textContent = this.formatNumber(data.inventory_stats.pallets);
-        document.getElementById('inventoryPackages').textContent = this.formatNumber(data.inventory_stats.packages);
+        const inventoryCountEl = document.getElementById('inventoryCount');
+        const inventoryPalletsEl = document.getElementById('inventoryPallets');
+        const inventoryPackagesEl = document.getElementById('inventoryPackages');
+
+        if (inventoryCountEl) inventoryCountEl.textContent = data.inventory_stats.count;
+        if (inventoryPalletsEl) inventoryPalletsEl.textContent = this.formatNumber(data.inventory_stats.pallets);
+        if (inventoryPackagesEl) inventoryPackagesEl.textContent = this.formatNumber(data.inventory_stats.packages);
 
         // 在途货物
-        document.getElementById('transitCount').textContent = data.transit_stats.count;
-        document.getElementById('transitPallets').textContent = this.formatNumber(data.transit_stats.pallets);
-        document.getElementById('transitPackages').textContent = this.formatNumber(data.transit_stats.packages);
+        const transitCountEl = document.getElementById('transitCount');
+        const transitPalletsEl = document.getElementById('transitPallets');
+        const transitPackagesEl = document.getElementById('transitPackages');
+
+        if (transitCountEl) transitCountEl.textContent = data.transit_stats.count;
+        if (transitPalletsEl) transitPalletsEl.textContent = this.formatNumber(data.transit_stats.pallets);
+        if (transitPackagesEl) transitPackagesEl.textContent = this.formatNumber(data.transit_stats.packages);
 
         // 更新趋势指示器
         this.updateTrendIndicator('inboundTrend', data.comparison.inbound_growth.count);
@@ -1100,25 +1224,26 @@ class CargoVolumeDashboard {
     }
 
     updateTrendIndicator(elementId, growthRate) {
-        const element = document.getElementById(elementId);
-        const badge = element.querySelector('.badge');
-        const icon = badge.querySelector('i');
-        
+        // 直接通过ID获取趋势元素
+        const trendElement = document.getElementById(elementId);
+        if (!trendElement) {
+            return;
+        }
+
         const absRate = Math.abs(growthRate);
         const rateText = `${growthRate >= 0 ? '+' : ''}${growthRate.toFixed(1)}%`;
-        
+
+        // 更新趋势样式和内容
         if (growthRate > 0) {
-            badge.className = 'badge bg-success';
-            icon.className = 'fas fa-arrow-up';
+            trendElement.className = 'stat-trend positive';
+            trendElement.innerHTML = `<i class="fas fa-arrow-up"></i> ${rateText}`;
         } else if (growthRate < 0) {
-            badge.className = 'badge bg-danger';
-            icon.className = 'fas fa-arrow-down';
+            trendElement.className = 'stat-trend negative';
+            trendElement.innerHTML = `<i class="fas fa-arrow-down"></i> ${rateText}`;
         } else {
-            badge.className = 'badge bg-secondary';
-            icon.className = 'fas fa-minus';
+            trendElement.className = 'stat-trend neutral';
+            trendElement.innerHTML = `<i class="fas fa-minus"></i> ${rateText}`;
         }
-        
-        badge.innerHTML = `<i class="${icon.className}"></i> ${rateText}`;
     }
 
     updateTrendsCharts(data) {
@@ -1278,7 +1403,6 @@ class CargoVolumeDashboard {
     createSeparatedTrendChart(containerId, data, type, title, color) {
         const container = document.getElementById(containerId);
         if (!container) {
-            console.warn(`图表容器 ${containerId} 不存在`);
             return;
         }
 
@@ -1428,38 +1552,26 @@ class CargoVolumeDashboard {
     }
 
     updateWarehouseStats(data) {
-        console.log('🏭 开始更新仓库货量分布，数据:', data);
-
         const container = document.getElementById('warehouseStatsContainer');
         if (!container) {
-            console.error('❌ 未找到 warehouseStatsContainer 元素');
             return;
         }
-
-        console.log('✅ 找到 warehouseStatsContainer 元素');
-
         let html = '';
 
         // 使用简化的显示方式，直接显示汇总数据
         if (data.frontend_summary) {
             html += this.createSimpleStatsCard('前端仓汇总', data.frontend_summary, 'primary');
-            console.log('📊 添加前端仓汇总');
         }
 
         if (data.backend_summary) {
             html += this.createSimpleStatsCard('后端仓汇总', data.backend_summary, 'success');
-            console.log('📊 添加后端仓汇总');
         }
 
         // 添加库存统计
         if (data.inventory_stats) {
             html += this.createInventoryStatsCard(data.inventory_stats);
-            console.log('📊 添加库存统计');
         }
-
-        console.log('📝 生成的HTML长度:', html.length);
         container.innerHTML = html;
-        console.log('✅ 仓库货量分布更新完成');
     }
 
     createSimpleStatsCard(title, data, colorClass) {
@@ -1570,57 +1682,49 @@ class CargoVolumeDashboard {
     createWarehouseCard(warehouse) {
         const typeClass = warehouse.warehouse_type === 'frontend' ? 'primary' : 'success';
         const typeName = warehouse.warehouse_type === 'frontend' ? '前端仓' : '后端仓';
-        
+
         return `
-            <div class="col-lg-4 col-md-6 mb-3">
-                <div class="card border-0 shadow-sm">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-center mb-3">
-                            <h6 class="card-title mb-0">${warehouse.warehouse_name}</h6>
-                            <span class="badge bg-${typeClass} warehouse-type-badge">${typeName}</span>
+            <div class="warehouse-card">
+                <div class="warehouse-header">
+                    <h6 class="warehouse-name">${warehouse.warehouse_name}</h6>
+                    <span class="warehouse-type warehouse-type-${typeClass}">${typeName}</span>
+                </div>
+
+                <div class="warehouse-stats">
+                    <div class="warehouse-stat">
+                        <div class="stat-icon-small text-primary">
+                            <i class="fas fa-arrow-down"></i>
                         </div>
-                        
-                        <div class="row text-center">
-                            <div class="col-4">
-                                <div class="text-primary">
-                                    <i class="fas fa-arrow-down"></i>
-                                    <div class="mt-1">
-                                        <small class="text-muted">进货</small>
-                                        <div><strong>${warehouse.inbound.count}</strong></div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-4">
-                                <div class="text-success">
-                                    <i class="fas fa-arrow-up"></i>
-                                    <div class="mt-1">
-                                        <small class="text-muted">出货</small>
-                                        <div><strong>${warehouse.outbound.count}</strong></div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-4">
-                                <div class="text-info">
-                                    <i class="fas fa-boxes"></i>
-                                    <div class="mt-1">
-                                        <small class="text-muted">库存</small>
-                                        <div><strong>${warehouse.inventory.count}</strong></div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <hr class="my-2">
-                        
-                        <div class="row text-center">
-                            <div class="col-6">
-                                <small class="text-muted">板数: ${this.formatNumber(warehouse.inbound.pallets + warehouse.outbound.pallets)}</small>
-                            </div>
-                            <div class="col-6">
-                                <small class="text-muted">件数: ${this.formatNumber(warehouse.inbound.packages + warehouse.outbound.packages)}</small>
-                            </div>
+                        <div class="stat-info-small">
+                            <div class="stat-label-small">进货</div>
+                            <div class="stat-value-small">${warehouse.inbound.count}</div>
                         </div>
                     </div>
+
+                    <div class="warehouse-stat">
+                        <div class="stat-icon-small text-success">
+                            <i class="fas fa-arrow-up"></i>
+                        </div>
+                        <div class="stat-info-small">
+                            <div class="stat-label-small">出货</div>
+                            <div class="stat-value-small">${warehouse.outbound.count}</div>
+                        </div>
+                    </div>
+
+                    <div class="warehouse-stat">
+                        <div class="stat-icon-small text-info">
+                            <i class="fas fa-boxes"></i>
+                        </div>
+                        <div class="stat-info-small">
+                            <div class="stat-label-small">库存</div>
+                            <div class="stat-value-small">${warehouse.inventory.count}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="warehouse-meta">
+                    <span class="meta-item">板数: ${this.formatNumber(warehouse.inbound.pallets + warehouse.outbound.pallets)}</span>
+                    <span class="meta-item">件数: ${this.formatNumber(warehouse.inbound.packages + warehouse.outbound.packages)}</span>
                 </div>
             </div>
         `;
@@ -1794,6 +1898,94 @@ class CargoVolumeDashboard {
         }
     }
 
+    renderWeekComparisonChart(chartData) {
+        const container = document.getElementById('comparisonChart');
+        if (!container || typeof echarts === 'undefined') {
+            console.log('图表容器或ECharts未找到');
+            return;
+        }
+
+        // 销毁现有图表
+        if (this.charts && this.charts.comparisonChart) {
+            this.charts.comparisonChart.dispose();
+        }
+
+        const chart = echarts.init(container);
+
+        const option = {
+            title: {
+                text: '周对比分析',
+                left: 'center',
+                textStyle: {
+                    fontSize: 16
+                }
+            },
+            tooltip: {
+                trigger: 'axis',
+                axisPointer: {
+                    type: 'shadow'
+                }
+            },
+            legend: {
+                data: ['票数', '板数', '件数'],
+                top: 30
+            },
+            grid: {
+                left: '3%',
+                right: '4%',
+                bottom: '3%',
+                top: '15%',
+                containLabel: true
+            },
+            xAxis: {
+                type: 'category',
+                data: chartData.categories
+            },
+            yAxis: {
+                type: 'value'
+            },
+            series: [
+                {
+                    name: '票数',
+                    type: 'bar',
+                    data: chartData.inbound,
+                    itemStyle: {
+                        color: '#007bff'
+                    }
+                },
+                {
+                    name: '板数',
+                    type: 'bar',
+                    data: chartData.pallets,
+                    itemStyle: {
+                        color: '#28a745'
+                    }
+                },
+                {
+                    name: '件数',
+                    type: 'bar',
+                    data: chartData.packages,
+                    itemStyle: {
+                        color: '#ffc107'
+                    }
+                }
+            ]
+        };
+
+        chart.setOption(option);
+
+        // 保存图表实例
+        if (!this.charts) {
+            this.charts = {};
+        }
+        this.charts.comparisonChart = chart;
+
+        // 响应式调整
+        window.addEventListener('resize', () => {
+            chart.resize();
+        });
+    }
+
     showError(message) {
         // 创建错误提示
         const alertHtml = `
@@ -1838,9 +2030,9 @@ class CargoVolumeDashboard {
         warehouses.forEach(warehouse => {
             const warehouseData = data[warehouse.key] || {};
             const cardElement = document.getElementById(`warehouse-${warehouse.id}-data`);
-
             if (cardElement) {
-                cardElement.innerHTML = this.generateWarehouseCardContent(warehouseData, warehouse.name);
+                const content = this.generateWarehouseCardContent(warehouseData, warehouse.name);
+                cardElement.innerHTML = content;
             }
         });
     }
@@ -2077,41 +2269,77 @@ class CargoVolumeDashboard {
     }
 
     bindQueryEvents() {
+        // 先移除旧的事件监听器
+        this.unbindQueryEvents();
+
         // 日对比查询
         const dayQueryBtn = document.getElementById('dayQueryBtn');
         if (dayQueryBtn) {
-            dayQueryBtn.addEventListener('click', () => this.queryDayData());
+            this.dayQueryHandler = () => this.queryDayData();
+            dayQueryBtn.addEventListener('click', this.dayQueryHandler);
         }
 
         // 周对比查询
         const weekQueryBtn = document.getElementById('weekQueryBtn');
         if (weekQueryBtn) {
-            weekQueryBtn.addEventListener('click', () => this.queryWeekData());
+            this.weekQueryHandler = () => this.queryWeekData();
+            weekQueryBtn.addEventListener('click', this.weekQueryHandler);
         }
 
         // 月对比查询
         const monthQueryBtn = document.getElementById('monthQueryBtn');
         if (monthQueryBtn) {
-            monthQueryBtn.addEventListener('click', () => this.queryMonthData());
+            this.monthQueryHandler = () => this.queryMonthData();
+            monthQueryBtn.addEventListener('click', this.monthQueryHandler);
         }
 
         // 年对比查询
         const yearQueryBtn = document.getElementById('yearQueryBtn');
         if (yearQueryBtn) {
-            yearQueryBtn.addEventListener('click', () => this.queryYearData());
+            this.yearQueryHandler = () => this.queryYearData();
+            yearQueryBtn.addEventListener('click', this.yearQueryHandler);
         }
 
         // 日期范围验证
         this.bindDateValidation();
     }
 
+    // 移除查询事件监听器
+    unbindQueryEvents() {
+        const dayQueryBtn = document.getElementById('dayQueryBtn');
+        if (dayQueryBtn && this.dayQueryHandler) {
+            dayQueryBtn.removeEventListener('click', this.dayQueryHandler);
+        }
+
+        const weekQueryBtn = document.getElementById('weekQueryBtn');
+        if (weekQueryBtn && this.weekQueryHandler) {
+            weekQueryBtn.removeEventListener('click', this.weekQueryHandler);
+        }
+
+        const monthQueryBtn = document.getElementById('monthQueryBtn');
+        if (monthQueryBtn && this.monthQueryHandler) {
+            monthQueryBtn.removeEventListener('click', this.monthQueryHandler);
+        }
+
+        const yearQueryBtn = document.getElementById('yearQueryBtn');
+        if (yearQueryBtn && this.yearQueryHandler) {
+            yearQueryBtn.removeEventListener('click', this.yearQueryHandler);
+        }
+
+        // 移除日期验证事件
+        this.unbindDateValidation();
+    }
+
     bindDateValidation() {
+        // 先移除旧的事件监听器
+        this.unbindDateValidation();
+
         // 日期范围验证
         const dayStartDate = document.getElementById('dayStartDate');
         const dayEndDate = document.getElementById('dayEndDate');
 
         if (dayStartDate && dayEndDate) {
-            const validateDayRange = () => {
+            this.validateDayRangeHandler = () => {
                 const start = new Date(dayStartDate.value);
                 const end = new Date(dayEndDate.value);
                 const diffDays = Math.ceil((end - start) / (1000 * 60 * 60 * 24));
@@ -2125,8 +2353,22 @@ class CargoVolumeDashboard {
                 }
             };
 
-            dayStartDate.addEventListener('change', validateDayRange);
-            dayEndDate.addEventListener('change', validateDayRange);
+            dayStartDate.addEventListener('change', this.validateDayRangeHandler);
+            dayEndDate.addEventListener('change', this.validateDayRangeHandler);
+        }
+    }
+
+    // 移除日期验证事件监听器
+    unbindDateValidation() {
+        const dayStartDate = document.getElementById('dayStartDate');
+        const dayEndDate = document.getElementById('dayEndDate');
+
+        if (dayStartDate && this.validateDayRangeHandler) {
+            dayStartDate.removeEventListener('change', this.validateDayRangeHandler);
+        }
+
+        if (dayEndDate && this.validateDayRangeHandler) {
+            dayEndDate.removeEventListener('change', this.validateDayRangeHandler);
         }
     }
 
@@ -2148,33 +2390,49 @@ class CargoVolumeDashboard {
 
             this.displayDayResults(result.data, startDate, endDate);
         } catch (error) {
-            console.error('日对比查询失败:', error);
             alert('查询失败: ' + error.message);
         }
     }
 
     async queryWeekData() {
-        const firstYear = document.getElementById('weekFirstYear').value;
-        const firstMonth = document.getElementById('weekFirstMonth').value;
-        const firstWeek = document.getElementById('weekFirstWeek').value;
+        // 检查HTML元素是否存在
+        const yearEl = document.getElementById('weekYear');
+        const firstWeekEl = document.getElementById('weekFirst');
+        const secondWeekEl = document.getElementById('weekSecond');
 
-        if (!firstYear || !firstMonth || !firstWeek) {
-            alert('请选择第一周的年份、月份和周次');
+        if (!yearEl || !firstWeekEl || !secondWeekEl) {
+            alert('周对比功能暂未完全实现，请使用其他对比功能');
             return;
         }
 
-        // 获取第二周数据
-        const secondYear = document.getElementById('weekSecondYear').value;
-        const secondMonth = document.getElementById('weekSecondMonth').value;
-        const secondWeek = document.getElementById('weekSecondWeek').value;
+        const year = yearEl.value;
+        const firstWeek = firstWeekEl.value;
+        const secondWeek = secondWeekEl.value;
 
-        if (!secondYear || !secondMonth || !secondWeek) {
-            alert('请选择第二周的年份、月份和周次');
+        if (!year || !firstWeek || !secondWeek || firstWeek === '请选择第一周' || secondWeek === '请选择第二周') {
+            alert('请选择年份和两周进行对比');
+            return;
+        }
+
+        // 直接解析数字值（现在选项值是纯数字）
+        const firstWeekNum = parseInt(firstWeek);
+        const secondWeekNum = parseInt(secondWeek);
+
+        // 验证解析结果
+        if (isNaN(firstWeekNum) || isNaN(secondWeekNum)) {
+            alert(`周次格式错误，请重新选择。第一周: "${firstWeek}", 第二周: "${secondWeek}"`);
+            return;
+        }
+
+        // 验证周次范围
+        if (firstWeekNum < 1 || firstWeekNum > 52 || secondWeekNum < 1 || secondWeekNum > 52) {
+            alert('周次必须在1-52之间');
             return;
         }
 
         try {
-            let url = `/reports/api/cargo_volume/week_range?first_year=${firstYear}&first_month=${firstMonth}&first_week=${firstWeek}&second_year=${secondYear}&second_month=${secondMonth}&second_week=${secondWeek}`;
+            // 使用简化的week_comparison端点
+            let url = `/reports/api/cargo_volume/week_comparison?year=${year}&first_week=${firstWeekNum}&second_week=${secondWeekNum}`;
 
             const response = await fetch(url);
             if (!response.ok) throw new Error('查询失败');
@@ -2182,23 +2440,40 @@ class CargoVolumeDashboard {
             const result = await response.json();
             if (!result.success) throw new Error(result.message);
 
-            this.displayWeekResults(result.data, firstYear, firstMonth, firstWeek, secondYear, secondMonth, secondWeek);
+            // 计算月份（用于显示，但实际应该显示年周次）
+            const firstMonth = Math.ceil(firstWeekNum / 4.33);
+            const secondMonth = Math.ceil(secondWeekNum / 4.33);
+
+            this.displayWeekResults(result.data, year, firstMonth, firstWeekNum, year, secondMonth, secondWeekNum);
         } catch (error) {
-            console.error('周对比查询失败:', error);
             alert('查询失败: ' + error.message);
         }
     }
 
     async queryMonthData() {
-        if (!this.monthPickerState || !this.monthPickerState.startSelected || !this.monthPickerState.endSelected) {
-            alert('请先选择完整的月份范围');
+        // 检查HTML元素是否存在
+        const yearEl = document.getElementById('monthYear');
+        const firstMonthEl = document.getElementById('monthFirst');
+        const secondMonthEl = document.getElementById('monthSecond');
+
+        if (!yearEl || !firstMonthEl || !secondMonthEl) {
+            alert('月对比功能暂未完全实现，请使用其他对比功能');
             return;
         }
 
-        const startYear = this.monthPickerState.startYear;
-        const startMonth = this.monthPickerState.startMonth;
-        const endYear = this.monthPickerState.endYear;
-        const endMonth = this.monthPickerState.endMonth;
+        const year = yearEl.value;
+        const firstMonth = firstMonthEl.value;
+        const secondMonth = secondMonthEl.value;
+
+        if (!year || !firstMonth || !secondMonth) {
+            alert('请选择年份和两个月份');
+            return;
+        }
+
+        const startYear = parseInt(year);
+        const startMonth = parseInt(firstMonth);
+        const endYear = parseInt(year);
+        const endMonth = parseInt(secondMonth);
 
         // 验证月份范围
         const start = new Date(startYear, startMonth - 1);
@@ -2224,99 +2499,109 @@ class CargoVolumeDashboard {
 
             this.displayMonthResults(result.data, startYear, startMonth, endYear, endMonth);
         } catch (error) {
-            console.error('月对比查询失败:', error);
             alert('查询失败: ' + error.message);
         }
     }
 
     async queryYearData() {
-        const startYear = document.getElementById('yearStartYear').value;
-        const endYear = document.getElementById('yearEndYear').value;
+        // 检查HTML元素是否存在
+        const firstYearEl = document.getElementById('yearFirst');
+        const secondYearEl = document.getElementById('yearSecond');
 
-        if (!startYear || !endYear) {
-            alert('请选择开始和结束年份');
+        if (!firstYearEl || !secondYearEl) {
+            alert('年对比功能暂未完全实现，请使用其他对比功能');
             return;
         }
 
-        // 验证年份范围
-        const yearDiff = parseInt(endYear) - parseInt(startYear) + 1;
-        if (yearDiff > 5) {
-            alert('年份范围不能超过5年');
+        const firstYear = firstYearEl.value;
+        const secondYear = secondYearEl.value;
+
+        if (!firstYear || !secondYear) {
+            alert('请选择两个年份进行对比');
             return;
         }
 
-        if (parseInt(startYear) > parseInt(endYear)) {
-            alert('开始年份不能晚于结束年份');
+        // 转换为数字进行验证
+        const firstYearNum = parseInt(firstYear);
+        const secondYearNum = parseInt(secondYear);
+
+        if (isNaN(firstYearNum) || isNaN(secondYearNum)) {
+            alert('年份格式错误');
             return;
         }
 
         try {
-            const response = await fetch(`/reports/api/cargo_volume/year_range?start_year=${startYear}&end_year=${endYear}`);
+            // 使用简化的年对比API
+            const response = await fetch(`/reports/api/cargo_volume/year_comparison?first_year=${firstYearNum}&second_year=${secondYearNum}`);
             if (!response.ok) throw new Error('查询失败');
 
             const result = await response.json();
             if (!result.success) throw new Error(result.message);
 
-            this.displayYearResults(result.data, startYear, endYear);
+            this.displayYearResults(result.data, firstYearNum, secondYearNum);
         } catch (error) {
-            console.error('年对比查询失败:', error);
             alert('查询失败: ' + error.message);
         }
     }
 
     displayDayResults(data, startDate, endDate) {
-        const queryResultArea = document.getElementById('queryResultArea');
-        const queryResultTitle = document.getElementById('queryResultTitle');
-        const queryResultContent = document.getElementById('queryResultContent');
+        const queryResultArea = document.getElementById('comparisonResultArea');
+        const queryResultContent = document.getElementById('comparisonContent');
 
-        queryResultTitle.innerHTML = `<i class="fas fa-calendar-day text-primary"></i> 日对比结果 (${startDate} 至 ${endDate})`;
+        if (!queryResultArea || !queryResultContent) {
+            return;
+        }
 
         // 生成日对比结果HTML
-        queryResultContent.innerHTML = this.generateDayResultsHTML(data);
+        queryResultContent.innerHTML = this.generateDayResultsHTML(data, startDate, endDate);
 
         queryResultArea.style.display = 'block';
     }
 
     displayWeekResults(data, firstYear, firstMonth, firstWeek, secondYear, secondMonth, secondWeek) {
-        const queryResultArea = document.getElementById('queryResultArea');
-        const queryResultTitle = document.getElementById('queryResultTitle');
-        const queryResultContent = document.getElementById('queryResultContent');
+        const queryResultArea = document.getElementById('comparisonResultArea');
+        const queryResultContent = document.getElementById('comparisonContent');
 
-        let title = `<i class="fas fa-calendar-week text-primary"></i> 周对比结果 (${firstYear}年${firstMonth}月第${firstWeek}周`;
-        if (secondYear && secondMonth && secondWeek) {
-            title += ` vs ${secondYear}年${secondMonth}月第${secondWeek}周`;
+        if (!queryResultArea || !queryResultContent) {
+            return;
         }
-        title += ')';
 
-        queryResultTitle.innerHTML = title;
-        queryResultContent.innerHTML = this.generateWeekResultsHTML(data);
+        // 生成周对比结果HTML
+        queryResultContent.innerHTML = this.generateWeekResultsHTML(data, firstYear, firstMonth, firstWeek, secondYear, secondMonth, secondWeek);
 
         queryResultArea.style.display = 'block';
+
+        // 渲染图表（如果有图表数据）
+        if (data.chart_data) {
+            this.renderWeekComparisonChart(data.chart_data);
+        }
     }
 
     displayMonthResults(data, startYear, startMonth, endYear, endMonth) {
-        const queryResultArea = document.getElementById('queryResultArea');
-        const queryResultTitle = document.getElementById('queryResultTitle');
-        const queryResultContent = document.getElementById('queryResultContent');
+        const queryResultArea = document.getElementById('comparisonResultArea');
+        const queryResultContent = document.getElementById('comparisonContent');
 
-        queryResultTitle.innerHTML = `<i class="fas fa-calendar-alt text-primary"></i> 月对比结果 (${startYear}年${startMonth}月 至 ${endYear}年${endMonth}月)`;
-        queryResultContent.innerHTML = this.generateMonthResultsHTML(data);
+        if (!queryResultArea || !queryResultContent) {
+            return;
+        }
 
+        queryResultContent.innerHTML = this.generateMonthResultsHTML(data, startYear, startMonth, endYear, endMonth);
         queryResultArea.style.display = 'block';
     }
 
     displayYearResults(data, startYear, endYear) {
-        const queryResultArea = document.getElementById('queryResultArea');
-        const queryResultTitle = document.getElementById('queryResultTitle');
-        const queryResultContent = document.getElementById('queryResultContent');
+        const queryResultArea = document.getElementById('comparisonResultArea');
+        const queryResultContent = document.getElementById('comparisonContent');
 
-        queryResultTitle.innerHTML = `<i class="fas fa-calendar text-primary"></i> 年对比结果 (${startYear}年 至 ${endYear}年)`;
-        queryResultContent.innerHTML = this.generateYearResultsHTML(data);
+        if (!queryResultArea || !queryResultContent) {
+            return;
+        }
 
+        queryResultContent.innerHTML = this.generateYearResultsHTML(data, startYear, endYear);
         queryResultArea.style.display = 'block';
     }
 
-    generateDayResultsHTML(data) {
+    generateDayResultsHTML(data, startDate, endDate) {
         // 这里将生成日对比结果的HTML
         return `
             <div class="query-result-summary">
@@ -2403,7 +2688,7 @@ class CargoVolumeDashboard {
         `;
     }
 
-    generateWeekResultsHTML(data) {
+    generateWeekResultsHTML(data, firstYear, firstMonth, firstWeek, secondYear, secondMonth, secondWeek) {
         // 生成周对比结果HTML
         const hasSecondWeek = data.second_week ? true : false;
 
@@ -2575,7 +2860,7 @@ class CargoVolumeDashboard {
         return (dailyData || []).reduce((total, day) => total + (day[warehouseKey] || 0), 0);
     }
 
-    generateMonthResultsHTML(data) {
+    generateMonthResultsHTML(data, startYear, startMonth, endYear, endMonth) {
         // 生成月对比结果HTML
         return `
             <div class="query-result-summary">
@@ -2662,7 +2947,7 @@ class CargoVolumeDashboard {
         `;
     }
 
-    generateYearResultsHTML(data) {
+    generateYearResultsHTML(data, startYear, endYear) {
         // 生成年对比结果HTML
         return `
             <div class="query-result-summary">
@@ -2752,8 +3037,6 @@ class CargoVolumeDashboard {
 
 // 应用仓库卡片自定义样式
 function applyWarehouseCardStyles() {
-    console.log('🎨 开始应用仓库卡片自定义样式...');
-
     // 定义每个仓库卡片的颜色方案
     const cardStyles = {
         'pinghu-card': {
@@ -2782,12 +3065,7 @@ function applyWarehouseCardStyles() {
     Object.keys(cardStyles).forEach(cardClass => {
         const cards = document.querySelectorAll(`.${cardClass}`);
         const style = cardStyles[cardClass];
-
-        console.log(`🎯 应用样式到 ${cardClass}，找到 ${cards.length} 个卡片`);
-
         cards.forEach((card, index) => {
-            console.log(`- 处理卡片 ${index + 1}:`, card);
-
             // 应用背景渐变 (使用 setProperty 和 important)
             card.style.setProperty('background', style.background, 'important');
             card.style.setProperty('background-image', style.background, 'important');
@@ -2817,12 +3095,8 @@ function applyWarehouseCardStyles() {
             // 绑定悬停效果
             card.addEventListener('mouseenter', card._hoverEnter);
             card.addEventListener('mouseleave', card._hoverLeave);
-
-            console.log(`✅ 卡片 ${cardClass} 样式已应用 (使用 !important)`);
         });
     });
-
-    console.log('🎨 仓库卡片样式应用完成！');
 }
 
 // 页面加载完成后初始化
@@ -2831,7 +3105,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // 延迟应用样式，确保数据加载完成
     setTimeout(function() {
-        console.log('🚀 开始应用仓库卡片样式...');
         applyWarehouseCardStyles();
 
         // 监听数据更新，重新应用样式
@@ -2847,7 +3120,6 @@ document.addEventListener('DOMContentLoaded', function() {
             });
 
             if (shouldReapplyStyles) {
-                console.log('🔄 检测到仓库数据更新，重新应用样式...');
                 setTimeout(applyWarehouseCardStyles, 100);
             }
         });
