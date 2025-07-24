@@ -480,16 +480,16 @@ def draw_label_content(canvas_obj, print_data, index, width, height):
             pass  # 如果连备用方案都失败，就跳过
 
 def send_to_printer(pdf_data, printer_name, copies=1):
-    """发送PDF到系统打印机"""
+    """发送PDF到系统打印机 - 使用跨平台打印管理器"""
     import tempfile
     import os
-    import platform
+    import time
 
     # 验证PDF数据
     if not pdf_data or len(pdf_data) < 100:
         raise Exception("PDF数据无效或太小")
 
-    # 创建临时文件，使用更安全的路径
+    # 创建临时文件
     try:
         # 使用项目目录下的temp文件夹
         temp_dir = os.path.join(os.getcwd(), 'temp')
@@ -497,7 +497,6 @@ def send_to_printer(pdf_data, printer_name, copies=1):
             os.makedirs(temp_dir)
 
         # 生成安全的文件名
-        import time
         safe_filename = f"label_print_{int(time.time())}.pdf"
         temp_path = os.path.join(temp_dir, safe_filename)
 
@@ -511,21 +510,23 @@ def send_to_printer(pdf_data, printer_name, copies=1):
 
         current_app.logger.info(f"PDF文件已创建: {temp_path} (大小: {os.path.getsize(temp_path)} 字节)")
 
-        system = platform.system()
-        current_app.logger.info(f"检测到操作系统: {system}")
-
-        if system == "Windows":
-            # Windows打印
-            print_windows_pdf(temp_path, printer_name, copies)
-        elif system == "Darwin":  # macOS
-            print_mac_pdf(temp_path, printer_name, copies)
-        elif system == "Linux":
-            print_linux_pdf(temp_path, printer_name, copies)
+        # 使用跨平台打印管理器
+        if CROSS_PLATFORM_PRINT_AVAILABLE:
+            try:
+                success = print_file(temp_path, printer_name, copies)
+                if success:
+                    current_app.logger.info(f"✅ 跨平台打印成功: {printer_name}")
+                else:
+                    current_app.logger.warning(f"⚠️ 跨平台打印失败，但PDF已生成: {temp_path}")
+            except Exception as e:
+                current_app.logger.error(f"跨平台打印出错: {e}")
+                # 降级到旧的打印方法
+                _legacy_print_pdf(temp_path, printer_name, copies)
         else:
-            raise Exception(f"不支持的操作系统: {system}")
+            # 使用旧的打印方法
+            _legacy_print_pdf(temp_path, printer_name, copies)
 
         # 打印成功后等待一段时间再删除文件
-        import time
         time.sleep(3)  # 等待3秒让打印机处理文件
 
     except Exception as e:
@@ -539,12 +540,27 @@ def send_to_printer(pdf_data, printer_name, copies=1):
         try:
             if 'temp_path' in locals() and os.path.exists(temp_path):
                 # 再等待一段时间确保打印完成
-                import time
                 time.sleep(2)  # 再等待2秒
                 os.unlink(temp_path)
                 current_app.logger.info(f"临时文件已清理: {temp_path}")
         except Exception as e:
             current_app.logger.warning(f"清理临时文件失败: {str(e)}")
+
+def _legacy_print_pdf(temp_path, printer_name, copies):
+    """旧版打印方法 - 作为备用方案"""
+    import platform
+
+    system = platform.system()
+    current_app.logger.info(f"使用旧版打印方法，检测到操作系统: {system}")
+
+    if system == "Windows":
+        print_windows_pdf(temp_path, printer_name, copies)
+    elif system == "Darwin":  # macOS
+        print_mac_pdf(temp_path, printer_name, copies)
+    elif system == "Linux":
+        print_linux_pdf(temp_path, printer_name, copies)
+    else:
+        raise Exception(f"不支持的操作系统: {system}")
 
 def print_windows_pdf(pdf_path, printer_name, copies):
     """Windows系统打印PDF"""
@@ -1016,8 +1032,22 @@ def get_cargo_status(inventory_record):
 from io import StringIO, BytesIO
 from openpyxl.worksheet.datavalidation import DataValidation
 from openpyxl import Workbook
-import win32print
 from collections import defaultdict
+import platform
+
+# 跨平台打印机支持
+try:
+    import win32print
+    WINDOWS_PRINT_AVAILABLE = True
+except ImportError:
+    WINDOWS_PRINT_AVAILABLE = False
+
+# 导入跨平台打印机管理器
+try:
+    from app.utils.cross_platform_printer import get_system_printers, get_default_printer, print_file
+    CROSS_PLATFORM_PRINT_AVAILABLE = True
+except ImportError:
+    CROSS_PLATFORM_PRINT_AVAILABLE = False
 
 def _get_operation_warehouse_id(is_backend_final_outbound=False, operation_type=None):
     """智能获取操作仓库ID"""
@@ -4390,75 +4420,87 @@ def api_print_labels():
 
 @bp.route('/api/printers', methods=['GET'])
 def get_printers():
+    """获取系统打印机列表 - 跨平台支持"""
     try:
-        # 使用win32print获取系统所有打印机列表
-        import win32print
-
         printers = []
-        try:
-            # 获取默认打印机
-            default_printer = win32print.GetDefaultPrinter()
-            current_app.logger.info(f"默认打印机: {default_printer}")
 
-            # 获取所有打印机 (本地和网络)
-            printer_list = win32print.EnumPrinters(win32print.PRINTER_ENUM_LOCAL | win32print.PRINTER_ENUM_CONNECTIONS)
-
-            for printer_info in printer_list:
-                # 根据测试结果，打印机名称在元组的第三个元素 (索引2)
-                printer_name = printer_info[2]
-                is_default = (printer_name == default_printer)
-
-                printers.append({
-                    'name': printer_name,
-                    'isDefault': is_default
-                })
-
-            current_app.logger.info(f"已获取 {len(printers)} 台打印机")
-        except Exception as e:
-            current_app.logger.error(f"使用win32print获取打印机列表时出错: {str(e)}")
-            # 尝试备用方法
-            import os
-            import subprocess
-
+        # 优先使用跨平台打印机管理器
+        if CROSS_PLATFORM_PRINT_AVAILABLE:
             try:
-                # 使用wmic命令获取打印机列表
-                output = subprocess.check_output('wmic printer get name', shell=True).decode('utf-8', errors='ignore')
-                lines = output.strip().split('\n')[1:]  # 跳过标题行
+                printers = get_system_printers()
+                current_app.logger.info(f"跨平台方式获取了 {len(printers)} 台打印机")
+            except Exception as e:
+                current_app.logger.error(f"跨平台方式获取打印机失败: {e}")
 
-                for line in lines:
-                    printer_name = line.strip()
-                    if printer_name:
-                        is_default = (printer_name == default_printer)
-                        printers.append({
-                            'name': printer_name,
-                            'isDefault': is_default
-                        })
+        # 如果跨平台方式失败，且在Windows环境下，尝试使用win32print
+        if not printers and WINDOWS_PRINT_AVAILABLE:
+            try:
+                import win32print
 
-                current_app.logger.info(f"使用wmic命令获取了 {len(printers)} 台打印机")
-            except Exception as cmd_error:
-                current_app.logger.error(f"使用wmic命令获取打印机列表时出错: {str(cmd_error)}")
+                # 获取默认打印机
+                default_printer = win32print.GetDefaultPrinter()
+                current_app.logger.info(f"默认打印机: {default_printer}")
 
-        # 如果还是没有找到打印机，返回默认列表
+                # 获取所有打印机 (本地和网络)
+                printer_list = win32print.EnumPrinters(
+                    win32print.PRINTER_ENUM_LOCAL | win32print.PRINTER_ENUM_CONNECTIONS
+                )
+
+                for printer_info in printer_list:
+                    printer_name = printer_info[2]
+                    is_default = (printer_name == default_printer)
+
+                    printers.append({
+                        'name': printer_name,
+                        'isDefault': is_default,
+                        'status': 'available',
+                        'type': 'windows'
+                    })
+
+                current_app.logger.info(f"win32print方式获取了 {len(printers)} 台打印机")
+            except Exception as e:
+                current_app.logger.error(f"win32print获取打印机失败: {e}")
+
+        # 如果所有方法都失败，返回虚拟打印机
         if not printers:
             printers = [
-                {'name': '默认打印机', 'isDefault': True},
-                {'name': 'HP LaserJet Pro', 'isDefault': False},
-                {'name': 'Brother标签打印机', 'isDefault': False},
-                {'name': '条码标签打印机', 'isDefault': False}
+                {
+                    'name': 'PDF打印机',
+                    'isDefault': True,
+                    'status': 'available',
+                    'type': 'virtual',
+                    'description': '生成PDF文件'
+                },
+                {
+                    'name': '系统默认打印机',
+                    'isDefault': False,
+                    'status': 'unknown',
+                    'type': 'system',
+                    'description': '使用系统默认设置'
+                }
             ]
-            current_app.logger.warning("未能获取到系统打印机，返回默认列表")
+            current_app.logger.info("使用虚拟打印机列表")
 
-        return jsonify({'printers': printers, 'success': True})
+        return jsonify({
+            'success': True,
+            'printers': printers,
+            'platform': {
+                'system': platform.system(),
+                'cross_platform_available': CROSS_PLATFORM_PRINT_AVAILABLE,
+                'windows_print_available': WINDOWS_PRINT_AVAILABLE
+            }
+        })
+
     except Exception as e:
-        current_app.logger.error(f"获取打印机列表总体出错: {str(e)}")
-        # 出错时返回默认打印机列表
-        default_printers = [
-            {'name': '默认打印机', 'isDefault': True},
-            {'name': 'HP LaserJet Pro', 'isDefault': False},
-            {'name': 'Brother标签打印机', 'isDefault': False},
-            {'name': '条码标签打印机', 'isDefault': False}
-        ]
-        return jsonify({'printers': default_printers, 'success': False, 'error': str(e)})
+        current_app.logger.error(f"获取打印机列表时出错: {str(e)}")
+        return jsonify({
+            'success': False,
+            'message': f'获取打印机列表失败: {str(e)}',
+            'printers': [
+                {'name': 'PDF打印机', 'isDefault': True, 'type': 'fallback'},
+                {'name': '系统默认打印机', 'isDefault': False, 'type': 'fallback'}
+            ]
+        }), 500
 
 @bp.route('/api/inventory/list')
 @csrf.exempt  # 豁免CSRF保护，提高API响应速度

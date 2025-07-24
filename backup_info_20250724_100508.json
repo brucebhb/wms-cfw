@@ -1,0 +1,10 @@
+{
+  "backup_file": "essential_data_backup_20250724_100508.json",
+  "compressed_file": "essential_data_backup_20250724_100508.json.gz",
+  "timestamp": "20250724_100508",
+  "file_size": 4946,
+  "compressed_size": 917,
+  "md5_hash": "c74dba7176303ac2d42e4d4a7e74398e",
+  "tables_count": 4,
+  "total_records": 13
+}

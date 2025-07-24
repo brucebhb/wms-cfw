@@ -1,0 +1,196 @@
+{
+  "backup_info": {
+    "timestamp": "2025-07-24T10:05:08.936867",
+    "version": "1.0",
+    "description": "仓储管理系统核心数据备份",
+    "database": "warehouse_db"
+  },
+  "tables": {
+    "roles": {
+      "table": "roles",
+      "columns": [
+        "id",
+        "role_code",
+        "role_name",
+        "role_level",
+        "description",
+        "status",
+        "created_at",
+        "updated_at"
+      ],
+      "data": [
+        {
+          "id": 1,
+          "role_code": "admin",
+          "role_name": "系统管理员",
+          "role_level": 1,
+          "description": "拥有所有权限的超级管理员",
+          "status": "active",
+          "created_at": null,
+          "updated_at": null
+        },
+        {
+          "id": 2,
+          "role_code": "warehouse_manager",
+          "role_name": "仓库经理",
+          "role_level": 2,
+          "description": "仓库管理人员，可管理多个仓库",
+          "status": "active",
+          "created_at": null,
+          "updated_at": null
+        },
+        {
+          "id": 3,
+          "role_code": "warehouse_operator",
+          "role_name": "仓库操作员",
+          "role_level": 3,
+          "description": "仓库操作人员，只能操作指定仓库",
+          "status": "active",
+          "created_at": null,
+          "updated_at": null
+        },
+        {
+          "id": 4,
+          "role_code": "customer",
+          "role_name": "客户",
+          "role_level": 4,
+          "description": "客户账号，只能查看相关数据",
+          "status": "active",
+          "created_at": null,
+          "updated_at": null
+        }
+      ],
+      "count": 4
+    },
+    "permissions": {
+      "table": "permissions",
+      "columns": [
+        "id",
+        "permission_code",
+        "permission_name",
+        "module",
+        "action",
+        "description",
+        "created_at"
+      ],
+      "data": [
+        {
+          "id": 1,
+          "permission_code": "STATISTICS_VIEW",
+          "permission_name": "统计查看",
+          "module": "reports",
+          "action": "view",
+          "description": "查看统计报表的权限",
+          "created_at": "2025-07-20T21:12:45"
+        }
+      ],
+      "count": 1
+    },
+    "user_roles": {
+      "table": "user_roles",
+      "columns": [
+        "id",
+        "user_id",
+        "role_id",
+        "warehouse_id",
+        "assigned_by",
+        "assigned_at",
+        "expires_at",
+        "status"
+      ],
+      "data": [
+        {
+          "id": 8,
+          "user_id": 1,
+          "role_id": 1,
+          "warehouse_id": null,
+          "assigned_by": null,
+          "assigned_at": "2025-07-10T14:40:56",
+          "expires_at": null,
+          "status": null
+        },
+        {
+          "id": 9,
+          "user_id": 2,
+          "role_id": 3,
+          "warehouse_id": null,
+          "assigned_by": null,
+          "assigned_at": "2025-07-10T14:40:56",
+          "expires_at": null,
+          "status": null
+        },
+        {
+          "id": 10,
+          "user_id": 3,
+          "role_id": 3,
+          "warehouse_id": null,
+          "assigned_by": null,
+          "assigned_at": "2025-07-10T14:40:56",
+          "expires_at": null,
+          "status": null
+        },
+        {
+          "id": 11,
+          "user_id": 4,
+          "role_id": 3,
+          "warehouse_id": null,
+          "assigned_by": null,
+          "assigned_at": "2025-07-10T14:40:56",
+          "expires_at": null,
+          "status": null
+        },
+        {
+          "id": 12,
+          "user_id": 5,
+          "role_id": 3,
+          "warehouse_id": null,
+          "assigned_by": null,
+          "assigned_at": "2025-07-10T14:40:56",
+          "expires_at": null,
+          "status": null
+        },
+        {
+          "id": 13,
+          "user_id": 6,
+          "role_id": 2,
+          "warehouse_id": null,
+          "assigned_by": null,
+          "assigned_at": "2025-07-10T14:40:56",
+          "expires_at": null,
+          "status": null
+        },
+        {
+          "id": 14,
+          "user_id": 7,
+          "role_id": 4,
+          "warehouse_id": null,
+          "assigned_by": null,
+          "assigned_at": "2025-07-10T14:40:56",
+          "expires_at": null,
+          "status": null
+        }
+      ],
+      "count": 7
+    },
+    "role_permissions": {
+      "table": "role_permissions",
+      "columns": [
+        "id",
+        "role_id",
+        "permission_id",
+        "warehouse_scope",
+        "created_at"
+      ],
+      "data": [
+        {
+          "id": 1,
+          "role_id": 1,
+          "permission_id": 1,
+          "warehouse_scope": "own",
+          "created_at": "2025-07-20T21:12:45"
+        }
+      ],
+      "count": 1
+    }
+  }
+}

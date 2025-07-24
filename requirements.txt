@@ -47,3 +47,6 @@ bcrypt==4.1.2
 
 # Windows特定依赖（仅在Windows环境安装）
 pywin32==310; sys_platform == "win32"
+
+# Linux打印支持
+cups-python==1.0.1; sys_platform == "linux"
