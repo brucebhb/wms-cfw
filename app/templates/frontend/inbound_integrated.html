@@ -869,7 +869,10 @@ $(document).ready(function() {
                     alert('批次接收成功！已生成入库记录和库存更新');
                 }
 
-                $('#batchReceiveModal').modal('hide');
+                const modal = bootstrap.Modal.getInstance(document.getElementById('batchReceiveModal'));
+                if (modal) {
+                    modal.hide();
+                }
                 loadPendingBatchData(); // 重新加载数据
             } else {
                 if (typeof showError === 'function') {
@@ -1044,9 +1047,10 @@ $(document).ready(function() {
         $('#batchReceiveModal').data('batchKey', batchKey);
         $('#batchReceiveModal').data('batchNo', batchNo);
 
-        // 显示模态框
+        // 显示模态框 - 使用Bootstrap 5原生API
         console.log('准备显示模态框...');
-        $('#batchReceiveModal').modal('show');
+        const modal = new bootstrap.Modal(document.getElementById('batchReceiveModal'));
+        modal.show();
         console.log('模态框已显示');
     }
 
@@ -1123,7 +1127,10 @@ $(document).ready(function() {
     // 关闭批次接收模态框
     function closeBatchReceiveModal() {
         console.log('关闭模态框');
-        $('#batchReceiveModal').modal('hide');
+        const modal = bootstrap.Modal.getInstance(document.getElementById('batchReceiveModal'));
+        if (modal) {
+            modal.hide();
+        }
         console.log('模态框已关闭');
     }
 
@@ -1247,7 +1254,10 @@ $(document).ready(function() {
                 } else {
                     alert(`成功接收 ${selectedCount} 个货物！`);
                 }
-                $('#batchReceiveModal').modal('hide');
+                const modal = bootstrap.Modal.getInstance(document.getElementById('batchReceiveModal'));
+                if (modal) {
+                    modal.hide();
+                }
                 loadPendingBatchData(); // 重新加载数据
             } else {
                 if (typeof showError === 'function') {

@@ -913,7 +913,10 @@ $(document).on('click', '#confirmSelectionBtn', function(e) {
     });
 
     showMessage('success', `已添加 ${selectedCheckboxes.length} 个库存项目到表格`);
-    $('#inventoryModal').modal('hide');
+    const modal = bootstrap.Modal.getInstance(document.getElementById('inventoryModal'));
+    if (modal) {
+        modal.hide();
+    }
 });
 
 // 备用的确认选择处理函数（直接绑定到onclick）
@@ -977,7 +980,10 @@ function handleConfirmSelection() {
 
     if (addedCount > 0) {
         showMessage('success', `已添加 ${addedCount} 个库存项目到表格`);
-        $('#inventoryModal').modal('hide');
+        const modal = bootstrap.Modal.getInstance(document.getElementById('inventoryModal'));
+        if (modal) {
+            modal.hide();
+        }
     } else {
         showMessage('warning', '没有成功添加任何库存项目');
     }
@@ -1501,8 +1507,9 @@ function initializePage() {
     function loadInventoryData() {
         console.log('🔍 调试: loadInventoryData 函数开始执行');
 
-        // 显示模态框
-        $('#inventoryModal').modal('show');
+        // 显示模态框 - 使用Bootstrap 5原生API
+        const modal = new bootstrap.Modal(document.getElementById('inventoryModal'));
+        modal.show();
 
         // 启动复选框监控器
         startCheckboxMonitor();

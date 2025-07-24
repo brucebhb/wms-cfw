@@ -256,16 +256,22 @@ class BusinessValidator:
     
     @staticmethod
     def validate_warehouse_permission(user, warehouse_id, operation):
-        """验证仓库操作权限"""
-        if user.is_admin:
+        """验证仓库操作权限 - 支持admin用户智能匹配"""
+        # 超级管理员拥有所有权限
+        if user.is_super_admin():
             return True
-        
-        if user.warehouse_id != warehouse_id:
+
+        # 兼容旧的is_admin属性
+        if hasattr(user, 'is_admin') and user.is_admin:
+            return True
+
+        # 普通用户需要检查仓库权限
+        if not hasattr(user, 'warehouse_id') or user.warehouse_id != warehouse_id:
             raise PermissionException(
                 f"无权限操作其他仓库的数据",
                 required_permission=f"warehouse_{warehouse_id}_{operation}"
             )
-        
+
         return True
     
     @staticmethod

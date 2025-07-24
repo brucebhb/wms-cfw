@@ -523,7 +523,8 @@ function openEditModal(id, customerName, location) {
     $('#recordId').val(id);
     $('#customerName').val(customerName);
     $('#location').val(location);
-    $('#editModal').modal('show');
+    const modal = new bootstrap.Modal(document.getElementById('editModal'));
+    modal.show();
 }
 
 function saveLocation() {

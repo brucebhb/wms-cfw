@@ -709,7 +709,10 @@ $(document).ready(function() {
             data: JSON.stringify(data),
             success: function(response) {
                 alert('用户创建成功');
-                $('#createUserModal').modal('hide');
+                const modal = bootstrap.Modal.getInstance(document.getElementById('createUserModal'));
+                if (modal) {
+                    modal.hide();
+                }
                 $('#createUserForm')[0].reset();
                 loadUsers(currentPage);
             },
@@ -739,7 +742,10 @@ $(document).ready(function() {
             success: function(response) {
                 const message = response.message || '用户更新成功';
                 alert(message);
-                $('#editUserModal').modal('hide');
+                const modal = bootstrap.Modal.getInstance(document.getElementById('editUserModal'));
+                if (modal) {
+                    modal.hide();
+                }
                 loadUsers(currentPage);
             },
             error: function(xhr) {
@@ -769,8 +775,9 @@ $(document).ready(function() {
         // 加载用户权限数据
         loadUserPermissions(userId);
 
-        // 显示权限配置模态框
-        $('#userPermissionModal').modal('show');
+        // 显示权限配置模态框 - 使用Bootstrap 5原生API
+        const modal = new bootstrap.Modal(document.getElementById('userPermissionModal'));
+        modal.show();
     });
 
     // 保存权限配置 - 已由 user_permission_manager.js 处理，这里注释掉避免重复调用
@@ -814,8 +821,9 @@ function editUser(userId) {
             $('#edit_warehouse_id').val(user.warehouse_id || '');
             $('#edit_status').val(user.status);
 
-            // 显示编辑模态框
-            $('#editUserModal').modal('show');
+            // 显示编辑模态框 - 使用Bootstrap 5原生API
+            const modal = new bootstrap.Modal(document.getElementById('editUserModal'));
+            modal.show();
         },
         error: function(xhr) {
             let errorMessage = '获取用户信息失败';

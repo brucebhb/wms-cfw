@@ -929,6 +929,53 @@ window.addEventListener('beforeunload', function() {
     <!-- Bootstrap Bundle with Popper -->
     <script src="https://cdn.bootcdn.net/ajax/libs/twitter-bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
 
+    <!-- Bootstrap 5 模态框兼容性脚本 -->
+    <script>
+    // 为了兼容旧代码，添加jQuery模态框方法的Bootstrap 5适配器
+    $(document).ready(function() {
+        // 扩展jQuery原型，添加Bootstrap 5兼容的modal方法
+        $.fn.modal = function(action, options) {
+            return this.each(function() {
+                const element = this;
+                let modal = bootstrap.Modal.getInstance(element);
+
+                try {
+                    if (!modal) {
+                        modal = new bootstrap.Modal(element, options || {});
+                    }
+
+                    if (action === 'show') {
+                        modal.show();
+                    } else if (action === 'hide') {
+                        modal.hide();
+                    } else if (action === 'toggle') {
+                        modal.toggle();
+                    } else if (action === 'dispose') {
+                        modal.dispose();
+                    }
+                } catch (error) {
+                    console.error('模态框操作失败:', error);
+                    // 降级处理：直接操作DOM
+                    if (action === 'show') {
+                        element.style.display = 'block';
+                        element.classList.add('show');
+                        document.body.classList.add('modal-open');
+                    } else if (action === 'hide') {
+                        element.style.display = 'none';
+                        element.classList.remove('show');
+                        document.body.classList.remove('modal-open');
+                    }
+                }
+            });
+        };
+
+        console.log('✅ Bootstrap 5模态框兼容性脚本已加载');
+    });
+    </script>
+
+    <!-- 模态框修复脚本 -->
+    <script src="{{ url_for('static', filename='js/modal-fix.js') }}"></script>
+
     <!-- 2. 第三方工具库 -->
     <!-- DateRangePicker JS -->
     <script src="https://cdn.jsdelivr.net/npm/moment/moment.min.js"></script>

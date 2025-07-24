@@ -1,0 +1,238 @@
+{% extends "base.html" %}
+
+{% block title %}模态框测试页面{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <h2>模态框功能测试</h2>
+            <p class="text-muted">测试Bootstrap 5模态框的各种调用方式</p>
+            
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">测试按钮</h5>
+                    
+                    <!-- 原生Bootstrap 5方式 -->
+                    <button type="button" class="btn btn-primary me-2" data-bs-toggle="modal" data-bs-target="#testModal1">
+                        原生Bootstrap 5
+                    </button>
+                    
+                    <!-- jQuery方式 -->
+                    <button type="button" class="btn btn-success me-2" onclick="$('#testModal2').modal('show')">
+                        jQuery方式
+                    </button>
+                    
+                    <!-- JavaScript方式 -->
+                    <button type="button" class="btn btn-info me-2" onclick="showModal3()">
+                        JavaScript方式
+                    </button>
+                    
+                    <!-- 工具函数方式 -->
+                    <button type="button" class="btn btn-warning me-2" onclick="ModalFix.show('testModal4')">
+                        工具函数方式
+                    </button>
+                    
+                    <hr>
+                    
+                    <h6>批量操作</h6>
+                    <button type="button" class="btn btn-secondary me-2" onclick="ModalFix.hideAll()">
+                        关闭所有模态框
+                    </button>
+                    
+                    <button type="button" class="btn btn-outline-primary" onclick="testAllModals()">
+                        测试所有模态框
+                    </button>
+                </div>
+            </div>
+            
+            <div class="mt-3">
+                <h6>控制台日志</h6>
+                <div id="logOutput" class="border p-3 bg-light" style="height: 200px; overflow-y: auto; font-family: monospace; font-size: 12px;">
+                    <!-- 日志输出区域 -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 测试模态框1 - 原生Bootstrap 5 -->
+<div class="modal fade" id="testModal1" tabindex="-1" aria-labelledby="testModal1Label" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="testModal1Label">原生Bootstrap 5模态框</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                这是使用原生Bootstrap 5方式打开的模态框。
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 测试模态框2 - jQuery方式 -->
+<div class="modal fade" id="testModal2" tabindex="-1" aria-labelledby="testModal2Label" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="testModal2Label">jQuery方式模态框</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                这是使用jQuery方式打开的模态框。
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="$('#testModal2').modal('hide')">关闭</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 测试模态框3 - JavaScript方式 -->
+<div class="modal fade" id="testModal3" tabindex="-1" aria-labelledby="testModal3Label" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="testModal3Label">JavaScript方式模态框</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                这是使用JavaScript方式打开的模态框。
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="hideModal3()">关闭</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 测试模态框4 - 工具函数方式 -->
+<div class="modal fade" id="testModal4" tabindex="-1" aria-labelledby="testModal4Label" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="testModal4Label">工具函数方式模态框</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                这是使用工具函数方式打开的模态框。
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="ModalFix.hide('testModal4')">关闭</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// 日志输出函数
+function log(message) {
+    const logOutput = document.getElementById('logOutput');
+    const timestamp = new Date().toLocaleTimeString();
+    logOutput.innerHTML += `[${timestamp}] ${message}\n`;
+    logOutput.scrollTop = logOutput.scrollHeight;
+    console.log(message);
+}
+
+// JavaScript方式显示模态框
+function showModal3() {
+    try {
+        const modal = new bootstrap.Modal(document.getElementById('testModal3'));
+        modal.show();
+        log('✅ JavaScript方式显示模态框成功');
+    } catch (error) {
+        log('❌ JavaScript方式显示模态框失败: ' + error.message);
+    }
+}
+
+// JavaScript方式隐藏模态框
+function hideModal3() {
+    try {
+        const modal = bootstrap.Modal.getInstance(document.getElementById('testModal3'));
+        if (modal) {
+            modal.hide();
+            log('✅ JavaScript方式隐藏模态框成功');
+        }
+    } catch (error) {
+        log('❌ JavaScript方式隐藏模态框失败: ' + error.message);
+    }
+}
+
+// 测试所有模态框
+function testAllModals() {
+    log('🚀 开始测试所有模态框...');
+    
+    // 测试1: 原生Bootstrap 5
+    setTimeout(() => {
+        try {
+            const modal1 = new bootstrap.Modal(document.getElementById('testModal1'));
+            modal1.show();
+            log('✅ 测试1: 原生Bootstrap 5 - 成功');
+            
+            setTimeout(() => modal1.hide(), 1000);
+        } catch (error) {
+            log('❌ 测试1: 原生Bootstrap 5 - 失败: ' + error.message);
+        }
+    }, 500);
+    
+    // 测试2: jQuery方式
+    setTimeout(() => {
+        try {
+            $('#testModal2').modal('show');
+            log('✅ 测试2: jQuery方式 - 成功');
+            
+            setTimeout(() => $('#testModal2').modal('hide'), 1000);
+        } catch (error) {
+            log('❌ 测试2: jQuery方式 - 失败: ' + error.message);
+        }
+    }, 2000);
+    
+    // 测试3: 工具函数方式
+    setTimeout(() => {
+        try {
+            ModalFix.show('testModal4');
+            log('✅ 测试3: 工具函数方式 - 成功');
+            
+            setTimeout(() => ModalFix.hide('testModal4'), 1000);
+        } catch (error) {
+            log('❌ 测试3: 工具函数方式 - 失败: ' + error.message);
+        }
+    }, 4000);
+    
+    setTimeout(() => {
+        log('🎉 所有测试完成');
+    }, 6000);
+}
+
+// 页面加载完成后的初始化
+$(document).ready(function() {
+    log('📄 模态框测试页面已加载');
+    log('🔧 jQuery版本: ' + $.fn.jquery);
+    log('🔧 Bootstrap可用: ' + (typeof bootstrap !== 'undefined'));
+    log('🔧 ModalFix可用: ' + (typeof ModalFix !== 'undefined'));
+    
+    // 监听模态框事件
+    $('.modal').on('show.bs.modal', function(e) {
+        log('🔓 模态框即将显示: ' + e.target.id);
+    });
+    
+    $('.modal').on('shown.bs.modal', function(e) {
+        log('✅ 模态框已显示: ' + e.target.id);
+    });
+    
+    $('.modal').on('hide.bs.modal', function(e) {
+        log('🔒 模态框即将隐藏: ' + e.target.id);
+    });
+    
+    $('.modal').on('hidden.bs.modal', function(e) {
+        log('✅ 模态框已隐藏: ' + e.target.id);
+    });
+});
+</script>
+{% endblock %}

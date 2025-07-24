@@ -2039,8 +2039,9 @@ function showBatchReceiveModal(batch) {
 
     $('#batchReceiveTableBody').html(html);
 
-    // 显示弹窗
-    $('#batchReceiveModal').modal('show');
+    // 显示弹窗 - 使用Bootstrap 5原生API
+    const modal = new bootstrap.Modal(document.getElementById('batchReceiveModal'));
+    modal.show();
 
     // 延迟强制隐藏数字输入框箭头
     setTimeout(() => {
@@ -2268,7 +2269,11 @@ $(document).on('click', '#confirmBatchReceiveBtn', function() {
             } else {
                 alert('批次接收成功！');
             }
-            $('#batchReceiveModal').modal('hide');
+            // 使用Bootstrap 5原生API关闭模态框
+            const modal = bootstrap.Modal.getInstance(document.getElementById('batchReceiveModal'));
+            if (modal) {
+                modal.hide();
+            }
             loadPendingReceiveData(); // 重新加载数据
         } else {
             if (typeof showError === 'function') {

@@ -165,7 +165,8 @@ console.log('角色管理页面JavaScript已加载 - 版本 2.0');
 let currentRoleId = null;
 
 function showCreateRoleModal() {
-    $('#createRoleModal').modal('show');
+    const modal = new bootstrap.Modal(document.getElementById('createRoleModal'));
+    modal.show();
 }
 
 function createRole() {

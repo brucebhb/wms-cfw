@@ -9,7 +9,7 @@ import json
 from sqlalchemy import func, or_
 
 # 确保API路由被正确注册到蓝图
-__all__ = ['save_outbound_batch', 'get_outbound_list', 'get_outbound_history']
+__all__ = ['save_outbound_batch', 'get_outbound_list', 'get_outbound_history', 'save_frontend_outbound_to_backend']
 
 
 
@@ -793,4 +793,213 @@ def get_backend_inventory_for_outbound():
         return jsonify({
             'success': False,
             'message': f"获取后端仓库库存数据出错: {str(e)}"
+        }), 500
+
+
+@bp.route('/frontend/outbound/to_backend', methods=['POST'])
+@csrf.exempt  # 豁免CSRF保护，因为这是API接口
+def save_frontend_outbound_to_backend():
+    """
+    保存前端仓库出库到后端仓库的记录API
+    支持admin用户根据始发仓智能匹配权限
+    """
+    try:
+        # 获取请求数据
+        data = request.get_json()
+
+        # 调试日志
+        current_app.logger.info(f"收到前端仓库出库到后端仓库数据请求: {json.dumps(data, ensure_ascii=False)}")
+
+        if not data:
+            current_app.logger.error("请求数据为空")
+            return jsonify({
+                'success': False,
+                'message': '请求数据为空'
+            }), 400
+
+        # 验证必需字段
+        if 'commonData' not in data or 'records' not in data:
+            current_app.logger.error(f"数据格式不正确，缺少必要字段。数据键: {list(data.keys())}")
+            return jsonify({
+                'success': False,
+                'message': '数据格式不正确，必须包含commonData和records字段'
+            }), 400
+
+        common_data = data['commonData']
+        records = data['records']
+
+        # 验证记录列表
+        if not isinstance(records, list) or len(records) == 0:
+            return jsonify({
+                'success': False,
+                'message': '出库记录列表不能为空'
+            }), 400
+
+        # 权限检查 - 特殊处理admin用户
+        if not current_user.is_authenticated:
+            return jsonify({
+                'success': False,
+                'message': '用户未登录'
+            }), 401
+
+        # 获取始发仓库信息
+        origin_warehouse_name = common_data.get('originWarehouse', '')
+        current_app.logger.info(f"始发仓库: {origin_warehouse_name}")
+
+        # admin用户权限检查 - 根据始发仓智能匹配
+        if current_user.is_super_admin():
+            current_app.logger.info(f"管理员用户 {current_user.username} 操作前端仓库出库到后端仓库，始发仓: {origin_warehouse_name}")
+            # admin用户可以操作任何仓库的出库
+        else:
+            # 普通用户需要检查仓库权限
+            if not hasattr(current_user, 'warehouse') or not current_user.warehouse:
+                return jsonify({
+                    'success': False,
+                    'message': '用户没有关联仓库，请联系管理员'
+                }), 403
+
+            # 检查用户仓库是否与始发仓库匹配
+            user_warehouse_name = current_user.warehouse.warehouse_name
+            if user_warehouse_name != origin_warehouse_name:
+                return jsonify({
+                    'success': False,
+                    'message': f'您只能操作 {user_warehouse_name} 的出库，无法操作 {origin_warehouse_name} 的出库'
+                }), 403
+
+        # 开始数据库事务
+        try:
+            saved_records = []
+
+            for record in records:
+                # 验证必需字段
+                identification_code = record.get('identification_code', '').strip()
+                if not identification_code:
+                    current_app.logger.error(f"记录缺少识别编码: {record}")
+                    continue
+
+                # 查找对应的库存记录
+                inventory = Inventory.query.filter_by(
+                    identification_code=identification_code
+                ).first()
+
+                if not inventory:
+                    current_app.logger.error(f"未找到识别编码为 {identification_code} 的库存记录")
+                    return jsonify({
+                        'success': False,
+                        'message': f'未找到识别编码为 {identification_code} 的库存记录'
+                    }), 400
+
+                # 验证出库数量
+                outbound_pallet = int(record.get('pallet_count', 0))
+                outbound_package = int(record.get('package_count', 0))
+
+                if outbound_pallet > inventory.pallet_count:
+                    return jsonify({
+                        'success': False,
+                        'message': f'出库板数 {outbound_pallet} 超过库存板数 {inventory.pallet_count}'
+                    }), 400
+
+                if outbound_package > inventory.package_count:
+                    return jsonify({
+                        'success': False,
+                        'message': f'出库件数 {outbound_package} 超过库存件数 {inventory.package_count}'
+                    }), 400
+
+                # 创建出库记录
+                outbound_record = OutboundRecord(
+                    outbound_time=datetime.strptime(record.get('outbound_time', ''), '%Y-%m-%d').date(),
+                    customer_name=record.get('customer_name', ''),
+                    identification_code=identification_code,
+                    pallet_count=outbound_pallet,
+                    package_count=outbound_package,
+                    weight=float(record.get('weight', 0)),
+                    volume=float(record.get('volume', 0)),
+                    batch_number=record.get('batch_number', ''),
+                    documents=record.get('documents', ''),
+                    remarks=record.get('remarks', ''),
+                    remarks2=record.get('remarks2', ''),
+
+                    # 运输信息
+                    plate_number=common_data.get('trunkPlate', ''),
+                    vehicle_type=common_data.get('vehicleType', ''),
+                    driver_name=common_data.get('driverName', ''),
+                    driver_phone=common_data.get('driverPhone', ''),
+
+                    # 时间信息
+                    arrival_time=datetime.strptime(common_data.get('arrivalTime', ''), '%Y-%m-%d %H:%M') if common_data.get('arrivalTime') else None,
+                    loading_start_time=datetime.strptime(common_data.get('loadingStartTime', ''), '%Y-%m-%d %H:%M') if common_data.get('loadingStartTime') else None,
+                    loading_end_time=datetime.strptime(common_data.get('loadingEndTime', ''), '%Y-%m-%d %H:%M') if common_data.get('loadingEndTime') else None,
+                    departure_time=datetime.strptime(common_data.get('departureTime', ''), '%Y-%m-%d %H:%M') if common_data.get('departureTime') else None,
+
+                    # 仓库信息
+                    origin_warehouse=common_data.get('originWarehouse', ''),
+                    destination_warehouse=common_data.get('destinationWarehouse', ''),
+                    origin_contact=common_data.get('originContact', ''),
+                    destination_contact=common_data.get('destinationContact', ''),
+                    origin_address=common_data.get('originAddress', ''),
+                    destination_address=common_data.get('destinationAddress', ''),
+
+                    # 托盘信息
+                    large_pallet=int(common_data.get('largePallet', 0)) if common_data.get('largePallet') else 0,
+                    small_pallet=int(common_data.get('smallPallet', 0)) if common_data.get('smallPallet') else 0,
+                    card_pallet=int(common_data.get('cardPallet', 0)) if common_data.get('cardPallet') else 0,
+
+                    # 业务字段
+                    inbound_plate=record.get('inbound_plate', ''),
+                    order_type=record.get('order_type', ''),
+                    export_mode=record.get('export_mode', ''),
+                    customs_broker=record.get('customs_broker', ''),
+                    service_staff=record.get('service_staff', ''),
+                    document_count=record.get('document_count', ''),
+
+                    # 目的地类型
+                    destination_type='backend_warehouse',
+
+                    # 操作信息
+                    operated_warehouse_id=inventory.operated_warehouse_id,
+                    create_time=datetime.now(),
+                    update_time=datetime.now()
+                )
+
+                db.session.add(outbound_record)
+
+                # 更新库存
+                inventory.pallet_count -= outbound_pallet
+                inventory.package_count -= outbound_package
+                inventory.update_time = datetime.now()
+
+                saved_records.append({
+                    'identification_code': identification_code,
+                    'customer_name': record.get('customer_name', ''),
+                    'pallet_count': outbound_pallet,
+                    'package_count': outbound_package
+                })
+
+            # 提交事务
+            db.session.commit()
+
+            current_app.logger.info(f"成功保存 {len(saved_records)} 条前端仓库出库到后端仓库记录")
+
+            return jsonify({
+                'success': True,
+                'message': f'成功保存 {len(saved_records)} 条出库记录',
+                'count': len(saved_records),
+                'records': saved_records
+            })
+
+        except Exception as e:
+            db.session.rollback()
+            current_app.logger.error(f"保存前端仓库出库到后端仓库记录时发生错误: {str(e)}")
+            current_app.logger.error(traceback.format_exc())
+            return jsonify({
+                'success': False,
+                'message': f'保存失败: {str(e)}'
+            }), 500
+
+    except Exception as e:
+        current_app.logger.error(f"处理前端仓库出库到后端仓库请求时发生错误: {str(e)}")
+        current_app.logger.error(traceback.format_exc())
+        return jsonify({
+            'success': False,
+            'message': f'处理请求失败: {str(e)}'
         }), 500

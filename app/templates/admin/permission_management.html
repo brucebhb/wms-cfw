@@ -256,7 +256,10 @@ function saveUserPermissions() {
         success: function(response) {
             if (response.success) {
                 alert(response.message);
-                $('#editPermissionModal').modal('hide');
+                const modal = bootstrap.Modal.getInstance(document.getElementById('editPermissionModal'));
+                if (modal) {
+                    modal.hide();
+                }
                 loadUserPermissionCount(userId);
             } else {
                 alert('保存失败: ' + response.message);

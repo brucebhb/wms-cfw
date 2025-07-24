@@ -962,7 +962,8 @@ function resetSearch() {
 // 查看记录详情
 function viewRecord(recordId) {
     $('#recordDetailContent').html('<div class="text-center"><i class="fas fa-spinner fa-spin"></i> 加载中...</div>');
-    $('#viewRecordModal').modal('show');
+    const modal = new bootstrap.Modal(document.getElementById('viewRecordModal'));
+    modal.show();
 
     // 这里可以添加AJAX请求获取详情
     setTimeout(function() {

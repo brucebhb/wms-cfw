@@ -238,7 +238,8 @@ function showDetails(details) {
     } catch (e) {
         document.getElementById('detailsContent').textContent = details;
     }
-    $('#detailsModal').modal('show');
+    const modal = new bootstrap.Modal(document.getElementById('detailsModal'));
+    modal.show();
 }
 
 function resetSearch() {

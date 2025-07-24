@@ -1395,6 +1395,18 @@ def utility_processor():
 
     return dict(now=now)
 
+@bp.route('/modal-test')
+@login_required
+def modal_test():
+    """模态框测试页面"""
+    return render_template('modal_test.html')
+
+@bp.route('/api-test')
+@login_required
+def api_test():
+    """API测试页面"""
+    return render_template('test_api.html')
+
 @bp.route('/')
 @bp.route('/index')
 @login_required  # 添加登录要求
@@ -10742,9 +10754,15 @@ def api_frontend_outbound_to_backend():
             current_app.logger.warning('前端仓出库请求被拒绝：用户未认证')
             return jsonify({'success': False, 'message': '用户未认证，请先登录'}), 401
 
-        if not hasattr(current_user, 'warehouse_id') or not current_user.warehouse_id:
-            current_app.logger.warning(f'前端仓出库请求被拒绝：用户{current_user.username}没有关联仓库')
-            return jsonify({'success': False, 'message': '用户没有关联仓库，请联系管理员'}), 403
+        # 权限检查 - 特殊处理admin用户
+        if current_user.is_super_admin():
+            current_app.logger.info(f"管理员用户 {current_user.username} 操作前端仓库出库到后端仓库")
+            # admin用户可以操作任何仓库的出库
+        else:
+            # 普通用户需要检查仓库权限
+            if not hasattr(current_user, 'warehouse_id') or not current_user.warehouse_id:
+                current_app.logger.warning(f'前端仓出库请求被拒绝：用户{current_user.username}没有关联仓库')
+                return jsonify({'success': False, 'message': '用户没有关联仓库，请联系管理员'}), 403
 
         # 安全验证：验证请求数据
         if SECURITY_ENABLED:
@@ -10932,6 +10950,19 @@ def api_frontend_outbound_to_backend():
 
                 # 根据目的仓类型决定是否创建在途记录
                 if destination_warehouse == '凭祥北投仓':
+                    # 确定源仓库ID - 对于admin用户，根据始发仓库名称查找ID
+                    source_warehouse_id = current_user.warehouse_id
+                    if current_user.is_super_admin() and not source_warehouse_id:
+                        # admin用户根据始发仓库名称查找ID
+                        origin_warehouse_name = common_data.get('originWarehouse', '')
+                        if origin_warehouse_name:
+                            origin_warehouse = Warehouse.query.filter_by(warehouse_name=origin_warehouse_name).first()
+                            if origin_warehouse:
+                                source_warehouse_id = origin_warehouse.id
+                                current_app.logger.info(f"Admin用户根据始发仓 {origin_warehouse_name} 确定源仓库ID: {source_warehouse_id}")
+                            else:
+                                current_app.logger.warning(f"未找到始发仓库: {origin_warehouse_name}")
+
                     # 发往北投仓：创建在途记录，需要后续接收
                     transit_cargo = TransitCargo(
                         customer_name=record_data.get('customer_name'),
@@ -10941,7 +10972,7 @@ def api_frontend_outbound_to_backend():
                         weight=float(record_data.get('weight', 0)),
                         volume=float(record_data.get('volume', 0)),
                         batch_no=batch_number,
-                        source_warehouse_id=current_user.warehouse_id,
+                        source_warehouse_id=source_warehouse_id,
                         destination_warehouse_id=destination_warehouse_id,
                         departure_time=_parse_datetime(common_data.get('departureTime')) or datetime.now(),
                         plate_number=trunk_plate,
